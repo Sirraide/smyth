@@ -14,6 +14,8 @@
 #define SMYTH_CAT(X, Y)  SMYTH_CAT_(X, Y)
 
 namespace smyth {
+using namespace std::literals;
+
 using u8 = uint8_t;
 using u16 = uint16_t;
 using u32 = uint32_t;
