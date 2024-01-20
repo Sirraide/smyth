@@ -5,6 +5,7 @@
 #define LEXURGY_REQUEST_APPLY       "apply"
 #define LEXURGY_REQUEST_LOAD_STRING "load_string"
 #define LEXURGY_RESPONSE_ERROR      "error"
+#define LEXURGY_RESPONSE_CHANGED    "changed"
 #define LEXURGY_RESPONSE_OK         "ok"
 
 struct LoadStringRequest {
@@ -12,6 +13,17 @@ struct LoadStringRequest {
     struct {
         std::string changes = "foo";
     } data;
+};
+
+struct ApplyRequest {
+    std::string_view type = LEXURGY_REQUEST_APPLY;
+    struct {
+        std::vector<std::string> words;
+    } data;
+};
+
+struct ChangedResponse {
+    std::vector<std::string> words;
 };
 
 struct OkResponse {};
@@ -50,11 +62,9 @@ auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res, Error> {
     auto s = glz::write_json(std::move(r));
     lexurgy_process.write(s.data(), qint64(s.size()));
     lexurgy_process.write("\n");
-    fmt::print(stderr, "Request: {}\n", s);
     lexurgy_process.waitForReadyRead(5'000);
-    auto res = lexurgy_process.readLine();
-    std::string_view sv = {res.data(), usz(res.size())};
-    fmt::print(stderr, "Response: {}\n", sv);
+    auto line = lexurgy_process.readLine();
+    std::string_view sv = {line.data(), usz(line.size())};
 
     /// Parse the response.
     glz::context ctx;
@@ -65,12 +75,21 @@ auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res, Error> {
     if (response_tag->type == LEXURGY_RESPONSE_ERROR) {
         auto err = ReadPartial<ErrorResponse>(sv, ctx);
         if (err.is_err()) return err.err();
-        return Error(err->message);
+        return Error(std::move(err->message));
     }
 
     if (response_tag->type == LEXURGY_RESPONSE_OK) {
         if constexpr (not std::is_same_v<Res, OkResponse>) return Error(fmt::format("Unexpected 'ok' response", sv));
         else return {};
+    }
+
+    if (response_tag->type == LEXURGY_RESPONSE_CHANGED) {
+        if constexpr (not std::is_same_v<Res, ChangedResponse>) return Error(fmt::format("Unexpected 'changed' response", sv));
+        else {
+            auto res = ReadPartial<ChangedResponse>(sv, ctx);
+            if (res.is_err()) return res.err();
+            return std::move(res);
+        }
     }
 
     return Error(fmt::format("Unknown response type '{}'", response_tag->type));
@@ -108,29 +127,27 @@ smyth::Lexurgy::~Lexurgy() {
 }
 
 auto smyth::Lexurgy::operator()(
-    QStringView words,
+    QStringView input,
     QString changes
 ) -> Result<QString, Error> {
     if (auto res = UpdateSoundChanges(std::move(changes)); not res)
         return res.err();
-    /*
-        json::array_t ws;
-        for (auto w : words | vws::split('\n') | vws::filter([](auto&& w) { return not w.empty(); })) {
-            auto sv = QStringView{w.begin(), w.end() - w.begin()};
-            ws.push_back(sv.toString().toStdString());
-        }
 
-        json req = {
-            {"type", LEXURGY_REQUEST_APPLY},
-            {"data", {
-                 {"words", std::move(ws)}
-            }}
-        };
+    std::vector<std::string> words;
+    for (auto w : input | vws::split('\n') | vws::filter([](auto&& w) { return not w.empty(); })) {
+        auto sv = QStringView{w.begin(), w.end() - w.begin()};
+        words.push_back(sv.toString().toStdString());
+    }
 
+    auto res = SendRequest<ChangedResponse>(ApplyRequest{
+        .data = {.words = std::move(words)}
+    });
+    if (res.is_err()) return res.err();
 
-        auto s = req.dump();
-        lexurgy_process.write(s.data(), qint64(s.size()));
-        lexurgy_process.write("\n");
-        auto line = lexurgy_process.readLine();*/
-    return {"todo"};
+    QString joined;
+    for (const auto& w : res->words) {
+        joined += w;
+        joined += '\n';
+    }
+    return joined;
 }

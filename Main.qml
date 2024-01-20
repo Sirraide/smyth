@@ -35,6 +35,7 @@ Window {
             Layout.minimumWidth: 200
             Layout.fillWidth: true
             Layout.fillHeight: true
+            fontFamily: "Fira Code"
         }
 
         Editor {

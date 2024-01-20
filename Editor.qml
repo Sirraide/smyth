@@ -6,6 +6,7 @@ Rectangle {
 
     property alias text: edit.text
     property alias readOnly: edit.readOnly
+    property alias fontFamily: edit.font.family
 
     TextEdit {
         id: edit
@@ -20,6 +21,7 @@ Rectangle {
 
         font {
             family: "Charis SIL"
+            features: { "liga": 1 }
             pointSize: 16
         }
     }
