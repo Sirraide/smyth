@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 
-Window {
+ApplicationWindow {
     id: root
     width: 800
     height: 600
@@ -12,6 +12,23 @@ Window {
     visible: true
     color: "#2D2A2E"
     title: "Smyth"
+
+    menuBar: MenuBar {
+        Menu {
+            title: "&File"
+
+            Action {
+                text: "&Quit"
+                onTriggered: Qt.quit()
+            }
+
+            Action {
+                text: "&Save"
+                shortcut: StandardKey.Save
+                onTriggered: SmythContext.save()
+            }
+        }
+    }
 
     GridLayout {
         id: mainGrid
@@ -49,29 +66,6 @@ Window {
         Button {
             text: "Apply"
             onClicked: output.text = SmythContext.applySoundChanges(input.text, changes.text)
-        }
-    }
-
-    MessageDialog {
-        id: errorDialog
-        buttons: MessageDialog.Ok
-        visible: false
-        text: "Error"
-    }
-
-    Connections {
-        target: SmythContext
-        function onShowErrorDialog(message) {
-            errorDialog.informativeText = message
-            errorDialog.open()
-        }
-
-        // This is jank, but there seems to be a bug in Qt or something
-        // that causes the error dialog to not render properly the first
-        // time it is displayed.
-        function onInit() {
-            errorDialog.open()
-            errorDialog.close()
         }
     }
 }

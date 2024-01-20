@@ -12,13 +12,18 @@ class App : public QObject {
 
     Lexurgy lexurgy;
 
+public:
+    static void ShowError(QString message);
+
 signals:
     void init();
-    void showErrorDialog(QString message);
 
 public slots:
     /// Apply sound changes to the input string.
     auto applySoundChanges(QString inputs, QString sound_changes) -> QString;
+
+    /// Save project to a file.
+    void save();
 };
 
 }

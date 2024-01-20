@@ -219,16 +219,16 @@ add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
 ## ============================================================================
 ##  Qt Stuff
 ## ============================================================================
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Widgets)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
 file(GLOB_RECURSE smyth-sources src/*.cc src/*.hh)
-qt_add_executable(appSmyth
+qt_add_executable(smyth
     ${smyth-sources}
 )
 
-qt_add_qml_module(appSmyth
+qt_add_qml_module(smyth
     URI Smyth
     VERSION 1.0
     QML_FILES Main.qml
@@ -239,20 +239,21 @@ qt_add_qml_module(appSmyth
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
-set_target_properties(appSmyth PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appSmyth
+set_target_properties(smyth PROPERTIES
+#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.smyth
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
 
-target_link_libraries(appSmyth
-    PRIVATE Qt6::Quick options smyth-lib
+target_link_libraries(smyth
+    PRIVATE Qt6::Quick Qt6::Widgets options smyth-lib
 )
 
 include(GNUInstallDirs)
-install(TARGETS appSmyth
+install(TARGETS smyth
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
