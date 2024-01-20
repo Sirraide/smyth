@@ -3,10 +3,6 @@
 
 #include <fmt/format.h>
 
-#ifdef QT_VERSION
-#    include <QString>
-#endif
-
 #define SMYTH_STR_(X) #X
 #define SMYTH_STR(X)  SMYTH_STR_(X)
 
@@ -37,15 +33,5 @@ template <typename... arguments>
     std::exit(1);
 }
 } // namespace smyth
-
-#ifdef QT_VERSION
-template <>
-struct fmt::formatter<QString> : fmt::formatter<string_view> {
-    template <typename FormatContext>
-    auto format(const QString& s, FormatContext& ctx) {
-        return fmt::formatter<string_view>::format(s.toStdString(), ctx);
-    }
-};
-#endif
 
 #endif // FOOBAR_UTILS_HH

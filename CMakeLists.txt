@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-project(Smyth VERSION 0.1 LANGUAGES CXX)
+project(Smyth VERSION 0.1 LANGUAGES CXX C)
 
 ## ============================================================================
 ##  Global CMake Variables.
@@ -209,9 +209,13 @@ target_link_libraries(options INTERFACE fmt glaze::glaze)
 ## ============================================================================
 ##  Executables and libraries.
 ## ============================================================================
+add_library(sqlite3 STATIC "${PROJECT_SOURCE_DIR}/thirdparty/sqlite/sqlite3.c")
+target_compile_options(sqlite3 PRIVATE -O3)
+
 file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/*.hh)
-add_library(smyth-lib STATIC ${smyth-lib-sources})
-target_link_libraries(smyth-lib PRIVATE options ICU::i18n ICU::uc ICU::data)
+add_library(smyth-lib STATIC ${smyth-lib-sources} )
+target_include_directories(smyth-lib PUBLIC "${${PROJECT_SOURCE_DIR}/thirdparty/sqlite/}")
+target_link_libraries(smyth-lib PRIVATE options ICU::i18n ICU::uc ICU::data sqlite3)
 set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
 
 add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")

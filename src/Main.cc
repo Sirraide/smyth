@@ -5,8 +5,6 @@
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-
-    /// Initialise app data.
     smyth::App Smyth;
 
     QQmlApplicationEngine engine;
@@ -21,6 +19,5 @@ int main(int argc, char* argv[]) {
     auto ctx = engine.rootContext();
     ctx->setContextProperty("SmythContext", &Smyth);
     engine.loadFromModule("Smyth", "Main");
-    emit Smyth.init();
     return app.exec();
 }
