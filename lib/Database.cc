@@ -22,38 +22,54 @@ smyth::Database::~Database() noexcept {
     sqlite3_close_v2(handle);
 }
 
-auto smyth::Database::backup(std::string_view path) -> Res {
-    sqlite3* target;
+auto smyth::Database::BackupInternal(sqlite3* to, sqlite3* from) -> Res {
+    sqlite3_backup* backup = sqlite3_backup_init(to, "main", from, "main");
+    if (backup == nullptr) return fmt::format(
+        "Failed to create backup: {}",
+        sqlite3_errmsg(from)
+    );
+
+    auto res = sqlite3_backup_step(backup, -1);
+    if (res != SQLITE_DONE) return fmt::format(
+        "Failed to backup database: {}",
+        sqlite3_errmsg(from)
+    );
+
+    sqlite3_backup_finish(backup);
+    sqlite3_close_v2(from);
+    return {};
+}
+
+auto smyth::Database::Load(std::string_view path) -> Result<Database, std::string> {
+    Database db;
+    auto from = Open(path, SQLITE_OPEN_READONLY);
+    if (from.is_err()) return from.err();
+    auto res = BackupInternal(db.handle, *from);
+    if (res.is_err()) return res.err();
+    return db;
+}
+
+auto smyth::Database::Open(std::string_view path, int flags) -> Result<sqlite3*, std::string> {
+    sqlite3* db;
     auto res = sqlite3_open_v2(
         path.data(),
-        &target,
-        SQLITE_OPEN_READWRITE |
-            SQLITE_OPEN_CREATE |
-            SQLITE_OPEN_FULLMUTEX,
+        &db,
+        flags | SQLITE_OPEN_FULLMUTEX,
         nullptr
     );
 
     if (res != SQLITE_OK) return fmt::format(
         "Failed to open database '{}': {}",
         path,
-        sqlite3_errmsg(target)
+        sqlite3_errmsg(db)
     );
+    return db;
+}
 
-    sqlite3_backup* backup = sqlite3_backup_init(target, "main", handle, "main");
-    if (backup == nullptr) return fmt::format(
-        "Failed to create backup: {}",
-        sqlite3_errmsg(target)
-    );
-
-    res = sqlite3_backup_step(backup, -1);
-    if (res != SQLITE_DONE) return fmt::format(
-        "Failed to backup database: {}",
-        sqlite3_errmsg(target)
-    );
-
-    sqlite3_backup_finish(backup);
-    sqlite3_close_v2(target);
-    return {};
+auto smyth::Database::backup(std::string_view path) -> Res {
+    auto to = Open(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+    if (to.is_err()) return to.err();
+    return BackupInternal(*to, handle);
 }
 
 auto smyth::Database::exec(std::string_view query) -> Res {

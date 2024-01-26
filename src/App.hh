@@ -18,6 +18,7 @@ class PersistQString : public PersistentBase {
 public:
     PersistQString(Object* obj) : obj(obj) {}
 
+private:
     void load(std::string new_val) override {
         std::invoke(Set, obj, QString::fromStdString(new_val));
     }
@@ -50,17 +51,14 @@ public:
         store.register_entry(std::move(key), std::move(e));
     }
 
-signals:
-
-public slots:
     /// Apply sound changes to the input string.
     auto applySoundChanges(QString inputs, QString sound_changes) -> QString;
 
+    /// Open a project from a file.
+    void open();
+
     /// Save project to a file.
     void save();
-
-    /// Save project to a file under a new name.
-    void saveAs();
 
 private:
     /// Save project to a file.

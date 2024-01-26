@@ -14,13 +14,17 @@ namespace smyth {
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
+    smyth::App& app;
+    std::unique_ptr<Ui::MainWindow> ui;
+
 public:
     SMYTH_IMMOVABLE(MainWindow);
     MainWindow(App& app);
     ~MainWindow() noexcept;
 
-private:
-    std::unique_ptr<Ui::MainWindow> ui;
+public slots:
+    void open_project();
+    void save_project();
 };
 } // namespace smyth
 #endif // SMYTH_MAINWINDOW_HH

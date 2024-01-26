@@ -18,7 +18,15 @@ class Database {
 public:
     using Res = Result<void, std::string>;
 
-    SMYTH_IMMOVABLE(Database);
+    Database(const Database&) = delete;
+    Database(Database&& other) noexcept : handle(std::exchange(other.handle, nullptr)) {}
+
+    Database& operator=(const Database&) = delete;
+    Database& operator=(Database&& other) noexcept {
+        handle = std::exchange(other.handle, nullptr);
+        return *this;
+    }
+
     Database();
     ~Database() noexcept;
 
@@ -30,6 +38,16 @@ public:
 
     /// Prepare a statement.
     auto prepare(std::string_view query) -> Result<Statement, std::string>;
+
+    /// Load a copy of a database from a file.
+    static auto Load(std::string_view path) -> Result<Database, std::string>;
+
+private:
+    /// Helper to load from / save to a file.
+    static auto BackupInternal(sqlite3* to, sqlite3* from) -> Res;
+
+    /// Open a database file on disk.
+    static auto Open(std::string_view path, int flags = 0) -> Result<sqlite3*, std::string>;
 };
 
 class Row {

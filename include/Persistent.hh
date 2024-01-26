@@ -5,6 +5,8 @@
 #include <unordered_map>
 
 namespace smyth {
+class PersistentStore;
+
 namespace detail {
 class PersistentBase {
 protected:
@@ -13,6 +15,9 @@ protected:
 public:
     SMYTH_IMMOVABLE(PersistentBase);
     virtual ~PersistentBase() = default;
+
+private:
+    friend PersistentStore;
 
     /// Initialise this entry from the DB.
     /// \throw std::runtime_error if there is an error during loading.

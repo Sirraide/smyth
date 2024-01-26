@@ -55,10 +55,11 @@ void smyth::PersistentStore::reload_all(Database& db) {
         SELECT value FROM {} WHERE key = ?;
     )sql";
 
+    Init(db);
     auto stmt = db.prepare(fmt::format(query, table_name));
-    if (stmt.is_err()) throw Exception("Failed to prepare statement: {}", stmt.err());
+    if (stmt.is_err()) throw Exception("{}", stmt.err());
     for (const auto& [key, entry] : entries) {
-        stmt->bind(0, key);
+        stmt->bind(1, key);
         auto res = stmt->fetch_one();
         if (res.is_err()) throw Exception("Failed to load entry '{}': {}", key, res.err());
         entry->load(res->text(0));
@@ -72,11 +73,12 @@ void smyth::PersistentStore::save_all(Database& db) {
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
     )sql";
 
+    Init(db);
     auto stmt = db.prepare(fmt::format(query, table_name));
-    if (stmt.is_err()) throw Exception("Failed to prepare statement: {}", stmt.err());
+    if (stmt.is_err()) throw Exception("{}", stmt.err());
     for (const auto& [key, entry] : entries) {
-        stmt->bind(0, key);
-        stmt->bind(1, entry->save());
+        stmt->bind(1, key);
+        stmt->bind(2, entry->save());
         auto res = stmt->exec();
         if (res.is_err()) throw Exception("Failed to save entry '{}': {}", key, res.err());
         stmt->reset();

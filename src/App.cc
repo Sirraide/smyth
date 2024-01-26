@@ -15,6 +15,24 @@ auto smyth::App::applySoundChanges(QString inputs, QString sound_changes) -> QSt
     return res.value();
 }
 
+void smyth::App::open() try {
+    auto path = QFileDialog::getOpenFileName(
+        nullptr,
+        "Open Project",
+        "",
+        "Smyth Projects (*.smyth)"
+    );
+
+    if (path.isEmpty()) return;
+    auto res = Database::Load(path.toStdString());
+    if (res.is_err()) throw Exception("{}", res.err());
+
+    db = std::move(res.value());
+    store.reload_all(db);
+} catch (const Exception& e) {
+    Error("Failed to open project: {}", e.what());
+}
+
 void smyth::App::save() {
     if (not save_path.isEmpty()) {
         SaveImpl();
@@ -37,14 +55,13 @@ void smyth::App::save() {
     SaveImpl();
 }
 
-void smyth::App::saveAs() {
-    Error("TODO : saveAs()");
-}
-
-void smyth::App::SaveImpl() {
+void smyth::App::SaveImpl() try {
+    store.save_all(db);
     auto res = db.backup(save_path.toStdString());
     if (res.is_err()) {
         Error("Failed to save project: {}", res.err());
         return;
     }
+} catch (const Exception& e) {
+    Error("Failed to save project: {}", e.what());
 }
