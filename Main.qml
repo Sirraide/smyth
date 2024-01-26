@@ -18,14 +18,20 @@ ApplicationWindow {
             title: "&File"
 
             Action {
-                text: "&Quit"
-                onTriggered: Qt.quit()
+                text: "&Open"
+                shortcut: StandardKey.Open
+                onTriggered: SmythContext.open()
             }
 
             Action {
                 text: "&Save"
                 shortcut: StandardKey.Save
                 onTriggered: SmythContext.save()
+            }
+
+            Action {
+                text: "&Quit"
+                onTriggered: Qt.quit()
             }
         }
     }
@@ -42,6 +48,7 @@ ApplicationWindow {
 
         Editor {
             id: input
+            objectName: "input"
             Layout.minimumWidth: 100
             Layout.preferredWidth: parent.width * .25
             Layout.fillHeight: true
@@ -49,6 +56,7 @@ ApplicationWindow {
 
         Editor {
             id: changes
+            objectName: "changes"
             Layout.minimumWidth: 200
             Layout.fillWidth: true
             Layout.fillHeight: true

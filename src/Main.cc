@@ -1,23 +1,22 @@
 #include <App.hh>
+#include <MainWindow.hh>
 #include <QApplication>
-#include <QQmlApplicationEngine>
-#include <QQmlContext>
+#include <QMessageBox>
+
+void ShowError(std::string message) {
+    QMessageBox box;
+    box.setWindowTitle("Error");
+    box.setIcon(QMessageBox::Critical);
+    box.setText(QString::fromStdString(message));
+    box.setWindowFlags(box.windowFlags() & ~(Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint));
+    box.exec();
+}
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     smyth::App Smyth;
-
-    QQmlApplicationEngine engine;
-    QObject::connect(
-        &engine,
-        &QQmlApplicationEngine::objectCreationFailed,
-        &app,
-        []() { QCoreApplication::exit(-1); },
-        Qt::QueuedConnection
-    );
-
-    auto ctx = engine.rootContext();
-    ctx->setContextProperty("SmythContext", &Smyth);
-    engine.loadFromModule("Smyth", "Main");
+    smyth::RegisterMessageHandler(ShowError);
+    smyth::MainWindow w{Smyth};
+    w.show();
     return app.exec();
 }

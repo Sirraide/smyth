@@ -1,35 +1,34 @@
 #ifndef SMYTH_APP_HH
 #define SMYTH_APP_HH
 
+#include <Database.hh>
 #include <Lexurgy.hh>
+#include <Persistent.hh>
 #include <QObject>
 #include <QUrl>
 #include <Utils.hh>
 
-struct sqlite3;
+#define SMYTH_MAIN_STORE_KEY "store"
 
-namespace smyth {
-class Database {
-    sqlite3* handle{};
+namespace smyth::detail {
+template <typename Object, QString (Object::*Get)() const, void (Object::*Set)(const QString&)>
+class PersistQString : public PersistentBase {
+    Object* obj;
 
 public:
-    using Res = Result<void, std::string>;
+    PersistQString(Object* obj) : obj(obj) {}
 
-    Database(const Database&) = delete;
-    Database& operator=(const Database&) = delete;
-    Database(Database&&) = delete;
-    Database& operator=(Database&&) = delete;
+    void load(std::string new_val) override {
+        std::invoke(Set, obj, QString::fromStdString(new_val));
+    }
 
-    Database();
-    ~Database() noexcept;
-
-    /// Save the DB to a file.
-    auto backup(std::string_view path) -> Res;
-
-    /// Execute an SQL query.
-    auto exec(std::string_view query) -> Res;
+    auto save() -> std::string override {
+        return std::invoke(Get, obj).toStdString();
+    }
 };
+} // namespace smyth::detail
 
+namespace smyth {
 class App : public QObject {
     Q_OBJECT
 
@@ -38,25 +37,18 @@ class App : public QObject {
     QString save_path;
 
 public:
-    App();
+    PersistentStore store{SMYTH_MAIN_STORE_KEY};
 
-    /// Show an error to the user.
-    template <typename... Args>
-    static void ShowError(fmt::format_string<Args...> fmt, Args&&... args) {
-        ShowError(QString::fromStdString(fmt::format(fmt, std::forward<Args>(args)...)));
+    SMYTH_IMMOVABLE(App);
+    App() = default;
+
+    /// Persist a QString property in the store.
+    template <auto Get, auto Set, typename Object>
+    void persist(std::string key, Object* obj) {
+        using namespace detail;
+        std::unique_ptr<PersistentBase> e{new PersistQString<Object, Get, Set>(obj)};
+        store.register_entry(std::move(key), std::move(e));
     }
-
-    /// Show an error to the user.
-    static void ShowError(QString message);
-
-    /// Show an error to the user and exit.
-    template <typename... Args>
-    [[noreturn]] static void ShowFatalError(fmt::format_string<Args...> fmt, Args&&... args) {
-        ShowFatalError(QString::fromStdString(fmt::format(fmt, std::forward<Args>(args)...)));
-    }
-
-    /// Show an error to the user and exit.
-    [[noreturn]] static void ShowFatalError(QString message);
 
 signals:
 

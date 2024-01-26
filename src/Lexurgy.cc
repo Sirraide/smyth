@@ -81,7 +81,7 @@ auto smyth::Lexurgy::UpdateSoundChanges(QString changes) -> Result<void, Error> 
 smyth::Lexurgy::Lexurgy() {
     lexurgy_process.start(LEXURGY_ROOT "/bin/lexurgy", QStringList() << "server");
     if (not lexurgy_process.waitForStarted(5'000))
-        die("Failed to start lexurgy process.");
+        Fatal("Failed to start lexurgy process.");
 }
 
 smyth::Lexurgy::~Lexurgy() {

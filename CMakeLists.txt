@@ -223,37 +223,40 @@ add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
 ## ============================================================================
 ##  Qt Stuff
 ## ============================================================================
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Widgets)
+set(CMAKE_AUTOUIC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
 
-qt_standard_project_setup(REQUIRES 6.5)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
-file(GLOB_RECURSE smyth-sources src/*.cc src/*.hh)
-qt_add_executable(smyth
-    ${smyth-sources}
-)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
-qt_add_qml_module(smyth
-    URI Smyth
-    VERSION 1.0
-    QML_FILES Main.qml
-    QML_FILES Editor.qml
+file(GLOB_RECURSE smyth-sources src/*.cc src/*.hh ui/*.ui)
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_add_executable(smyth
+        MANUAL_FINALIZATION
+        ${smyth-sources}
+    )
+else()
+    add_executable(smyth ${smyth-sources})
+endif()
 
-)
+target_link_libraries(smyth PRIVATE Qt${QT_VERSION_MAJOR}::Widgets smyth-lib options)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
+if(${QT_VERSION} VERSION_LESS 6.1.0)
+  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER org.nguh.smyth)
+endif()
 set_target_properties(smyth PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.smyth
+    ${BUNDLE_ID_OPTION}
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
-)
-
-target_link_libraries(smyth
-    PRIVATE Qt6::Quick Qt6::Widgets options smyth-lib
 )
 
 include(GNUInstallDirs)
@@ -262,3 +265,7 @@ install(TARGETS smyth
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(smyth)
+endif()
