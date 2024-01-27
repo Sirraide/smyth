@@ -1,11 +1,15 @@
 #include <App.hh>
+#include <mutex>
 #include <QCoreApplication>
 #include <QFileDialog>
+#include <QSettings>
+
+#define SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY "last_open_project"
 
 /// ====================================================================
 ///  App
 /// ====================================================================
-auto smyth::App::applySoundChanges(QString inputs, QString sound_changes) -> QString {
+auto smyth::App::apply_sound_changes(QString inputs, QString sound_changes) -> QString {
     auto res = lexurgy(inputs, sound_changes);
     if (res.is_err()) {
         Error("{}", res.err().message);
@@ -13,6 +17,26 @@ auto smyth::App::applySoundChanges(QString inputs, QString sound_changes) -> QSt
     }
 
     return res.value();
+}
+
+void smyth::App::load_last_open_project() {
+    QSettings settings{QSettings::UserScope};
+    auto path = settings.value(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY).toString();
+    if (path.isEmpty()) return;
+    auto res = Database::Load(path.toStdString());
+    if (res.is_err()) {
+        Error("Failed to load last open project: {}", res.err());
+        return;
+    }
+
+    try {
+        db = std::move(res.value());
+        store.reload_all(db);
+        save_path = std::move(path);
+        NoteLastOpenProject();
+    } catch (const std::exception& e) {
+        Error("Failed to load last open project: {}", e.what());
+    }
 }
 
 void smyth::App::open() try {
@@ -29,6 +53,8 @@ void smyth::App::open() try {
 
     db = std::move(res.value());
     store.reload_all(db);
+    save_path = std::move(path);
+    NoteLastOpenProject();
 } catch (const Exception& e) {
     Error("Failed to open project: {}", e.what());
 }
@@ -55,13 +81,22 @@ void smyth::App::save() {
     SaveImpl();
 }
 
+void smyth::App::NoteLastOpenProject() {
+    QSettings settings{QSettings::UserScope};
+    settings.setValue(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY, save_path);
+}
+
 void smyth::App::SaveImpl() try {
+    /// Don’t save twice.
+    std::unique_lock _{save_lock};
     store.save_all(db);
-    auto res = db.backup(save_path.toStdString());
+    auto res = db->backup(save_path.toStdString());
     if (res.is_err()) {
         Error("Failed to save project: {}", res.err());
         return;
     }
+
+    NoteLastOpenProject();
 } catch (const Exception& e) {
     Error("Failed to save project: {}", e.what());
 }

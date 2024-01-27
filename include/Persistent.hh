@@ -21,11 +21,11 @@ private:
 
     /// Initialise this entry from the DB.
     /// \throw std::runtime_error if there is an error during loading.
-    virtual void load(std::string) = 0;
+    virtual void load(Column c) = 0;
 
     /// Save this entry to the DB.
     /// \throw std::runtime_error if there is an error during saving.
-    virtual auto save() -> std::string = 0;
+    virtual void save(QueryParamRef param) = 0;
 };
 } // namespace detail
 
@@ -65,11 +65,11 @@ public:
 
     /// Reload all entries from a database.
     /// \throw std::runtime_error if there is an error during loading.
-    void reload_all(Database& db);
+    void reload_all(DBRef db);
 
     /// Save all entries to a database.
     /// \throw std::runtime_error if there is an error during saving.
-    void save_all(Database& db);
+    void save_all(DBRef db);
 
 private:
     void Init(Database& db);

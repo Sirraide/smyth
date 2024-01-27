@@ -23,6 +23,7 @@ public:
     ~MainWindow() noexcept;
 
 public slots:
+    void apply_sound_changes();
     void open_project();
     void save_project();
 };

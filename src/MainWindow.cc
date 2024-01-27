@@ -1,4 +1,5 @@
 #include <MainWindow.hh>
+#include <QSettings>
 #include <QShortcut>
 #include <ui_MainWindow.h>
 
@@ -26,6 +27,15 @@ smyth::MainWindow::MainWindow(App& app)
     /// Initialise persistent settings.
     PersistPTE(app, "main.input.text", ui->input);
     PersistPTE(app, "main.changes.text", ui->changes);
+    app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
+
+    /// Load last open project, if any.
+    app.load_last_open_project();
+}
+
+void smyth::MainWindow::apply_sound_changes() {
+    auto text = app.apply_sound_changes(ui->input->toPlainText(), ui->changes->toPlainText());
+    ui->output->setPlainText(std::move(text));
 }
 
 void smyth::MainWindow::open_project() {

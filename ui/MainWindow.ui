@@ -185,6 +185,7 @@
     </property>
     <addaction name="action_open"/>
     <addaction name="action_save"/>
+    <addaction name="action_quit"/>
    </widget>
    <addaction name="file_menu"/>
   </widget>
@@ -203,6 +204,11 @@
   <action name="action_save">
    <property name="text">
     <string>&amp;Save Project</string>
+   </property>
+  </action>
+  <action name="action_quit">
+   <property name="text">
+    <string>Quit</string>
    </property>
   </action>
  </widget>
@@ -240,9 +246,42 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>action_quit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>apply_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>apply_sound_changes()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>739</x>
+     <y>544</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>open_project()</slot>
   <slot>save_project()</slot>
+  <slot>apply_sound_changes()</slot>
  </slots>
 </ui>

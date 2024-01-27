@@ -34,9 +34,14 @@ using i64 = int64_t;
 using isz = ptrdiff_t;
 using iptr = intptr_t;
 
+enum struct ErrorMessageType {
+    Info,
+    Error,
+    Fatal,
+};
+
 namespace detail {
-void ErrorImpl(std::string);
-[[noreturn]] void FatalImpl(std::string);
+void MessageImpl(std::string message, ErrorMessageType type);
 
 template <typename Callable>
 class DeferImpl {
@@ -49,7 +54,7 @@ public:
 };
 } // namespace detail
 
-using ErrorMessageHandler = void(std::string);
+using ErrorMessageHandler = void(std::string, ErrorMessageType type);
 
 struct Exception : std::runtime_error {
     template <typename... Args>
@@ -57,16 +62,23 @@ struct Exception : std::runtime_error {
         : std::runtime_error(fmt::format(fmt, std::forward<Args>(args)...)) {}
 };
 
+/// Display an informational message to the user.
+template <typename... arguments>
+void Info(fmt::format_string<arguments...> fmt, arguments&&... args) {
+    detail::MessageImpl(fmt::format(fmt, std::forward<arguments>(args)...), ErrorMessageType::Info);
+}
+
 /// Display an error to the user.
 template <typename... arguments>
 void Error(fmt::format_string<arguments...> fmt, arguments&&... args) {
-    detail::ErrorImpl(fmt::format(fmt, std::forward<arguments>(args)...));
+    detail::MessageImpl(fmt::format(fmt, std::forward<arguments>(args)...), ErrorMessageType::Error);
 }
 
 /// Display an error to the user and exit.
 template <typename... arguments>
 [[noreturn]] void Fatal(fmt::format_string<arguments...> fmt, arguments&&... args) {
-    detail::FatalImpl(fmt::format(fmt, std::forward<arguments>(args)...));
+    detail::MessageImpl(fmt::format(fmt, std::forward<arguments>(args)...), ErrorMessageType::Fatal);
+    std::exit(1);
 }
 
 /// Register a message handler.

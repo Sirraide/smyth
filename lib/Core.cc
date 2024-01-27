@@ -7,22 +7,23 @@
 /// ====================================================================
 namespace smyth {
 namespace {
-void DefaultHandler(std::string message) {
-    fmt::print(stderr, "Error: {}\n", message);
+void DefaultHandler(std::string message, ErrorMessageType type) {
+    switch (type) {
+        case ErrorMessageType::Info: fmt::print(stderr, "Info"); break;
+        case ErrorMessageType::Error: fmt::print(stderr, "Error"); break;
+        case ErrorMessageType::Fatal: fmt::print(stderr, "Fatal Error"); break;
+    }
+
+    fmt::print(stderr, ": {}\n", message);
 }
 
 std::atomic<ErrorMessageHandler*> handler = DefaultHandler;
 }
 } // namespace smyth
 
-void smyth::detail::ErrorImpl(std::string message) {
+void smyth::detail::MessageImpl(std::string message, ErrorMessageType type) {
     auto h = handler.load(std::memory_order_relaxed);
-    if (h != nullptr) h(std::move(message));
-}
-
-void smyth::detail::FatalImpl(std::string message) {
-    ErrorImpl(std::move(message));
-    std::exit(1);
+    if (h != nullptr) h(std::move(message), type);
 }
 
 void smyth::RegisterMessageHandler(ErrorMessageHandler* new_handler) {
@@ -38,7 +39,7 @@ void smyth::PersistentStore::Init(Database& db) {
         CREATE TABLE IF NOT EXISTS {} (
             key TEXT PRIMARY KEY,
             value BLOB
-        );
+        ); -- *NOT* strict!!!
     )sql";
 
     auto err = db.exec(fmt::format(query, table_name));
@@ -50,35 +51,35 @@ void smyth::PersistentStore::register_entry(std::string key, Entry entry) {
     entries.emplace(std::move(key), std::move(entry));
 }
 
-void smyth::PersistentStore::reload_all(Database& db) {
+void smyth::PersistentStore::reload_all(DBRef db) {
     static constexpr std::string_view query = R"sql(
         SELECT value FROM {} WHERE key = ?;
     )sql";
 
-    Init(db);
-    auto stmt = db.prepare(fmt::format(query, table_name));
+    Init(*db);
+    auto stmt = db->prepare(fmt::format(query, table_name));
     if (stmt.is_err()) throw Exception("{}", stmt.err());
     for (const auto& [key, entry] : entries) {
         stmt->bind(1, key);
         auto res = stmt->fetch_one();
         if (res.is_err()) throw Exception("Failed to load entry '{}': {}", key, res.err());
-        entry->load(res->text(0));
+        entry->load(Column(*res, 0));
         stmt->reset();
     }
 }
 
-void smyth::PersistentStore::save_all(Database& db) {
+void smyth::PersistentStore::save_all(DBRef db) {
     static constexpr std::string_view query = R"sql(
         INSERT INTO {} (key, value) VALUES (?, ?)
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
     )sql";
 
-    Init(db);
-    auto stmt = db.prepare(fmt::format(query, table_name));
+    Init(*db);
+    auto stmt = db->prepare(fmt::format(query, table_name));
     if (stmt.is_err()) throw Exception("{}", stmt.err());
     for (const auto& [key, entry] : entries) {
         stmt->bind(1, key);
-        stmt->bind(2, entry->save());
+        entry->save(QueryParamRef(*stmt, 2));
         auto res = stmt->exec();
         if (res.is_err()) throw Exception("Failed to save entry '{}': {}", key, res.err());
         stmt->reset();

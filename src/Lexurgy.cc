@@ -37,7 +37,6 @@ struct glz::meta<Response> {
 template <typename Res, typename Req>
 auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res, Error> {
     auto s = glz::write_json(std::move(r));
-    fmt::print(stderr, "REQ: {}\n", s);
     lexurgy_process.write(s.data(), qint64(s.size()));
     lexurgy_process.write("\n");
     lexurgy_process.waitForReadyRead(5'000);
@@ -46,7 +45,6 @@ auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res, Error> {
 
     /// Parse the response.
     Response res{};
-    fmt::print(stderr, "RES: {}\n", sv);
     if (auto e = glz::read<IgnoreUnknown>(res, sv)) return Lexurgy::Error(
         fmt::format("Error parsing JSON response: {}", glz::format_error(e, sv))
     );
