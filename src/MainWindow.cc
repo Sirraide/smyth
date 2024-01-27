@@ -1,9 +1,9 @@
 #include <MainWindow.hh>
+#include <QJSEngine>
 #include <QSettings>
 #include <QShortcut>
 #include <ui_MainWindow.h>
 #include <Unicode.hh>
-#include <QJSEngine>
 
 namespace smyth {
 namespace {
@@ -21,8 +21,17 @@ void PersistChBox(App& app, std::string key, QCheckBox* cbox) {
     );
 }
 
+/// Like PersistCBox, but the entries are generated dynamically.
+void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
+    app.persist<&QComboBox::currentText, [](QComboBox* cbox, QString str) {
+        /// If the item does not exists yet, add it.
+        if (cbox->findText(str) == -1) cbox->addItem(str);
+        cbox->setCurrentText(str);
+    }>(std::move(key), cbox);
 }
-}
+
+} // namespace
+} // namespace smyth
 
 /// Needs destructor that isn’t visible in the header.
 smyth::MainWindow::~MainWindow() noexcept = default;
@@ -46,6 +55,7 @@ smyth::MainWindow::MainWindow(App& app)
     PersistCBox(app, "main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
     PersistCBox(app, "main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
     PersistCBox(app, "main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
+    PersistDynCBox(app, "main.sca.cbox.stop.before", ui->sca_cbox_stop_before);
     PersistChBox(app, "main.sca.chbox.details", ui->sca_chbox_details);
     PersistChBox(app, "main.sca.chbox.enable.js", ui->sca_chbox_enable_javascript);
 
@@ -54,6 +64,7 @@ smyth::MainWindow::MainWindow(App& app)
         ui->sca_frame_input_bottom->setVisible(false);
         ui->sca_frame_changes_bottom->setVisible(false);
         ui->sca_frame_output_bottom->setVisible(false);
+        ui->frame_stop_before->setVisible(false);
     }
 
     /// Load last open project, if any.
@@ -104,7 +115,50 @@ void smyth::MainWindow::apply_sound_changes() try {
         }
     }
 
-    auto output = app.apply_sound_changes(std::move(input), std::move(changes));
+    /// Remember the 'Stop Before' rule that is currently selected.
+    auto stop_before = ui->sca_cbox_stop_before->currentText();
+
+    /// Parse the sound changes to figure out what rules we have for the
+    /// 'Stop Before' dropdown; rule names are lines that start with a name
+    /// followed by a colon.
+    std::vector<QString> rule_names;
+    for (auto line : changes.split('\n')) {
+        line = line.trimmed();
+        if (
+            line.isEmpty() or
+            line.startsWith('#') or
+            line.startsWith('\\') or
+            line.contains("=>")
+        ) continue;
+
+        /// If the line contains a colon, and everything before the colon
+        /// does not contain whitespace, then this is the name of a rule.
+        auto colon = line.indexOf(':');
+        if (colon == -1) continue;
+        auto name = line.mid(0, colon).trimmed();
+        if (name.contains(' ')) continue;
+        rule_names.push_back(name);
+    }
+
+    /// Filter out special rules.
+    std::erase_if(rule_names, [](const QString& str) {
+        return str.startsWith("romanizer") or
+               str == "deromanizer" or
+               str == "Syllables";
+    });
+
+    /// Update the 'Stop Before' dropdown.
+    ui->sca_cbox_stop_before->clear();
+    ui->sca_cbox_stop_before->addItem("");
+    for (const auto& name : rule_names) ui->sca_cbox_stop_before->addItem(name);
+
+    /// If the rule that was selected before still exists, select it again; if
+    /// not, do not stop before any rule.
+    if (rgs::contains(rule_names, stop_before)) ui->sca_cbox_stop_before->setCurrentText(stop_before);
+    else stop_before = "";
+
+    /// Dew it.
+    auto output = app.apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before));
     ui->output->setPlainText(Norm(ui->sca_cbox_output_norm, std::move(output)));
 } catch (const Exception& e) {
     Error("{}", e.what());

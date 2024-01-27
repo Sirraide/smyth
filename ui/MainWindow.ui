@@ -76,6 +76,12 @@
                </property>
                <item>
                 <widget class="SmythPlainTextEdit" name="input">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="font">
                   <font>
                    <family>Charis SIL</family>
@@ -166,6 +172,12 @@
               </layout>
              </widget>
              <widget class="QFrame" name="frame_2">
+              <property name="baseSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="frameShape">
                <enum>QFrame::NoFrame</enum>
               </property>
@@ -187,6 +199,18 @@
                </property>
                <item>
                 <widget class="SmythPlainTextEdit" name="changes">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="font">
                   <font>
                    <family>Fira Code</family>
@@ -424,7 +448,7 @@
            <item>
             <widget class="QCheckBox" name="sca_chbox_details">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable advanced settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show advanced settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Details</string>
@@ -454,6 +478,45 @@
               </size>
              </property>
             </spacer>
+           </item>
+           <item>
+            <widget class="QFrame" name="frame_stop_before">
+             <property name="toolTip">
+              <string>Stop before a given rule. Click ‘Apply’ to refresh the list of rules. 
+
+Note that certain rules with special names (e.g. anything starting with ‘romanizer‘) cannot be selected here as Lexurgy doesn‘t support that.</string>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::NoFrame</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="label_stop_before">
+                <property name="text">
+                 <string>Stop Before:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="sca_cbox_stop_before"/>
+              </item>
+             </layout>
+            </widget>
            </item>
            <item>
             <widget class="QPushButton" name="apply_button">
@@ -639,6 +702,22 @@
     <hint type="destinationlabel">
      <x>145</x>
      <y>511</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_chbox_details</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frame_stop_before</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>613</x>
+     <y>544</y>
     </hint>
    </hints>
   </connection>

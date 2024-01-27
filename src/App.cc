@@ -12,8 +12,12 @@ namespace fs = std::filesystem;
 /// ====================================================================
 ///  App
 /// ====================================================================
-auto smyth::App::apply_sound_changes(QString inputs, QString sound_changes) -> QString {
-    auto res = lexurgy(inputs, sound_changes);
+auto smyth::App::apply_sound_changes(
+    QString inputs,
+    QString sound_changes,
+    QString stop_before
+) -> QString {
+    auto res = lexurgy(inputs, sound_changes, stop_before);
     if (res.is_err()) throw Exception("{}", res.err().message);
     return res.value();
 }

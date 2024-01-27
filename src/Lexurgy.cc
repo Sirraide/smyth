@@ -6,6 +6,7 @@
 namespace smyth::detail::lexurgy_requests { // clang-format off
 struct ApplyRequest {
     std::vector<std::string> words;
+    std::optional<std::string> stopBefore;
     std::string_view type = "apply";
 };
 
@@ -88,7 +89,8 @@ smyth::Lexurgy::~Lexurgy() {
 
 auto smyth::Lexurgy::operator()(
     QStringView input,
-    QString changes
+    QString changes,
+    const QString& stop_before
 ) -> Result<QString, Error> {
     if (auto res = UpdateSoundChanges(std::move(changes)); not res)
         return res.err();
@@ -99,7 +101,9 @@ auto smyth::Lexurgy::operator()(
         words.push_back(sv.toString().toStdString());
     }
 
-    auto res = SendRequest<ChangedResponse>(ApplyRequest{std::move(words)});
+    std::optional<std::string> stop_before_opt;
+    if (stop_before != "") stop_before_opt = stop_before.toStdString();
+    auto res = SendRequest<ChangedResponse>(ApplyRequest{std::move(words), std::move(stop_before_opt)});
     if (res.is_err()) return res.err();
 
     QString joined;

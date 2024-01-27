@@ -1,9 +1,9 @@
 #ifndef SMYTH_LEXURGY_HH
 #define SMYTH_LEXURGY_HH
 
-#include <Utils.hh>
 #include <QProcess>
 #include <Result.hh>
+#include <Utils.hh>
 
 namespace smyth {
 /// Lexurgy connexion.
@@ -31,7 +31,11 @@ public:
     ~Lexurgy();
 
     /// Apply sound changes.
-    auto operator()(QStringView words, QString changes) -> Result<QString, Error>;
+    auto operator()(
+        QStringView words,
+        QString changes,
+        const QString& stop_before
+    ) -> Result<QString, Error>;
 
 private:
     /// Make a request to lexurgy.
@@ -41,7 +45,6 @@ private:
     /// Update sound changes.
     auto UpdateSoundChanges(QString changes) -> Result<void, Error>;
 };
-}
-
+} // namespace smyth
 
 #endif // SMYTH_LEXURGY_HH

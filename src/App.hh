@@ -16,7 +16,7 @@ template <typename>
 struct ExtractTypeImpl;
 
 template <typename Type, typename Object>
-struct ExtractTypeImpl<Type (Object::*)> {
+struct ExtractTypeImpl<Type(Object::*)> {
     using type = Type;
 };
 
@@ -28,7 +28,7 @@ struct ExtractTypeImpl<Type (Object::*)() const> {
 template <typename Type>
 using ExtractType = typename ExtractTypeImpl<Type>::type;
 
-}
+} // namespace detail
 
 class App : public QObject {
     Q_OBJECT
@@ -55,7 +55,11 @@ public:
 
     /// Apply sound changes to the input string.
     /// \throw Exception if Lexurgy returns an error.
-    auto apply_sound_changes(QString inputs, QString sound_changes) -> QString;
+    auto apply_sound_changes(
+        QString inputs,
+        QString sound_changes,
+        QString stop_before
+    ) -> QString;
 
     /// Load the last project we had open.
     void load_last_open_project();
