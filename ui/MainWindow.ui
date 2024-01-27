@@ -423,6 +423,9 @@
            </property>
            <item>
             <widget class="QCheckBox" name="sca_chbox_details">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable advanced settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Details</string>
              </property>
@@ -430,6 +433,10 @@
            </item>
            <item>
             <widget class="QCheckBox" name="sca_chbox_enable_javascript">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable JavaScript execution in the sound changes panel: any text between &lt;code&gt;§{&lt;/code&gt;
+ and &lt;code&gt;}§&lt;/code&gt; will be treated as JavaScript, the result of evaluating which is then inserted in that position in the sound changes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Enable JavaScript</string>
              </property>
