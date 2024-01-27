@@ -1,5 +1,7 @@
 #include <atomic>
 #include <Persistent.hh>
+#include <Unicode.hh>
+#include <unicode/translit.h>
 #include <Utils.hh>
 
 /// ====================================================================
@@ -85,4 +87,26 @@ void smyth::PersistentStore::save_all(DBRef db) {
         if (res.is_err()) throw Exception("Failed to save entry '{}': {}", key, res.err());
         stmt->reset();
     }
+}
+
+/// ====================================================================
+///  Unicode
+/// ====================================================================
+icu::UnicodeString smyth::Normalise(NormalisationForm form, icu::UnicodeString str) {
+    if (form == NormalisationForm::None) return str;
+    auto GetTransliterator = [](const char* spec) {
+        UErrorCode ec{U_ZERO_ERROR};
+        auto norm = icu::Transliterator::createInstance(
+            spec,
+            UTRANS_FORWARD,
+            ec
+        );
+
+        if (U_FAILURE(ec)) throw Exception("Failed to create transliterator: {}\n", u_errorName(ec));
+        return norm;
+    };
+
+    auto norm = form == NormalisationForm::NFC ? GetTransliterator("NFC") : GetTransliterator("NFD");
+    norm->transliterate(str);
+    return str;
 }

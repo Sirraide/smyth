@@ -215,8 +215,8 @@ target_compile_options(sqlite3 PRIVATE -O3)
 file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/*.hh)
 add_library(smyth-lib STATIC ${smyth-lib-sources} )
 target_include_directories(smyth-lib PUBLIC "${${PROJECT_SOURCE_DIR}/thirdparty/sqlite/}")
-target_link_libraries(smyth-lib PRIVATE options ICU::i18n ICU::uc ICU::data sqlite3)
 set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
+target_link_libraries(smyth-lib PRIVATE options sqlite3 ICU::i18n ICU::uc ICU::data)
 
 add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
 
@@ -224,6 +224,14 @@ add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
 ##  Qt Stuff
 ## ============================================================================
 set(CMAKE_AUTOUIC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
+
+## Can’t set this earlier; otherwise, FindICU will find the *libraries* of whatever
+## outdated version of ICU is shipped with Qt, but the *headers* of the system ICU,
+## which simply does not work.
+if (NOT DEFINED SMYTH_QT_PREFIX_PATH)
+    message(FATAL_ERROR "Set SMYTH_QT_PREFIX_PATH to the install prefix of your Qt installation.")
+endif()
+set(CMAKE_PREFIX_PATH "${SMYTH_QT_PREFIX_PATH}")
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)

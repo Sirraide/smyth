@@ -54,6 +54,7 @@ public:
     }
 
     /// Apply sound changes to the input string.
+    /// \throw Exception if Lexurgy returns an error.
     auto apply_sound_changes(QString inputs, QString sound_changes) -> QString;
 
     /// Load the last project we had open.

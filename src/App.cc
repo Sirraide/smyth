@@ -1,9 +1,9 @@
 #include <App.hh>
+#include <filesystem>
 #include <mutex>
 #include <QCoreApplication>
 #include <QFileDialog>
 #include <QSettings>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -14,11 +14,7 @@ namespace fs = std::filesystem;
 /// ====================================================================
 auto smyth::App::apply_sound_changes(QString inputs, QString sound_changes) -> QString {
     auto res = lexurgy(inputs, sound_changes);
-    if (res.is_err()) {
-        Error("{}", res.err().message);
-        return "ERROR";
-    }
-
+    if (res.is_err()) throw Exception("{}", res.err().message);
     return res.value();
 }
 

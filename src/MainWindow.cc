@@ -2,6 +2,7 @@
 #include <QSettings>
 #include <QShortcut>
 #include <ui_MainWindow.h>
+#include <Unicode.hh>
 
 namespace smyth {
 namespace {
@@ -41,9 +42,30 @@ smyth::MainWindow::MainWindow(App& app)
     app.load_last_open_project();
 }
 
-void smyth::MainWindow::apply_sound_changes() {
-    auto text = app.apply_sound_changes(ui->input->toPlainText(), ui->changes->toPlainText());
-    ui->output->setPlainText(std::move(text));
+void smyth::MainWindow::apply_sound_changes() try {
+    auto Norm = [](QComboBox* cbox, QString plain) {
+        const auto norm = [cbox] {
+            switch (cbox->currentIndex()) {
+                default: return NormalisationForm::None;
+                case 1: return NormalisationForm::NFC;
+                case 2: return NormalisationForm::NFD;
+            }
+        }();
+
+        auto normed = Normalise(
+            norm,
+            icu::UnicodeString(reinterpret_cast<char16_t*>(plain.data()), i32(plain.size()))
+        );
+
+        return QString::fromUtf16(normed.getBuffer(), normed.length());
+    };
+
+    auto input = Norm(ui->sca_cbox_input_norm, ui->input->toPlainText());
+    auto changes = Norm(ui->sca_cbox_changes_norm, ui->changes->toPlainText());
+    auto output = app.apply_sound_changes(std::move(input), std::move(changes));
+    ui->output->setPlainText(Norm(ui->sca_cbox_output_norm, std::move(output)));
+} catch (const Exception& e) {
+    Error("{}", e.what());
 }
 
 void smyth::MainWindow::open_project() {
