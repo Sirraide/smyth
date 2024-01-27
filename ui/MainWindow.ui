@@ -451,7 +451,7 @@
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show advanced settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
-              <string>Details</string>
+              <string>Advanced Mode</string>
              </property>
             </widget>
            </item>
@@ -554,6 +554,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     </property>
     <addaction name="action_open"/>
     <addaction name="action_save"/>
+    <addaction name="action_settings"/>
     <addaction name="action_quit"/>
    </widget>
    <addaction name="file_menu"/>
@@ -581,6 +582,11 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
    </property>
    <property name="menuRole">
     <enum>QAction::QuitRole</enum>
+   </property>
+  </action>
+  <action name="action_settings">
+   <property name="text">
+    <string>Settings</string>
    </property>
   </action>
  </widget>
@@ -721,10 +727,27 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>action_settings</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>open_settings()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>open_project()</slot>
   <slot>save_project()</slot>
   <slot>apply_sound_changes()</slot>
+  <slot>open_settings()</slot>
  </slots>
 </ui>

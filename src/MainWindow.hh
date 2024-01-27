@@ -11,6 +11,7 @@ class MainWindow;
 QT_END_NAMESPACE
 
 namespace smyth {
+class SettingsDialog;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -22,9 +23,16 @@ public:
     MainWindow(App& app);
     ~MainWindow() noexcept;
 
+    auto mono_font() const -> QFont;
+    auto serif_font() const -> QFont;
+
+    void set_serif_font(QFont f);
+    void set_mono_font(QFont f);
+
 public slots:
     void apply_sound_changes();
     void open_project();
+    void open_settings();
     void save_project();
 };
 } // namespace smyth

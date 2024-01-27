@@ -30,20 +30,25 @@ using ExtractType = typename ExtractTypeImpl<Type>::type;
 
 } // namespace detail
 
+class MainWindow;
+class SettingsDialog;
+
 class App : public QObject {
     Q_OBJECT
 
     Lexurgy lexurgy;
     DBRef db = Database::Create();
     QString save_path;
-
+    std::unique_ptr<MainWindow> main;
+    std::unique_ptr<SettingsDialog> settings;
     std::mutex save_lock;
 
 public:
     PersistentStore store{SMYTH_MAIN_STORE_KEY};
 
     SMYTH_IMMOVABLE(App);
-    App() = default;
+    App();
+    ~App() noexcept;
 
     /// Persist a QString property in the store.
     template <auto Get, auto Set, typename Object>
@@ -64,11 +69,17 @@ public:
     /// Load the last project we had open.
     void load_last_open_project();
 
+    /// Get the main window.
+    auto main_window() -> MainWindow* { return main.get(); }
+
     /// Open a project from a file.
     void open();
 
     /// Save project to a file.
     void save();
+
+    /// Get the settings dialog.
+    auto settings_dialog() -> SettingsDialog* { return settings.get(); }
 
 private:
     /// Remember the last project we had open.

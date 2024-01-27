@@ -1,9 +1,11 @@
 #include <App.hh>
 #include <filesystem>
+#include <MainWindow.hh>
 #include <mutex>
 #include <QCoreApplication>
 #include <QFileDialog>
 #include <QSettings>
+#include <SettingsDialog.hh>
 
 namespace fs = std::filesystem;
 
@@ -12,6 +14,14 @@ namespace fs = std::filesystem;
 /// ====================================================================
 ///  App
 /// ====================================================================
+smyth::App::~App() noexcept = default;
+smyth::App::App() {
+    /// Do not use a member init list for these as it has to be
+    /// constructed *after* everything else.
+    main = std::make_unique<MainWindow>(*this);
+    settings = std::make_unique<SettingsDialog>(*this);
+}
+
 auto smyth::App::apply_sound_changes(
     QString inputs,
     QString sound_changes,

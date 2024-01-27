@@ -2,6 +2,7 @@
 #include <QJSEngine>
 #include <QSettings>
 #include <QShortcut>
+#include <SettingsDialog.hh>
 #include <ui_MainWindow.h>
 #include <Unicode.hh>
 
@@ -37,7 +38,9 @@ void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
 smyth::MainWindow::~MainWindow() noexcept = default;
 
 smyth::MainWindow::MainWindow(App& app)
-    : QMainWindow(nullptr), app(app), ui(std::make_unique<Ui::MainWindow>()) {
+    : QMainWindow(nullptr),
+      app(app),
+      ui(std::make_unique<Ui::MainWindow>()) {
     ui->setupUi(this);
 
     /// Initialise shortcuts.
@@ -164,10 +167,31 @@ void smyth::MainWindow::apply_sound_changes() try {
     Error("{}", e.what());
 }
 
+auto smyth::MainWindow::mono_font() const -> QFont {
+    return ui->changes->font();
+}
+
 void smyth::MainWindow::open_project() {
     app.open();
 }
 
+void smyth::MainWindow::open_settings() {
+    app.settings_dialog()->exec();
+}
+
 void smyth::MainWindow::save_project() {
     app.save();
+}
+
+auto smyth::MainWindow::serif_font() const -> QFont {
+    return ui->input->font();
+}
+
+void smyth::MainWindow::set_mono_font(QFont f) {
+    ui->changes->setFont(f);
+}
+
+void smyth::MainWindow::set_serif_font(QFont f) {
+    ui->input->setFont(f);
+    ui->output->setFont(f);
 }
