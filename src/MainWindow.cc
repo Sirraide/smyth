@@ -3,6 +3,17 @@
 #include <QShortcut>
 #include <ui_MainWindow.h>
 
+namespace smyth {
+namespace {
+void PersistCBox(App& app, std::string key, QComboBox* cbox) {
+    app.persist<&QComboBox::currentIndex, &QComboBox::setCurrentIndex>(
+        std::move(key),
+        cbox
+    );
+}
+}
+}
+
 /// Needs destructor that isn’t visible in the header.
 smyth::MainWindow::~MainWindow() noexcept = default;
 
@@ -22,6 +33,9 @@ smyth::MainWindow::MainWindow(App& app)
     ui->output->persist(app, "main.output");
     app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
     app.persist<&QSplitter::sizes, &QSplitter::setSizes>("main.sca.splitter.sizes", ui->sca_text_edits);
+    PersistCBox(app, "main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
+    PersistCBox(app, "main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
+    PersistCBox(app, "main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
 
     /// Load last open project, if any.
     app.load_last_open_project();

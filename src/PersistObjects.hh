@@ -63,6 +63,17 @@ struct Serialiser<QSize> {
     }
 };
 
+template <std::integral I>
+struct Serialiser<I> {
+    static auto Deserialise(Column c) -> std::optional<I> {
+        return static_cast<I>(c.integer());
+    }
+
+    static void Serialise(QueryParamRef q, I i) {
+        q.bind(static_cast<i64>(i));
+    }
+};
+
 template <>
 struct Serialiser<const QFont&> {
     static auto Deserialise(Column c) -> std::optional<QFont> {
