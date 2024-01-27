@@ -3,14 +3,6 @@
 #include <QShortcut>
 #include <ui_MainWindow.h>
 
-namespace smyth {
-namespace {
-void PersistPTE(App& app, std::string key, QPlainTextEdit* te) {
-    app.persist<&QPlainTextEdit::toPlainText, &QPlainTextEdit::setPlainText>(key, te);
-}
-}
-}
-
 /// Needs destructor that isn’t visible in the header.
 smyth::MainWindow::~MainWindow() noexcept = default;
 
@@ -25,8 +17,9 @@ smyth::MainWindow::MainWindow(App& app)
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
 
     /// Initialise persistent settings.
-    PersistPTE(app, "main.input.text", ui->input);
-    PersistPTE(app, "main.changes.text", ui->changes);
+    ui->input->persist(app, "main.input");
+    ui->changes->persist(app, "main.changes");
+    ui->output->persist(app, "main.output");
     app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
     app.persist<&QSplitter::sizes, &QSplitter::setSizes>("main.sca.splitter.sizes", ui->sca_text_edits);
 

@@ -6,10 +6,24 @@
 class SmythPlainTextEdit : public QPlainTextEdit {
     Q_OBJECT
 
+    using This = SmythPlainTextEdit;
+
 public:
     SmythPlainTextEdit(QWidget* parent = nullptr)
         : QPlainTextEdit(parent) {
         setTabChangesFocus(true);
+    }
+
+    void persist(smyth::App& app, std::string_view key) {
+        app.persist<&This::toPlainText, &This::setPlainText>(
+            std::format("{}.text", key),
+            this
+        );
+
+        app.persist<&This::font, &This::setFont>(
+            std::format("{}.font", key),
+            this
+        );
     }
 
     void wheelEvent(QWheelEvent* event) override {

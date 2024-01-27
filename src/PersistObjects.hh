@@ -4,6 +4,7 @@
 #include <bit>
 #include <glaze/glaze.hpp>
 #include <Persistent.hh>
+#include <QFont>
 #include <QSize>
 #include <QString>
 
@@ -59,6 +60,20 @@ struct Serialiser<QSize> {
         /// 32 lower bits are width, 32 upper bits are height.
         auto encoded = static_cast<u64>(s.width()) | (static_cast<u64>(s.height()) << 32);
         q.bind(encoded);
+    }
+};
+
+template <>
+struct Serialiser<const QFont&> {
+    static auto Deserialise(Column c) -> std::optional<QFont> {
+        auto description = c.text();
+        QFont f;
+        if (not f.fromString(QString::fromStdString(description))) return std::nullopt;
+        return f;
+    }
+
+    static void Serialise(QueryParamRef q, const QFont& font) {
+        q.bind(font.toString().toStdString());
     }
 };
 

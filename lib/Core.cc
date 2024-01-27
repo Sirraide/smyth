@@ -60,7 +60,6 @@ void smyth::PersistentStore::reload_all(DBRef db) {
     auto stmt = db->prepare(fmt::format(query, table_name));
     if (stmt.is_err()) throw Exception("{}", stmt.err());
     for (const auto& [key, entry] : entries) {
-        fmt::print("Retrieving '{}'...\n", key);
         defer { stmt->reset(); };
         stmt->bind(1, key);
         auto res = stmt->fetch_optional();
