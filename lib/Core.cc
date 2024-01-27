@@ -18,7 +18,7 @@ void DefaultHandler(std::string message, ErrorMessageType type) {
 }
 
 std::atomic<ErrorMessageHandler*> handler = DefaultHandler;
-}
+} // namespace
 } // namespace smyth
 
 void smyth::detail::MessageImpl(std::string message, ErrorMessageType type) {
@@ -60,11 +60,13 @@ void smyth::PersistentStore::reload_all(DBRef db) {
     auto stmt = db->prepare(fmt::format(query, table_name));
     if (stmt.is_err()) throw Exception("{}", stmt.err());
     for (const auto& [key, entry] : entries) {
+        fmt::print("Retrieving '{}'...\n", key);
+        defer { stmt->reset(); };
         stmt->bind(1, key);
-        auto res = stmt->fetch_one();
+        auto res = stmt->fetch_optional();
         if (res.is_err()) throw Exception("Failed to load entry '{}': {}", key, res.err());
-        entry->load(Column(*res, 0));
-        stmt->reset();
+        if (not res->has_value()) continue;
+        entry->load(Column(**res, 0));
     }
 }
 

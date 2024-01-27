@@ -121,6 +121,11 @@ void smyth::Statement::bind(int index, std::string_view text) {
     if (res != SQLITE_OK) Fatal("Failed to bind text: {}", handle->last_error());
 }
 
+void smyth::Statement::bind(int index, std::span<const std::byte> raw) {
+    auto res = sqlite3_bind_blob(stmt, index, raw.data(), int(raw.size()), SQLITE_TRANSIENT);
+    if (res != SQLITE_OK) Fatal("Failed to bind blob: {}", handle->last_error());
+}
+
 void smyth::Statement::bind(int index, i64 value) {
     auto res = sqlite3_bind_int64(stmt, index, value);
     if (res != SQLITE_OK) Fatal("Failed to bind integer: {}", handle->last_error());
@@ -142,10 +147,17 @@ auto smyth::Statement::for_each(std::function<void(Row)> cb) -> Res {
 }
 
 auto smyth::Statement::fetch_one() -> Result<Row, std::string> {
+    auto res = fetch_optional();
+    if (res.is_err()) return res.err();
+    if (not res->has_value()) return fmt::format("Expected at least one entry!");
+    return std::move(**res);
+}
+
+auto smyth::Statement::fetch_optional() -> Result<std::optional<Row>, std::string> {
     auto res = sqlite3_step(stmt);
-    if (res == SQLITE_DONE) return std::string{"No rows"};
+    if (res == SQLITE_DONE) return std::optional<Row>{std::nullopt};
     if (res != SQLITE_ROW) return fmt::format("Failed to execute statement: {}", handle->last_error());
-    return Row{stmt};
+    return std::optional { Row{stmt}};
 }
 
 void smyth::Statement::reset() {

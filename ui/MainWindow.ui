@@ -54,7 +54,7 @@
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <widget class="QPlainTextEdit" name="input">
+             <widget class="SmythPlainTextEdit" name="input">
               <property name="font">
                <font>
                 <family>Charis SIL</family>
@@ -62,11 +62,14 @@
                 <italic>false</italic>
                </font>
               </property>
+              <property name="tabChangesFocus">
+               <bool>true</bool>
+              </property>
               <property name="placeholderText">
                <string>Words</string>
               </property>
              </widget>
-             <widget class="QPlainTextEdit" name="changes">
+             <widget class="SmythPlainTextEdit" name="changes">
               <property name="font">
                <font>
                 <family>Fira Code</family>
@@ -77,13 +80,16 @@
                <string>Sound Changes</string>
               </property>
              </widget>
-             <widget class="QPlainTextEdit" name="output">
+             <widget class="SmythPlainTextEdit" name="output">
               <property name="font">
                <font>
                 <family>Charis SIL</family>
                 <pointsize>16</pointsize>
                 <italic>false</italic>
                </font>
+              </property>
+              <property name="undoRedoEnabled">
+               <bool>false</bool>
               </property>
               <property name="textInteractionFlags">
                <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
@@ -210,8 +216,18 @@
    <property name="text">
     <string>Quit</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::QuitRole</enum>
+   </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SmythPlainTextEdit</class>
+   <extends>QPlainTextEdit</extends>
+   <header>SmythPlainTextEdit.hh</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

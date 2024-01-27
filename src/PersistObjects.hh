@@ -1,10 +1,11 @@
 #ifndef SMYTH_PERSISTOBJECTS_HH
 #define SMYTH_PERSISTOBJECTS_HH
 
-#include <Persistent.hh>
-#include <QString>
-#include <QSize>
 #include <bit>
+#include <glaze/glaze.hpp>
+#include <Persistent.hh>
+#include <QSize>
+#include <QString>
 
 namespace smyth::detail {
 template <typename>
@@ -16,11 +17,13 @@ class PersistProperty : public PersistentBase {
     Object* obj;
 
 public:
-    PersistProperty (Object* obj) : obj(obj) {}
+    PersistProperty(Object* obj) : obj(obj) {}
 
 private:
     void load(Column c) override {
-        std::invoke(Set, obj, Serialiser<Type>::Deserialise(c));
+        auto stored = Serialiser<Type>::Deserialise(c);
+        if (not stored.has_value()) return;
+        std::invoke(Set, obj, std::move(*stored));
     }
 
     void save(QueryParamRef q) override {
@@ -28,9 +31,12 @@ private:
     }
 };
 
+/// The serialisation format deliberately avoids storing raw bytes
+/// in most cases so we don’t run into en
+
 template <>
 struct Serialiser<QString> {
-    static auto Deserialise(Column c) -> QString {
+    static auto Deserialise(Column c) -> std::optional<QString> {
         auto text = c.text();
         return QString::fromUtf8(text.data(), qsizetype(text.size()));
     }
@@ -43,11 +49,10 @@ struct Serialiser<QString> {
 
 template <>
 struct Serialiser<QSize> {
-    static auto Deserialise(Column c) -> QSize {
+    static auto Deserialise(Column c) -> std::optional<QSize> {
         /// 32 lower bits are width, 32 upper bits are height.
         auto encoded = c.integer();
-        return QSize{static_cast<int>(encoded & 0xFFFFFFFF),
-                     static_cast<int>(encoded >> 32)};
+        return QSize{static_cast<int>(encoded & 0xFFFF'FFFF), static_cast<int>(encoded >> 32)};
     }
 
     static void Serialise(QueryParamRef q, QSize s) {
@@ -55,7 +60,27 @@ struct Serialiser<QSize> {
         auto encoded = static_cast<u64>(s.width()) | (static_cast<u64>(s.height()) << 32);
         q.bind(encoded);
     }
+};
 
+template <typename Internal>
+requires std::is_trivially_constructible_v<Internal> /// For memcpy().
+struct Serialiser<QList<Internal>> {
+    static auto Deserialise(Column c) -> std::optional<QList<Internal>> {
+        QList<Internal> result;
+        auto blob = c.blob();
+        if (glz::read_binary_untagged(result, blob)) {
+            Error("Failed to deserialise {}", glz::name_v<QList<Internal>>);
+            return std::nullopt;
+        }
+
+        return result;
+    }
+
+    static void Serialise(QueryParamRef q, const QList<Internal>& list) {
+        std::vector<std::byte> blob;
+        glz::write_binary_untagged(std::span<const Internal>{list.data(), usz(list.size())}, blob);
+        q.bind(std::span{blob});
+    }
 };
 
 } // namespace smyth::detail

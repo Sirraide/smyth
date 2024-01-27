@@ -2,6 +2,7 @@
 #define SMYTH_DATABASE_HH
 
 #include <functional>
+#include <optional>
 #include <Result.hh>
 #include <span>
 #include <utility>
@@ -112,6 +113,7 @@ public:
 
     /// Bind a parameter.
     void bind(int index, std::string_view text);
+    void bind(int index, std::span<const std::byte> raw);
     void bind(int index, i64 value);
 
     /// Bind any integer type.
@@ -131,6 +133,9 @@ public:
     /// if there are no more rows.
     auto fetch_one() -> Result<Row, std::string>;
 
+    /// Fetch up to one row from the database.
+    auto fetch_optional() -> Result<std::optional<Row>, std::string>;
+
     /// Reset the statement.
     void reset();
 };
@@ -143,6 +148,7 @@ public:
     QueryParamRef(Statement& stmt, int index) : stmt(&stmt), index(index) {}
 
     void bind(std::string_view text) { stmt->bind(index, text); }
+    void bind(std::span<const std::byte> raw) { stmt->bind(index, raw); }
     void bind(std::integral auto value) { stmt->bind(index, value); }
 };
 

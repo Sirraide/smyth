@@ -28,6 +28,7 @@ smyth::MainWindow::MainWindow(App& app)
     PersistPTE(app, "main.input.text", ui->input);
     PersistPTE(app, "main.changes.text", ui->changes);
     app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
+    app.persist<&QSplitter::sizes, &QSplitter::setSizes>("main.sca.splitter.sizes", ui->sca_text_edits);
 
     /// Load last open project, if any.
     app.load_last_open_project();

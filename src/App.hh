@@ -34,7 +34,7 @@ class App : public QObject {
     Q_OBJECT
 
     Lexurgy lexurgy;
-    DBRef db;
+    DBRef db = Database::Create();
     QString save_path;
 
     std::mutex save_lock;

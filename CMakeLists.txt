@@ -229,8 +229,8 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Gui)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Gui)
 
 file(GLOB_RECURSE smyth-sources src/*.cc src/*.hh ui/*.ui)
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -242,7 +242,12 @@ else()
     add_executable(smyth ${smyth-sources})
 endif()
 
-target_link_libraries(smyth PRIVATE Qt${QT_VERSION_MAJOR}::Widgets smyth-lib options)
+target_link_libraries(smyth PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Gui
+    smyth-lib
+    options
+)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

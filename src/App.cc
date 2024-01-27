@@ -3,6 +3,9 @@
 #include <QCoreApplication>
 #include <QFileDialog>
 #include <QSettings>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 #define SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY "last_open_project"
 
@@ -23,6 +26,7 @@ void smyth::App::load_last_open_project() {
     QSettings settings{QSettings::UserScope};
     auto path = settings.value(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY).toString();
     if (path.isEmpty()) return;
+    if (not fs::exists(path.toStdString())) return;
     auto res = Database::Load(path.toStdString());
     if (res.is_err()) {
         Error("Failed to load last open project: {}", res.err());
