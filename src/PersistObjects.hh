@@ -63,7 +63,8 @@ struct Serialiser<QSize> {
     }
 };
 
-template <std::integral I>
+template <typename I>
+requires std::integral<I> or std::is_enum_v<I>
 struct Serialiser<I> {
     static auto Deserialise(Column c) -> std::optional<I> {
         return static_cast<I>(c.integer());

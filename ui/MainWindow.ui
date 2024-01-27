@@ -92,7 +92,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QFrame" name="frame_4">
+                <widget class="QFrame" name="sca_frame_input_bottom">
                  <property name="frameShape">
                   <enum>QFrame::NoFrame</enum>
                  </property>
@@ -199,7 +199,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QFrame" name="frame_5">
+                <widget class="QFrame" name="sca_frame_changes_bottom">
                  <property name="frameShape">
                   <enum>QFrame::NoFrame</enum>
                  </property>
@@ -304,7 +304,10 @@
                 </widget>
                </item>
                <item>
-                <widget class="QFrame" name="frame_6">
+                <widget class="QFrame" name="sca_frame_output_bottom">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
                  <property name="frameShape">
                   <enum>QFrame::NoFrame</enum>
                  </property>
@@ -418,6 +421,20 @@
            <property name="bottomMargin">
             <number>0</number>
            </property>
+           <item>
+            <widget class="QCheckBox" name="sca_chbox_details">
+             <property name="text">
+              <string>Details</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="sca_chbox_enable_javascript">
+             <property name="text">
+              <string>Enable JavaScript</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <spacer name="horizontalSpacer">
              <property name="orientation">
@@ -567,6 +584,54 @@
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_chbox_details</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sca_frame_changes_bottom</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>511</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_chbox_details</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sca_frame_output_bottom</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>653</x>
+     <y>511</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_chbox_details</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sca_frame_input_bottom</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>145</x>
+     <y>511</y>
     </hint>
    </hints>
   </connection>
