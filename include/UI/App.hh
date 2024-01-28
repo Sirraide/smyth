@@ -75,12 +75,12 @@ public:
 
     /// Persist a QString property in the store.
     template <auto Get, auto Set, typename Object>
-    auto persist(std::string key, Object* obj) -> smyth::detail::PersistentBase* {
+    auto persist(std::string key, Object* obj, usz priority = smyth::detail::DefaultPriority) -> smyth::detail::PersistentBase* {
         using namespace smyth::detail;
         using namespace detail;
         std::unique_ptr<PersistentBase> e{new PersistProperty<ExtractType<decltype(Get)>, Object, Get, Set>(obj)};
         auto ptr = e.get();
-        store.register_entry(std::move(key), std::move(e));
+        store.register_entry(std::move(key), {std::move(e), priority});
         return ptr;
     }
 
@@ -170,6 +170,17 @@ struct fmt::formatter<QPointF> : fmt::formatter<std::string_view> {
     auto format(QPointF s, FormatContext& ctx) {
         return fmt::formatter<std::string_view>::format(
             fmt::format("({}, {})", s.x(), s.y()),
+            ctx
+        );
+    }
+};
+
+template<typename T>
+struct fmt::formatter<QList<T>> : fmt::formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(const QList<T> s, FormatContext& ctx) {
+        return fmt::formatter<std::string_view>::format(
+            fmt::format("[{}]", fmt::join(s, ", ")),
             ctx
         );
     }

@@ -1,7 +1,7 @@
 #include <QJSEngine>
 #include <QMessageBox>
-#include <QShortcut>
 #include <QRegularExpression>
+#include <QShortcut>
 #include <Smyth/Unicode.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
@@ -33,6 +33,14 @@ void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
     }>(std::move(key), cbox);
 }
 
+/// Splitters may crash if we supply a value that is larger than the total width.
+void PersistSplitter(App& app, std::string key, QSplitter* splitter) {
+    app.persist<&QSplitter::sizes, [](QSplitter* w, QList<int> sz) {
+        /// If the sum is greater than the width, ignore.
+        if (std::accumulate(sz.begin(), sz.end(), 0) > w->width()) return;
+        w->setSizes(sz);
+    }>(std::move(key), splitter);
+}
 } // namespace
 } // namespace smyth::ui
 
@@ -154,7 +162,6 @@ auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -
             changes.remove(next, end - next + 2);
             pos = next;
         }
-
     }
     return {};
 }
@@ -190,13 +197,20 @@ void smyth::ui::MainWindow::open_settings() {
 void smyth::ui::MainWindow::persist() {
     auto& app = App::The();
 
+    /// Window needs to be updated before everything else to ensure that
+    /// the rest of the objects are working with the correct size.
+    app.persist<&QWidget::size, [](QWidget* w, QSize s) {
+        w->resize(s);
+        QApplication::processEvents();
+    }>("main.window.size", this, 1);
+
     /// Initialise persistent settings.
     ui->input->persist(app, "main.input");
     ui->changes->persist(app, "main.changes");
     ui->output->persist(app, "main.output");
-    app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
-    app.persist<&QSplitter::sizes, &QSplitter::setSizes>("main.sca.splitter.sizes", ui->sca_text_edits);
     app.persist<&QWidget::font, &QWidget::setFont>("charmap.font", ui->char_map);
+    PersistSplitter(app, "main.sca.splitter.sizes", ui->sca_text_edits);
+    PersistSplitter(app, "charmap.splitter.sizes", ui->char_map_splitter);
     PersistCBox(app, "main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
     PersistCBox(app, "main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
     PersistCBox(app, "main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
@@ -214,9 +228,6 @@ void smyth::ui::MainWindow::persist() {
 
     /// Load last open project, if any.
     HandleErrors(app.load_last_open_project());
-
-    /// Init MVC stuff.
-    //ui->char_map->update();
 }
 
 void smyth::ui::MainWindow::preview_changes_after_eval() {

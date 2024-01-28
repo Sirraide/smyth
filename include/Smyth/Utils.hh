@@ -2,6 +2,7 @@
 #define FOOBAR_UTILS_HH
 
 #include <fmt/format.h>
+#include <ranges>
 
 #define SMYTH_STR_(X) #X
 #define SMYTH_STR(X)  SMYTH_STR_(X)
@@ -52,6 +53,8 @@
 
 namespace smyth {
 using namespace std::literals;
+namespace rgs = std::ranges;
+namespace vws = std::ranges::views;
 
 using u8 = uint8_t;
 using u16 = uint16_t;

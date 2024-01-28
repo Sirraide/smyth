@@ -43,7 +43,7 @@ private:
         return std::invoke(Get, obj) != stored;
     }
 
-    void reset() override {
+    void restore() override {
         std::invoke(Set, obj, default_value);
     }
 

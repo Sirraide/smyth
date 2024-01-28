@@ -3,12 +3,14 @@
 
 #include <Smyth/Database.hh>
 #include <Smyth/Result.hh>
-#include <unordered_map>
+#include <unordered_set>
 
 namespace smyth {
 class PersistentStore;
 
 namespace detail {
+inline constexpr usz DefaultPriority = ~0zu;
+
 class PersistentBase {
 protected:
     PersistentBase() = default;
@@ -27,7 +29,7 @@ private:
     virtual auto modified(Column c) -> Result<bool> = 0;
 
     /// Reset this entry to its default value.
-    virtual void reset() = 0;
+    virtual void restore() = 0;
 
     /// Save this entry to the DB.
     virtual auto save(QueryParamRef param) -> Result<> = 0;
@@ -37,11 +39,27 @@ private:
 /// Persistent data store.
 class PersistentStore {
 public:
-    using Entry = std::unique_ptr<detail::PersistentBase>;
+    struct Entry {
+        std::unique_ptr<detail::PersistentBase> entry;
+
+        /// The priority of the entry; entries with higher priority
+        /// are loaded first so as to ensure that the rest of the
+        /// deserialisation process has access to the data.
+        usz priority;
+
+        Entry(std::unique_ptr<detail::PersistentBase> entry, usz priority)
+            : entry(std::move(entry)), priority(priority) {}
+
+        struct Eqv {
+            auto operator()(std::string_view a, std::string_view b) const -> bool {
+                return a == b;
+            }
+        };
+    };
 
 private:
     std::string_view table_name;
-    std::unordered_map<std::string, Entry> entries;
+    std::unordered_map<std::string, Entry, std::hash<std::string>, Entry::Eqv> entries;
 
 public:
     SMYTH_IMMOVABLE(PersistentStore);
@@ -50,13 +68,13 @@ public:
     /// \brief Register an entry to this store.
     ///
     /// \param key The key to use for this entry. If the key already
-    ///            exists, the program is terminated. If there is a key
-    ///            for this entry in the database, the load() function
-    ///            of the entry will be called.
+    ///     exists, the program is terminated. If there is a key
+    ///     for this entry in the database, the load() function
+    ///     of the entry will be called.
     ///
     /// \param entry The entry to register. When this store is saved
-    ///              to the database, the save() function of this entry
-    ///              will be called.
+    ///     to the database, the save() function of this entry will
+    ///     be called.
     void register_entry(std::string key, Entry entry);
 
     /// \brief Register several entries at once.
@@ -81,6 +99,8 @@ public:
     auto save_all(DBRef db) -> Result<>;
 
 private:
+    auto Entries();
+
     template <typename Callback>
     auto ForEachEntry(DBRef db, std::string_view query, Callback cb) -> Result<>;
 

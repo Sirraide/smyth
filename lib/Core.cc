@@ -1,10 +1,11 @@
+#include <algorithm>
 #include <atomic>
 #include <mutex>
 #include <Smyth/Persistent.hh>
 #include <Smyth/Unicode.hh>
 #include <Smyth/Utils.hh>
-#include <unicode/translit.h>
 #include <thread>
+#include <unicode/translit.h>
 
 /// ====================================================================
 ///  Error Handling
@@ -62,6 +63,16 @@ void smyth::RegisterMessageHandler(ErrorMessageHandler* new_handler) {
 /// ====================================================================
 ///  Persistent
 /// ====================================================================
+auto smyth::PersistentStore::Entries() {
+    std::vector<std::pair<std::string_view, Entry*>> sorted;
+    sorted.reserve(entries.size());
+    for (auto& [key, entry] : entries) sorted.emplace_back(key, &entry);
+    rgs::sort(sorted, [](const auto& a, const auto& b) {
+        return a.second->priority < b.second->priority;
+    });
+    return sorted;
+}
+
 template <typename Callback>
 auto smyth::PersistentStore::ForEachEntry(
     DBRef db,
@@ -70,10 +81,10 @@ auto smyth::PersistentStore::ForEachEntry(
 ) -> Result<> {
     Try(Init(*db));
     auto stmt = Try(db->prepare(query));
-    for (const auto& [key, entry] : entries) {
+    for (const auto& [key, entry] : Entries()) {
         defer { stmt.reset(); };
         stmt.bind(1, key);
-        auto res = std::invoke(cb, stmt, entry.get());
+        auto res = std::invoke(cb, stmt, entry->entry.get());
         if (res.is_err()) return Err("Failed to load entry '{}': {}", key, res.err());
     }
     return {};
@@ -128,8 +139,8 @@ auto smyth::PersistentStore::reload_all(DBRef db) -> Result<> {
 }
 
 void smyth::PersistentStore::reset_all() {
-    for (const auto& [key, entry] : entries)
-        entry->reset();
+    for (const auto& [key, entry] : Entries())
+        entry->entry->restore();
 }
 
 auto smyth::PersistentStore::save_all(DBRef db) -> Result<> {
