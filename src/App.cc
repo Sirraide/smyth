@@ -228,6 +228,6 @@ auto smyth::App::save() -> Result<> {
     if (not save_path.contains(".")) save_path += ".smyth";
 
     /// Don’t do anything if the user pressed Cancel.
-    if (save_path.isEmpty()) return SaveImpl();
+    if (not save_path.isEmpty()) return SaveImpl();
     return {};
 }
