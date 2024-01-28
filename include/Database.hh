@@ -25,8 +25,6 @@ class Database : public std::enable_shared_from_this<Database> {
     Database(sqlite3* handle) : handle(handle) {}
 
 public:
-    using Res = Result<void, std::string>;
-
     /// Internal. Do not use.
     Database(sqlite3* handle, _make_shared_tag) : Database(handle) {}
 
@@ -37,29 +35,29 @@ public:
     ~Database() noexcept;
 
     /// Save the DB to a file.
-    auto backup(std::string_view path) -> Res;
+    auto backup(std::string_view path) -> Result<>;
 
     /// Execute an SQL query.
-    auto exec(std::string_view query) -> Res;
+    auto exec(std::string_view query) -> Result<>;
 
     /// Get the last error.
     auto last_error() -> std::string;
 
     /// Prepare a statement.
-    auto prepare(std::string_view query) -> Result<Statement, std::string>;
+    auto prepare(std::string_view query) -> Result<Statement>;
 
     /// Create a new database.
-    static auto Create() -> DBRef;
+    static auto CreateInMemory() -> DBRef;
 
     /// Load a copy of a database from a file.
-    static auto Load(std::string_view path) -> Result<DBRef, std::string>;
+    static auto Load(std::string_view path) -> Result<DBRef>;
 
 private:
     /// Helper to load from / save to a file.
-    static auto BackupInternal(Database& to, Database& from) -> Res;
+    static auto BackupInternal(Database& to, Database& from) -> Result<>;
 
     /// Open a database file on disk.
-    static auto Open(std::string_view path, int flags = 0) -> Result<DBRef, std::string>;
+    static auto Open(std::string_view path, int flags = 0) -> Result<DBRef>;
 };
 
 class Row {
@@ -95,8 +93,6 @@ class Statement {
 public:
     friend Database;
 
-    using Res = Result<void, std::string>;
-
     Statement(const Statement&) = delete;
     Statement(Statement&& other) noexcept
         : handle(std::exchange(other.handle, nullptr)),
@@ -124,17 +120,17 @@ public:
     }
 
     /// Execute the statement.
-    auto exec() -> Res;
+    auto exec() -> Result<>;
 
     /// Execute the statement and call a callback for each row.
-    auto for_each(std::function<void(Row)> cb) -> Res;
+    auto for_each(std::function<void(Row)> cb) -> Result<>;
 
     /// Fetch one row from the database. Returns an error
     /// if there are no more rows.
-    auto fetch_one() -> Result<Row, std::string>;
+    auto fetch_one() -> Result<Row>;
 
     /// Fetch up to one row from the database.
-    auto fetch_optional() -> Result<std::optional<Row>, std::string>;
+    auto fetch_optional() -> Result<std::optional<Row>>;
 
     /// Reset the statement.
     void reset();

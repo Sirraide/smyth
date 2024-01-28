@@ -36,7 +36,7 @@ struct glz::meta<Response> {
 ///  Lexurgy – Implementation
 /// ====================================================================
 template <typename Res, typename Req>
-auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res, Error> {
+auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res> {
     auto s = glz::write_json(std::move(r));
     lexurgy_process.write(s.data(), qint64(s.size()));
     lexurgy_process.write("\n");
@@ -46,31 +46,25 @@ auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res, Error> {
 
     /// Parse the response.
     Response res{};
-    if (auto e = glz::read<IgnoreUnknown>(res, sv)) return Lexurgy::Error(
-        fmt::format("Error parsing JSON response: {}", glz::format_error(e, sv))
+    if (auto e = glz::read<IgnoreUnknown>(res, sv)) return Err(
+        "Error parsing JSON response: {}",
+        glz::format_error(e, sv)
     );
 
     /// Handle errors.
     if (auto err = std::get_if<ErrorResponse>(&res))
-        return Lexurgy::Error(fmt::format("Lexurgy error: {}", err->message));
+        return Err("Lexurgy error: {}", err->message);
 
     /// Make sure the response is of the right type.
     if (auto val = std::get_if<Res>(&res)) return std::move(*val);
-    else return Lexurgy::Error(fmt::format("Unexpected response type '{}'", sv));
+    else return Err("Unexpected response type '{}'", sv);
 }
 
-auto smyth::Lexurgy::UpdateSoundChanges(QString changes) -> Result<void, Error> {
+auto smyth::Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {
     auto tr = std::move(changes).trimmed();
     if (tr == sound_changes) return {};
+    Try(SendRequest<OkResponse>(LoadStringRequest{changes.toStdString()}));
     sound_changes = std::move(tr);
-
-    /// Update the sound changes.
-    auto res = SendRequest<OkResponse>(LoadStringRequest{changes.toStdString()});
-    if (res.is_err()) {
-        sound_changes.clear();
-        return res.err();
-    }
-
     return {};
 }
 
@@ -79,8 +73,10 @@ auto smyth::Lexurgy::UpdateSoundChanges(QString changes) -> Result<void, Error> 
 /// ====================================================================
 smyth::Lexurgy::Lexurgy() {
     lexurgy_process.start(LEXURGY_ROOT "/bin/lexurgy", QStringList() << "server");
-    if (not lexurgy_process.waitForStarted(5'000))
-        Fatal("Failed to start lexurgy process.");
+    if (not lexurgy_process.waitForStarted(5'000)) Fatal(
+        "Failed to start lexurgy process. Expected lexurgy at '{}'",
+        LEXURGY_ROOT "/bin/lexurgy"
+    );
 }
 
 smyth::Lexurgy::~Lexurgy() {
@@ -91,9 +87,8 @@ auto smyth::Lexurgy::operator()(
     QStringView input,
     QString changes,
     const QString& stop_before
-) -> Result<QString, Error> {
-    if (auto res = UpdateSoundChanges(std::move(changes)); not res)
-        return res.err();
+) -> Result<QString> {
+    Try(UpdateSoundChanges(std::move(changes)));
 
     std::vector<std::string> words;
     for (auto w : input | vws::split('\n') | vws::filter([](auto&& w) { return not w.empty(); })) {
@@ -103,11 +98,10 @@ auto smyth::Lexurgy::operator()(
 
     std::optional<std::string> stop_before_opt;
     if (stop_before != "") stop_before_opt = stop_before.toStdString();
-    auto res = SendRequest<ChangedResponse>(ApplyRequest{std::move(words), std::move(stop_before_opt)});
-    if (res.is_err()) return res.err();
+    auto changed = Try(SendRequest<ChangedResponse>(ApplyRequest{std::move(words), std::move(stop_before_opt)}));
 
     QString joined;
-    for (const auto& w : res->words) {
+    for (const auto& w : changed.words) {
         joined += w;
         joined += '\n';
     }

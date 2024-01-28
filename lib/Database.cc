@@ -5,24 +5,18 @@ smyth::Database::~Database() noexcept {
     sqlite3_close_v2(handle);
 }
 
-auto smyth::Database::BackupInternal(Database& to, Database& from) -> Res {
+auto smyth::Database::BackupInternal(Database& to, Database& from) -> Result<> {
     sqlite3_backup* backup = sqlite3_backup_init(to.handle, "main", from.handle, "main");
-    if (backup == nullptr) return fmt::format(
-        "Failed to create backup: {}",
-        from.last_error()
-    );
+    if (backup == nullptr) return Err("Failed to create backup: {}", from.last_error());
 
     auto res = sqlite3_backup_step(backup, -1);
-    if (res != SQLITE_DONE) return fmt::format(
-        "Failed to backup database: {}",
-        from.last_error()
-    );
+    if (res != SQLITE_DONE) return Err("Failed to backup database: {}", from.last_error());
 
     sqlite3_backup_finish(backup);
     return {};
 }
 
-auto smyth::Database::Create() -> std::shared_ptr<Database> {
+auto smyth::Database::CreateInMemory() -> std::shared_ptr<Database> {
     sqlite3* handle{};
     auto res = sqlite3_open_v2(
         ":memory:",
@@ -34,24 +28,18 @@ auto smyth::Database::Create() -> std::shared_ptr<Database> {
         nullptr
     );
 
-    if (res != SQLITE_OK) Fatal(
-        "Failed to open database: {}",
-        sqlite3_errmsg(handle)
-    );
-
+    if (res != SQLITE_OK) Fatal("Failed to open in-memory database: {}", sqlite3_errmsg(handle));
     return std::make_shared<Database>(handle, _make_shared_tag{});
 }
 
-auto smyth::Database::Load(std::string_view path) -> Result<std::shared_ptr<Database>, std::string> {
-    auto db = Database::Create();
-    auto from = Open(path, SQLITE_OPEN_READONLY);
-    if (from.is_err()) return from.err();
-    auto res = BackupInternal(*db, **from);
-    if (res.is_err()) return res.err();
+auto smyth::Database::Load(std::string_view path) -> Result<std::shared_ptr<Database>> {
+    auto db = Database::CreateInMemory();
+    auto from = Try(Open(path, SQLITE_OPEN_READONLY));
+    Try(BackupInternal(*db, *from));
     return db;
 }
 
-auto smyth::Database::Open(std::string_view path, int flags) -> Result<DBRef, std::string> {
+auto smyth::Database::Open(std::string_view path, int flags) -> Result<DBRef> {
     sqlite3* db;
     auto res = sqlite3_open_v2(
         path.data(),
@@ -60,7 +48,7 @@ auto smyth::Database::Open(std::string_view path, int flags) -> Result<DBRef, st
         nullptr
     );
 
-    if (res != SQLITE_OK) return fmt::format(
+    if (res != SQLITE_OK) return Err(
         "Failed to open database '{}': {}",
         path,
         sqlite3_errmsg(db)
@@ -68,15 +56,14 @@ auto smyth::Database::Open(std::string_view path, int flags) -> Result<DBRef, st
     return std::make_shared<Database>(db, _make_shared_tag{});
 }
 
-auto smyth::Database::backup(std::string_view path) -> Res {
-    auto to = Open(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
-    if (to.is_err()) return to.err();
-    return BackupInternal(**to, *this);
+auto smyth::Database::backup(std::string_view path) -> Result<> {
+    auto to = Try(Open(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
+    return BackupInternal(*to, *this);
 }
 
-auto smyth::Database::exec(std::string_view query) -> Res {
+auto smyth::Database::exec(std::string_view query) -> Result<> {
     auto res = sqlite3_exec(handle, query.data(), nullptr, nullptr, nullptr);
-    if (res != SQLITE_OK) return fmt::format(
+    if (res != SQLITE_OK) return Err(
         "Failed to execute query {}\nCode: {}. Message: {}",
         query,
         res,
@@ -89,10 +76,10 @@ auto smyth::Database::last_error() -> std::string {
     return sqlite3_errmsg(handle);
 }
 
-auto smyth::Database::prepare(std::string_view query) -> Result<Statement, std::string> {
+auto smyth::Database::prepare(std::string_view query) -> Result<Statement> {
     sqlite3_stmt* stmt;
     auto res = sqlite3_prepare_v2(handle, query.data(), -1, &stmt, nullptr);
-    if (res != SQLITE_OK) return fmt::format("Failed to prepare statement: {}", sqlite3_errmsg(handle));
+    if (res != SQLITE_OK) return Err("Failed to prepare statement: {}", sqlite3_errmsg(handle));
     return Statement{shared_from_this(), stmt};
 }
 
@@ -131,33 +118,32 @@ void smyth::Statement::bind(int index, i64 value) {
     if (res != SQLITE_OK) Fatal("Failed to bind integer: {}", handle->last_error());
 }
 
-auto smyth::Statement::exec() -> Res {
+auto smyth::Statement::exec() -> Result<> {
     auto res = sqlite3_step(stmt);
-    if (res != SQLITE_DONE and res != SQLITE_ROW) return fmt::format("Failed to execute statement: {}", handle->last_error());
+    if (res != SQLITE_DONE and res != SQLITE_ROW) return Err("Failed to execute statement: {}", handle->last_error());
     return {};
 }
 
-auto smyth::Statement::for_each(std::function<void(Row)> cb) -> Res {
+auto smyth::Statement::for_each(std::function<void(Row)> cb) -> Result<> {
     for (;;) {
         auto res = sqlite3_step(stmt);
         if (res == SQLITE_DONE) return {};
-        if (res != SQLITE_ROW) return fmt::format("Failed to execute statement: {}", handle->last_error());
+        if (res != SQLITE_ROW) return Err("Failed to execute statement: {}", handle->last_error());
         std::invoke(cb, Row{stmt});
     }
 }
 
-auto smyth::Statement::fetch_one() -> Result<Row, std::string> {
-    auto res = fetch_optional();
-    if (res.is_err()) return res.err();
-    if (not res->has_value()) return fmt::format("Expected at least one entry!");
-    return std::move(**res);
+auto smyth::Statement::fetch_one() -> Result<Row> {
+    auto res = Try(fetch_optional());
+    if (not res.has_value()) return Err("Expected at least one entry!");
+    return std::move(*res);
 }
 
-auto smyth::Statement::fetch_optional() -> Result<std::optional<Row>, std::string> {
+auto smyth::Statement::fetch_optional() -> Result<std::optional<Row>> {
     auto res = sqlite3_step(stmt);
     if (res == SQLITE_DONE) return std::optional<Row>{std::nullopt};
-    if (res != SQLITE_ROW) return fmt::format("Failed to execute statement: {}", handle->last_error());
-    return std::optional { Row{stmt}};
+    if (res != SQLITE_ROW) return Err("Failed to execute statement: {}", handle->last_error());
+    return std::optional{Row{stmt}};
 }
 
 void smyth::Statement::reset() {

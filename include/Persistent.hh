@@ -3,6 +3,7 @@
 
 #include <Database.hh>
 #include <unordered_map>
+#include <Result.hh>
 
 namespace smyth {
 class PersistentStore;
@@ -20,12 +21,13 @@ private:
     friend PersistentStore;
 
     /// Initialise this entry from the DB.
-    /// \throw std::runtime_error if there is an error during loading.
-    virtual void load(Column c) = 0;
+    virtual auto load(Column c) -> Result<> = 0;
+
+    /// Check if this entry has been modified and needs saving.
+    virtual auto modified(Column c) -> Result<bool> = 0;
 
     /// Save this entry to the DB.
-    /// \throw std::runtime_error if there is an error during saving.
-    virtual void save(QueryParamRef param) = 0;
+    virtual auto save(QueryParamRef param) -> Result<> = 0;
 };
 } // namespace detail
 
@@ -63,16 +65,20 @@ public:
         if constexpr (sizeof...(rest)) register_entries(std::forward<Rest>(rest)...);
     }
 
+    /// Check if any of the entries need saving.
+    auto modified(DBRef db) -> Result<bool>;
+
     /// Reload all entries from a database.
-    /// \throw std::runtime_error if there is an error during loading.
-    void reload_all(DBRef db);
+    auto reload_all(DBRef db) -> Result<>;
 
     /// Save all entries to a database.
-    /// \throw std::runtime_error if there is an error during saving.
-    void save_all(DBRef db);
+    auto save_all(DBRef db) -> Result<>;
 
 private:
-    void Init(Database& db);
+    template <typename Callback>
+    auto ForEachEntry(DBRef db, std::string_view query, Callback cb) -> Result<>;
+
+    auto Init(Database& db) -> Result<>;
 };
 } // namespace smyth
 

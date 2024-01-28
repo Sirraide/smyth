@@ -56,12 +56,6 @@ public:
 
 using ErrorMessageHandler = void(std::string, ErrorMessageType type);
 
-struct Exception : std::runtime_error {
-    template <typename... Args>
-    Exception(fmt::format_string<Args...> fmt, Args&&... args)
-        : std::runtime_error(fmt::format(fmt, std::forward<Args>(args)...)) {}
-};
-
 /// Display an informational message to the user.
 template <typename... arguments>
 void Info(fmt::format_string<arguments...> fmt, arguments&&... args) {

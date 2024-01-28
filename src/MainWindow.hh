@@ -18,10 +18,16 @@ class MainWindow : public QMainWindow {
     smyth::App& app;
     std::unique_ptr<Ui::MainWindow> ui;
 
+    /// App is the main controller of the program and needs to call protected
+    /// functions sometimes.
+    friend smyth::App;
+
 public:
     SMYTH_IMMOVABLE(MainWindow);
     MainWindow(App& app);
     ~MainWindow() noexcept;
+
+    void closeEvent(QCloseEvent *event) override;
 
     auto mono_font() const -> QFont;
     auto serif_font() const -> QFont;
@@ -34,6 +40,10 @@ public slots:
     void open_project();
     void open_settings();
     void save_project();
+
+private:
+    auto ApplySoundChanges() -> Result<>;
+    void HandleErrors(Result<> r);
 };
 } // namespace smyth
 #endif // SMYTH_MAINWINDOW_HH

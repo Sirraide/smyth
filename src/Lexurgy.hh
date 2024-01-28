@@ -14,11 +14,6 @@ class Lexurgy {
     QString sound_changes;
 
 public:
-    /// Error returned from lexurgy.
-    struct Error {
-        std::string message;
-    };
-
     Lexurgy(const Lexurgy&) = delete;
     Lexurgy(Lexurgy&&) = delete;
     auto operator=(const Lexurgy&) -> Lexurgy& = delete;
@@ -35,15 +30,15 @@ public:
         QStringView words,
         QString changes,
         const QString& stop_before
-    ) -> Result<QString, Error>;
+    ) -> Result<QString>;
 
 private:
     /// Make a request to lexurgy.
     template <typename Res, typename Req>
-    auto SendRequest(Req&& r) -> Result<Res, Error>;
+    auto SendRequest(Req&& r) -> Result<Res>;
 
     /// Update sound changes.
-    auto UpdateSoundChanges(QString changes) -> Result<void, Error>;
+    auto UpdateSoundChanges(QString changes) -> Result<>;
 };
 } // namespace smyth
 

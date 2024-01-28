@@ -12,6 +12,9 @@ namespace smyth::detail {
 template <typename>
 struct Serialiser;
 
+template <typename T>
+using MakeResult = std::conditional_t<IsResult<T>, T, Result<T>>;
+
 /// Helper to persist a ‘property’ of an object.
 template <typename Type, typename Object, auto Get, auto Set>
 class PersistProperty : public PersistentBase {
@@ -21,23 +24,30 @@ public:
     PersistProperty(Object* obj) : obj(obj) {}
 
 private:
-    void load(Column c) override {
-        auto stored = Serialiser<Type>::Deserialise(c);
-        if (not stored.has_value()) return;
-        std::invoke(Set, obj, std::move(*stored));
+    auto Deserialise(Column c) -> MakeResult<decltype(Serialiser<Type>::Deserialise(c))> {
+        return Serialiser<Type>::Deserialise(c);
     }
 
-    void save(QueryParamRef q) override {
-        return Serialiser<Type>::Serialise(q, std::invoke(Get, obj));
+    auto load(Column c) -> Result<> override {
+        auto stored = Try(Deserialise(c));
+        std::invoke(Set, obj, std::move(stored));
+        return {};
+    }
+
+    auto modified(Column c) -> Result<bool> override {
+        auto stored = Try(Deserialise(c));
+        return std::invoke(Get, obj) != stored;
+    }
+
+    auto save(QueryParamRef q) -> Result<> override {
+        Serialiser<Type>::Serialise(q, std::invoke(Get, obj));
+        return {};
     }
 };
 
-/// The serialisation format deliberately avoids storing raw bytes
-/// in most cases so we don’t run into en
-
 template <>
 struct Serialiser<QString> {
-    static auto Deserialise(Column c) -> std::optional<QString> {
+    static auto Deserialise(Column c) -> QString {
         auto text = c.text();
         return QString::fromUtf8(text.data(), qsizetype(text.size()));
     }
@@ -50,7 +60,7 @@ struct Serialiser<QString> {
 
 template <>
 struct Serialiser<QSize> {
-    static auto Deserialise(Column c) -> std::optional<QSize> {
+    static auto Deserialise(Column c) -> QSize {
         /// 32 lower bits are width, 32 upper bits are height.
         auto encoded = c.integer();
         return QSize{static_cast<int>(encoded & 0xFFFF'FFFF), static_cast<int>(encoded >> 32)};
@@ -66,7 +76,7 @@ struct Serialiser<QSize> {
 template <typename I>
 requires std::integral<I> or std::is_enum_v<I>
 struct Serialiser<I> {
-    static auto Deserialise(Column c) -> std::optional<I> {
+    static auto Deserialise(Column c) -> I {
         return static_cast<I>(c.integer());
     }
 
@@ -77,10 +87,13 @@ struct Serialiser<I> {
 
 template <>
 struct Serialiser<const QFont&> {
-    static auto Deserialise(Column c) -> std::optional<QFont> {
+    static auto Deserialise(Column c) -> Result<QFont> {
         auto description = c.text();
         QFont f;
-        if (not f.fromString(QString::fromStdString(description))) return std::nullopt;
+        if (not f.fromString(QString::fromStdString(description))) return Err(
+            "Invalid font record '{}' in save file",
+            description
+        );
         return f;
     }
 
@@ -92,15 +105,11 @@ struct Serialiser<const QFont&> {
 template <typename Internal>
 requires std::is_trivially_constructible_v<Internal> /// For memcpy().
 struct Serialiser<QList<Internal>> {
-    static auto Deserialise(Column c) -> std::optional<QList<Internal>> {
+    static auto Deserialise(Column c) -> Result<QList<Internal>> {
         QList<Internal> result;
         auto blob = c.blob();
-        if (glz::read_binary_untagged(result, blob)) {
-            Error("Failed to deserialise {}", glz::name_v<QList<Internal>>);
-            return std::nullopt;
-        }
-
-        return result;
+        if (glz::read_binary_untagged(result, blob) == 0) return result;
+        else return Err("Failed to deserialise {}", glz::name_v<QList<Internal>>);
     }
 
     static void Serialise(QueryParamRef q, const QList<Internal>& list) {

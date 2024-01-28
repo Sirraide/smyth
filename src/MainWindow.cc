@@ -1,6 +1,5 @@
 #include <MainWindow.hh>
 #include <QJSEngine>
-#include <QSettings>
 #include <QShortcut>
 #include <SettingsDialog.hh>
 #include <ui_MainWindow.h>
@@ -71,11 +70,11 @@ smyth::MainWindow::MainWindow(App& app)
     }
 
     /// Load last open project, if any.
-    app.load_last_open_project();
+    HandleErrors(app.load_last_open_project());
 }
 
-void smyth::MainWindow::apply_sound_changes() try {
-    auto Norm = [](QComboBox* cbox, QString plain) {
+auto smyth::MainWindow::ApplySoundChanges() -> Result<> {
+    auto Norm = [](QComboBox* cbox, QString plain) -> Result<QString> {
         const auto norm = [cbox] {
             switch (cbox->currentIndex()) {
                 default: return NormalisationForm::None;
@@ -84,16 +83,16 @@ void smyth::MainWindow::apply_sound_changes() try {
             }
         }();
 
-        auto normed = Normalise(
+        auto normed = Try(Normalise(
             norm,
             icu::UnicodeString(reinterpret_cast<char16_t*>(plain.data()), i32(plain.size()))
-        );
+        ));
 
         return QString::fromUtf16(normed.getBuffer(), normed.length());
     };
 
-    auto input = Norm(ui->sca_cbox_input_norm, ui->input->toPlainText());
-    auto changes = Norm(ui->sca_cbox_changes_norm, ui->changes->toPlainText());
+    auto input = Try(Norm(ui->sca_cbox_input_norm, ui->input->toPlainText()));
+    auto changes = Try(Norm(ui->sca_cbox_changes_norm, ui->changes->toPlainText()));
 
     /// If javascript is enabled, find all instances of `§{}§` and replace them with
     /// the result of evaluating the javascript expression inside the braces.
@@ -107,10 +106,11 @@ void smyth::MainWindow::apply_sound_changes() try {
             if (end == -1) break;
             auto expr = changes.mid(next + 2, end - next - 2);
             auto result = js.evaluate(expr);
-            if (result.isError()) {
-                Error("Exception in JS Evaluation: {}\nWhile evaluating:\n{}", result.toString(), expr);
-                return;
-            }
+            if (result.isError()) return Err(
+                "Exception in JS Evaluation: {}\nWhile evaluating:\n{}",
+                result.toString(),
+                expr
+            );
 
             auto str = result.toString();
             changes.replace(next, end - next + 2, str);
@@ -161,10 +161,21 @@ void smyth::MainWindow::apply_sound_changes() try {
     else stop_before = "";
 
     /// Dew it.
-    auto output = app.apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before));
-    ui->output->setPlainText(Norm(ui->sca_cbox_output_norm, std::move(output)));
-} catch (const Exception& e) {
-    Error("{}", e.what());
+    auto output = Try(app.apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before)));
+    ui->output->setPlainText(Try(Norm(ui->sca_cbox_output_norm, std::move(output))));
+    return {};
+}
+
+void smyth::MainWindow::HandleErrors(Result<> r) {
+    if (r.is_err()) Error("{}", r.err().message);
+}
+
+void smyth::MainWindow::apply_sound_changes() {
+    HandleErrors(ApplySoundChanges());
+}
+
+void smyth::MainWindow::closeEvent(QCloseEvent* event) {
+    app.quit(event);
 }
 
 auto smyth::MainWindow::mono_font() const -> QFont {
@@ -172,7 +183,7 @@ auto smyth::MainWindow::mono_font() const -> QFont {
 }
 
 void smyth::MainWindow::open_project() {
-    app.open();
+    HandleErrors(app.open());
 }
 
 void smyth::MainWindow::open_settings() {
@@ -180,7 +191,7 @@ void smyth::MainWindow::open_settings() {
 }
 
 void smyth::MainWindow::save_project() {
-    app.save();
+    HandleErrors(app.save());
 }
 
 auto smyth::MainWindow::serif_font() const -> QFont {
