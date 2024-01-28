@@ -4,6 +4,8 @@
 #include <UI/SmythCharacterMap.hh>
 
 auto smyth::ui::SmythCharacterMap::Rows() const -> int {
+    /// Ensure we always have at least one column.
+    if (cols == 0) return 1;
     return int(chars.size()) / cols + (int(chars.size()) % cols ? 1 : 0);
 }
 
@@ -36,12 +38,12 @@ void smyth::ui::SmythCharacterMap::UpdateSize() {
     /// couldn’t fit another square into.
     const auto space_left = (width() - (square_height * cols));
     square_width = std::max(m.height(), m.maxWidth()) + 10 + space_left / cols;
+    setMinimumWidth(square_width);
 }
 
 void smyth::ui::SmythCharacterMap::mousePressEvent(QMouseEvent* event) {
     auto pos = mapFromGlobal(event->globalPosition());
     auto idx = int(pos.y() / square_height) * cols + int(pos.x() / square_width);
-    fmt::print("pos: {}, idx: {} sqht: {}, sqwd: {}\n", pos, idx, square_height, square_width);
     if (idx >= 0 and idx < int(chars.size())) {
         selected_codepoint = idx;
         emit selected(chars[usz(idx)]);
