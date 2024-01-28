@@ -26,8 +26,6 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationName("Smyth");
     QCoreApplication::setApplicationName("Smyth");
     QCoreApplication::setOrganizationDomain("nguh.org");
-    smyth::App Smyth;
-    smyth::RegisterMessageHandler(ShowError);
-    Smyth.main_window()->show();
+    smyth::App Smyth{ShowError};
     return app.exec();
 }

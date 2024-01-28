@@ -19,9 +19,12 @@ using MakeResult = std::conditional_t<IsResult<T>, T, Result<T>>;
 template <typename Type, typename Object, auto Get, auto Set>
 class PersistProperty : public PersistentBase {
     Object* obj;
+    Type default_value;
 
 public:
-    PersistProperty(Object* obj) : obj(obj) {}
+    PersistProperty(Object* obj)
+        : obj(obj),
+        default_value(std::invoke(Get, obj)) {}
 
 private:
     auto Deserialise(Column c) -> MakeResult<decltype(Serialiser<Type>::Deserialise(c))> {
@@ -37,6 +40,10 @@ private:
     auto modified(Column c) -> Result<bool> override {
         auto stored = Try(Deserialise(c));
         return std::invoke(Get, obj) != stored;
+    }
+
+    void reset() override {
+        std::invoke(Set, obj, default_value);
     }
 
     auto save(QueryParamRef q) -> Result<> override {
@@ -113,6 +120,7 @@ struct Serialiser<QList<Internal>> {
     }
 
     static void Serialise(QueryParamRef q, const QList<Internal>& list) {
+        fmt::print("Serialising [{}]\n", fmt::join(list, ", "));
         std::vector<std::byte> blob;
         glz::write_binary_untagged(std::span<const Internal>{list.data(), usz(list.size())}, blob);
         q.bind(std::span{blob});

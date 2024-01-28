@@ -41,12 +41,21 @@ class SettingsDialog;
 class App : public QObject {
     Q_OBJECT
 
-    Lexurgy lexurgy;
+    /// Lexurgy background process.
+    std::unique_ptr<Lexurgy> lexurgy = std::make_unique<Lexurgy>();
+
+    /// Database used for saving.
     DBRef db = Database::CreateInMemory();
+
+    /// The path to the project that is currently open.
     QString save_path;
+
+    /// When we last saved the project, if ever.
+    std::optional<chr::time_point<chr::system_clock>> last_save_time;
+
+    /// Windows.
     std::unique_ptr<MainWindow> main;
     std::unique_ptr<SettingsDialog> settings;
-    std::optional<chr::time_point<chr::system_clock>> last_save_time;
 
     /// Used for operations like saving and closing that may content with one
     /// another or cause data corruption if executed at the same time, though
@@ -56,18 +65,21 @@ class App : public QObject {
     std::recursive_mutex global_lock;
 
 public:
+    /// Store that holds persistent data.
     PersistentStore store{SMYTH_MAIN_STORE_KEY};
 
     SMYTH_IMMOVABLE(App);
-    App();
+    App(ErrorMessageHandler handler);
     ~App() noexcept;
 
     /// Persist a QString property in the store.
     template <auto Get, auto Set, typename Object>
-    void persist(std::string key, Object* obj) {
+    auto persist(std::string key, Object* obj) -> detail::PersistentBase* {
         using namespace detail;
         std::unique_ptr<PersistentBase> e{new PersistProperty<ExtractType<decltype(Get)>, Object, Get, Set>(obj)};
+        auto ptr = e.get();
         store.register_entry(std::move(key), std::move(e));
+        return ptr;
     }
 
     /// Apply sound changes to the input string.
@@ -83,6 +95,9 @@ public:
     /// Get the main window.
     auto main_window() -> MainWindow* { return main.get(); }
 
+    /// Open a new project.
+    void new_project();
+
     /// Open a project from a file.
     auto open() -> Result<>;
 
@@ -96,11 +111,15 @@ public:
     auto settings_dialog() -> SettingsDialog* { return settings.get(); }
 
 private:
+
     /// Remember the last project we had open.
     void NoteLastOpenProject();
 
     /// Open a project.
     auto OpenProject(QString path) -> Result<>;
+
+    /// Ask the user if we should close the current project.
+    bool PromptCloseProject();
 
     /// Save project to a file.
     ///

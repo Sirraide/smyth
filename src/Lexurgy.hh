@@ -11,7 +11,7 @@ class Lexurgy {
     QProcess lexurgy_process;
 
     /// Cache the sound changes to avoid pointless requests.
-    QString sound_changes;
+    std::optional<QString> sound_changes;
 
 public:
     Lexurgy(const Lexurgy&) = delete;
@@ -26,7 +26,7 @@ public:
     ~Lexurgy();
 
     /// Apply sound changes.
-    auto operator()(
+    auto apply(
         QStringView words,
         QString changes,
         const QString& stop_before

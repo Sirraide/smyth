@@ -101,6 +101,11 @@ auto smyth::PersistentStore::reload_all(DBRef db) -> Result<> {
     return ForEachEntry(std::move(db), fmt::format(query, table_name), Reload);
 }
 
+void smyth::PersistentStore::reset_all() {
+    for (const auto& [key, entry] : entries)
+        entry->reset();
+}
+
 auto smyth::PersistentStore::save_all(DBRef db) -> Result<> {
     static constexpr std::string_view query = R"sql(
         INSERT INTO {} (key, value) VALUES (?, ?)

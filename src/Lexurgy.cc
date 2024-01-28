@@ -83,7 +83,7 @@ smyth::Lexurgy::~Lexurgy() {
     lexurgy_process.close();
 }
 
-auto smyth::Lexurgy::operator()(
+auto smyth::Lexurgy::apply(
     QStringView input,
     QString changes,
     const QString& stop_before

@@ -552,6 +552,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="action_new"/>
     <addaction name="action_open"/>
     <addaction name="action_save"/>
     <addaction name="action_settings"/>
@@ -573,7 +574,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   </action>
   <action name="action_save">
    <property name="text">
-    <string>&amp;Save Project</string>
+    <string>&amp;Save</string>
    </property>
   </action>
   <action name="action_quit">
@@ -587,6 +588,11 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   <action name="action_settings">
    <property name="text">
     <string>Settings</string>
+   </property>
+  </action>
+  <action name="action_new">
+   <property name="text">
+    <string>New Project</string>
    </property>
   </action>
  </widget>
@@ -743,11 +749,28 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>action_new</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>new_project()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>open_project()</slot>
   <slot>save_project()</slot>
   <slot>apply_sound_changes()</slot>
   <slot>open_settings()</slot>
+  <slot>new_project()</slot>
  </slots>
 </ui>

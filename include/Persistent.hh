@@ -26,6 +26,9 @@ private:
     /// Check if this entry has been modified and needs saving.
     virtual auto modified(Column c) -> Result<bool> = 0;
 
+    /// Reset this entry to its default value.
+    virtual void reset() = 0;
+
     /// Save this entry to the DB.
     virtual auto save(QueryParamRef param) -> Result<> = 0;
 };
@@ -70,6 +73,9 @@ public:
 
     /// Reload all entries from a database.
     auto reload_all(DBRef db) -> Result<>;
+
+    /// Reset all entries to their default values.
+    void reset_all();
 
     /// Save all entries to a database.
     auto save_all(DBRef db) -> Result<>;

@@ -47,30 +47,6 @@ smyth::MainWindow::MainWindow(App& app)
     auto open = new QShortcut(QKeySequence::Open, this);
     connect(save, &QShortcut::activated, this, &MainWindow::save_project);
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
-
-    /// Initialise persistent settings.
-    ui->input->persist(app, "main.input");
-    ui->changes->persist(app, "main.changes");
-    ui->output->persist(app, "main.output");
-    app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
-    app.persist<&QSplitter::sizes, &QSplitter::setSizes>("main.sca.splitter.sizes", ui->sca_text_edits);
-    PersistCBox(app, "main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
-    PersistCBox(app, "main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
-    PersistCBox(app, "main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
-    PersistDynCBox(app, "main.sca.cbox.stop.before", ui->sca_cbox_stop_before);
-    PersistChBox(app, "main.sca.chbox.details", ui->sca_chbox_details);
-    PersistChBox(app, "main.sca.chbox.enable.js", ui->sca_chbox_enable_javascript);
-
-    /// Hide the details panels if the checkbox is unchecked.
-    if (not ui->sca_chbox_details->isChecked()) {
-        ui->sca_frame_input_bottom->setVisible(false);
-        ui->sca_frame_changes_bottom->setVisible(false);
-        ui->sca_frame_output_bottom->setVisible(false);
-        ui->frame_stop_before->setVisible(false);
-    }
-
-    /// Load last open project, if any.
-    HandleErrors(app.load_last_open_project());
 }
 
 auto smyth::MainWindow::ApplySoundChanges() -> Result<> {
@@ -182,12 +158,42 @@ auto smyth::MainWindow::mono_font() const -> QFont {
     return ui->changes->font();
 }
 
+void smyth::MainWindow::new_project() {
+    app.new_project();
+}
+
 void smyth::MainWindow::open_project() {
     HandleErrors(app.open());
 }
 
 void smyth::MainWindow::open_settings() {
     app.settings_dialog()->exec();
+}
+
+void smyth::MainWindow::persist() {
+    /// Initialise persistent settings.
+    ui->input->persist(app, "main.input");
+    ui->changes->persist(app, "main.changes");
+    ui->output->persist(app, "main.output");
+    app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
+    app.persist<&QSplitter::sizes, &QSplitter::setSizes>("main.sca.splitter.sizes", ui->sca_text_edits);
+    PersistCBox(app, "main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
+    PersistCBox(app, "main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
+    PersistCBox(app, "main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
+    PersistDynCBox(app, "main.sca.cbox.stop.before", ui->sca_cbox_stop_before);
+    PersistChBox(app, "main.sca.chbox.details", ui->sca_chbox_details);
+    PersistChBox(app, "main.sca.chbox.enable.js", ui->sca_chbox_enable_javascript);
+
+    /// Hide the details panels if the checkbox is unchecked.
+    if (not ui->sca_chbox_details->isChecked()) {
+        ui->sca_frame_input_bottom->setVisible(false);
+        ui->sca_frame_changes_bottom->setVisible(false);
+        ui->sca_frame_output_bottom->setVisible(false);
+        ui->frame_stop_before->setVisible(false);
+    }
+
+    /// Load last open project, if any.
+    HandleErrors(app.load_last_open_project());
 }
 
 void smyth::MainWindow::save_project() {

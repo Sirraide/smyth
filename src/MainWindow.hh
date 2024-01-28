@@ -27,16 +27,27 @@ public:
     MainWindow(App& app);
     ~MainWindow() noexcept;
 
+    /// Handle a user pressing the close button.
     void closeEvent(QCloseEvent *event) override;
 
+    /// Initialise persistent objects.
+    void persist();
+
+    /// Get the current default monospace font.
     auto mono_font() const -> QFont;
+
+    /// Get the current default serif font.
     auto serif_font() const -> QFont;
 
-    void set_serif_font(QFont f);
+    /// Set the default monospace font.
     void set_mono_font(QFont f);
+
+    /// Set the default serif font.
+    void set_serif_font(QFont f);
 
 public slots:
     void apply_sound_changes();
+    void new_project();
     void open_project();
     void open_settings();
     void save_project();
