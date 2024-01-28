@@ -121,7 +121,6 @@ struct Serialiser<QList<Internal>> {
     }
 
     static void Serialise(QueryParamRef q, const QList<Internal>& list) {
-        fmt::print("Serialising [{}]\n", fmt::join(list, ", "));
         std::vector<std::byte> blob;
         glz::write_binary_untagged(std::span<const Internal>{list.data(), usz(list.size())}, blob);
         q.bind(std::span{blob});
