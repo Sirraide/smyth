@@ -43,6 +43,7 @@ auto smyth::ui::App::OpenProject(QString path) -> Result<> {
     /// Load it.
     db = Try(Database::Load(path.toStdString()));
     Try(store.reload_all(db));
+    settings->reset_dialog();
 
     /// Update save path and remember it.
     save_path = std::move(path);
@@ -193,7 +194,7 @@ void smyth::ui::App::new_project() {
     last_save_time = std::nullopt;
     lexurgy = std::make_unique<Lexurgy>();
     store.reset_all();
-    settings->reset();
+    settings->reset_dialog();
 }
 
 auto smyth::ui::App::open() -> Result<> {

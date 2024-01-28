@@ -230,10 +230,16 @@ auto smyth::ui::MainWindow::serif_font() const -> QFont {
 }
 
 void smyth::ui::MainWindow::set_mono_font(QFont f) {
-    ui->changes->setFont(f);
+    /// Set only the family and keep size etc. as is.
+    QFont font{ui->changes->font()};
+    font.setFamily(f.family());
+    ui->changes->setFont(font);
 }
 
 void smyth::ui::MainWindow::set_serif_font(QFont f) {
-    ui->input->setFont(f);
-    ui->output->setFont(f);
+    /// Set only the family and keep size etc. as is.
+    QFont font{ui->input->font()};
+    font.setFamily(f.family());
+    ui->input->setFont(font);
+    ui->output->setFont(font);
 }
