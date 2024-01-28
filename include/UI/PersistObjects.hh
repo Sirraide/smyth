@@ -1,14 +1,14 @@
-#ifndef SMYTH_PERSISTOBJECTS_HH
-#define SMYTH_PERSISTOBJECTS_HH
+#ifndef SMYTH_UI_PERSISTOBJECTS_HH
+#define SMYTH_UI_PERSISTOBJECTS_HH
 
 #include <bit>
 #include <glaze/glaze.hpp>
-#include <Persistent.hh>
 #include <QFont>
 #include <QSize>
 #include <QString>
+#include <Smyth/Persistent.hh>
 
-namespace smyth::detail {
+namespace smyth::ui::detail {
 template <typename>
 struct Serialiser;
 
@@ -17,7 +17,7 @@ using MakeResult = std::conditional_t<IsResult<T>, T, Result<T>>;
 
 /// Helper to persist a ‘property’ of an object.
 template <typename RawType, typename Object, auto Get, auto Set>
-class PersistProperty : public PersistentBase {
+class PersistProperty : public smyth::detail::PersistentBase {
     using Type = std::decay_t<RawType>;
     Object* obj;
     Type default_value;
@@ -25,7 +25,7 @@ class PersistProperty : public PersistentBase {
 public:
     PersistProperty(Object* obj)
         : obj(obj),
-        default_value(std::invoke(Get, obj)) {}
+          default_value(std::invoke(Get, obj)) {}
 
 private:
     auto Deserialise(Column c) -> MakeResult<decltype(Serialiser<Type>::Deserialise(c))> {
@@ -129,4 +129,4 @@ struct Serialiser<QList<Internal>> {
 
 } // namespace smyth::detail
 
-#endif // SMYTH_PERSISTOBJECTS_HH
+#endif // SMYTH_UI_PERSISTOBJECTS_HH

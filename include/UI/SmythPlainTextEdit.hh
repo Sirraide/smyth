@@ -1,9 +1,11 @@
-#ifndef SMYTH_SMYTHPLAINTEXTEDIT_HH
-#define SMYTH_SMYTHPLAINTEXTEDIT_HH
+#ifndef SMYTH_UI_SMYTHPLAINTEXTEDIT_HH
+#define SMYTH_UI_SMYTHPLAINTEXTEDIT_HH
 
 #include <QPlainTextEdit>
+#include <UI/App.hh>
 
-class SmythPlainTextEdit : public QPlainTextEdit {
+namespace smyth::ui {
+class SmythPlainTextEdit final : public QPlainTextEdit {
     Q_OBJECT
 
     using This = SmythPlainTextEdit;
@@ -14,7 +16,7 @@ public:
         setTabChangesFocus(true);
     }
 
-    void persist(smyth::App& app, std::string_view key) {
+    void persist(App& app, std::string_view key) {
         app.persist<&This::toPlainText, &This::setPlainText>(
             std::format("{}.text", key),
             this
@@ -71,5 +73,6 @@ public:
         QPlainTextEdit::keyPressEvent(event);
     }
 };
+} // namespace smyth::ui
 
-#endif // SMYTH_SMYTHPLAINTEXTEDIT_HH
+#endif // SMYTH_UI_SMYTHPLAINTEXTEDIT_HH

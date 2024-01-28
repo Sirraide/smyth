@@ -3,10 +3,10 @@
 
 #include <functional>
 #include <optional>
-#include <Result.hh>
+#include <Smyth/Result.hh>
+#include <Smyth/Utils.hh>
 #include <span>
 #include <utility>
-#include <Utils.hh>
 
 struct sqlite3;
 struct sqlite3_stmt;

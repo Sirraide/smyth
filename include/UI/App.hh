@@ -1,19 +1,19 @@
-#ifndef SMYTH_APP_HH
-#define SMYTH_APP_HH
+#ifndef SMYTH_UI_APP_HH
+#define SMYTH_UI_APP_HH
 
 #include <chrono>
-#include <Database.hh>
-#include <Lexurgy.hh>
-#include <PersistObjects.hh>
 #include <QCloseEvent>
 #include <QObject>
 #include <QUrl>
-#include <Result.hh>
-#include <Utils.hh>
+#include <Smyth/Database.hh>
+#include <Smyth/Result.hh>
+#include <Smyth/Utils.hh>
+#include <UI/Lexurgy.hh>
+#include <UI/PersistObjects.hh>
 
 #define SMYTH_MAIN_STORE_KEY "store"
 
-namespace smyth {
+namespace smyth::ui {
 namespace chr = std::chrono;
 
 namespace detail {
@@ -38,8 +38,7 @@ using ExtractType = typename ExtractTypeImpl<Type>::type;
 class MainWindow;
 class SettingsDialog;
 
-class App : public QObject {
-    Q_OBJECT
+class App final {
 
     /// Lexurgy background process.
     std::unique_ptr<Lexurgy> lexurgy = std::make_unique<Lexurgy>();
@@ -74,7 +73,8 @@ public:
 
     /// Persist a QString property in the store.
     template <auto Get, auto Set, typename Object>
-    auto persist(std::string key, Object* obj) -> detail::PersistentBase* {
+    auto persist(std::string key, Object* obj) -> smyth::detail::PersistentBase* {
+        using namespace smyth::detail;
         using namespace detail;
         std::unique_ptr<PersistentBase> e{new PersistProperty<ExtractType<decltype(Get)>, Object, Get, Set>(obj)};
         auto ptr = e.get();
@@ -111,7 +111,6 @@ public:
     auto settings_dialog() -> SettingsDialog* { return settings.get(); }
 
 private:
-
     /// Remember the last project we had open.
     void NoteLastOpenProject();
 
@@ -128,7 +127,7 @@ private:
     auto SaveImpl() -> Result<>;
 };
 
-} // namespace smyth
+} // namespace smyth::ui
 
 template <>
 struct fmt::formatter<QString> : fmt::formatter<std::string> {
@@ -138,4 +137,4 @@ struct fmt::formatter<QString> : fmt::formatter<std::string> {
     }
 };
 
-#endif // SMYTH_APP_HH
+#endif // SMYTH_UI_APP_HH

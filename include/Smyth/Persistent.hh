@@ -1,9 +1,9 @@
 #ifndef SMYTH_PERSISTENT_HH
 #define SMYTH_PERSISTENT_HH
 
-#include <Database.hh>
+#include <Smyth/Database.hh>
+#include <Smyth/Result.hh>
 #include <unordered_map>
-#include <Result.hh>
 
 namespace smyth {
 class PersistentStore;

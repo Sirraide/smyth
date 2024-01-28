@@ -1,4 +1,4 @@
-#include <Database.hh>
+#include <Smyth/Database.hh>
 #include <sqlite3.h>
 
 smyth::Database::~Database() noexcept {

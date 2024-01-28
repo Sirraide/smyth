@@ -1,8 +1,8 @@
 #include <atomic>
-#include <Persistent.hh>
-#include <Unicode.hh>
+#include <Smyth/Persistent.hh>
+#include <Smyth/Unicode.hh>
+#include <Smyth/Utils.hh>
 #include <unicode/translit.h>
-#include <Utils.hh>
 
 /// ====================================================================
 ///  Error Handling
@@ -75,7 +75,7 @@ auto smyth::PersistentStore::modified(DBRef db) -> Result<bool> {
     )sql";
 
     bool modified = false;
-    auto Test = [&] (Statement& stmt, detail::PersistentBase* entry) -> Result<> {
+    auto Test = [&](Statement& stmt, detail::PersistentBase* entry) -> Result<> {
         if (modified) return {};
         auto res = Try(stmt.fetch_optional());
         if (not res.has_value()) return {};
@@ -92,7 +92,7 @@ auto smyth::PersistentStore::reload_all(DBRef db) -> Result<> {
         SELECT value FROM {} WHERE key = ?;
     )sql";
 
-    auto Reload = [] (Statement& stmt, detail::PersistentBase* entry) -> Result<> {
+    auto Reload = [](Statement& stmt, detail::PersistentBase* entry) -> Result<> {
         auto res = Try(stmt.fetch_optional());
         if (not res.has_value()) return {};
         return entry->load(Column(*res, 0));
@@ -112,7 +112,7 @@ auto smyth::PersistentStore::save_all(DBRef db) -> Result<> {
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
     )sql";
 
-    auto Save = [] (Statement& stmt, detail::PersistentBase* entry) -> Result<> {
+    auto Save = [](Statement& stmt, detail::PersistentBase* entry) -> Result<> {
         Try(entry->save(QueryParamRef(stmt, 2)));
         return stmt.exec();
     };

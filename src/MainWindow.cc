@@ -1,12 +1,12 @@
-#include <MainWindow.hh>
 #include <QJSEngine>
-#include <QShortcut>
 #include <QMessageBox>
-#include <SettingsDialog.hh>
+#include <QShortcut>
+#include <Smyth/Unicode.hh>
+#include <UI/MainWindow.hh>
+#include <UI/SettingsDialog.hh>
 #include <ui_MainWindow.h>
-#include <Unicode.hh>
 
-namespace smyth {
+namespace smyth::ui {
 namespace {
 void PersistCBox(App& app, std::string key, QComboBox* cbox) {
     app.persist<&QComboBox::currentIndex, &QComboBox::setCurrentIndex>(
@@ -32,12 +32,12 @@ void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
 }
 
 } // namespace
-} // namespace smyth
+} // namespace smyth::ui
 
 /// Needs destructor that isn’t visible in the header.
-smyth::MainWindow::~MainWindow() noexcept = default;
+smyth::ui::MainWindow::~MainWindow() noexcept = default;
 
-smyth::MainWindow::MainWindow(App& app)
+smyth::ui::MainWindow::MainWindow(App& app)
     : QMainWindow(nullptr),
       app(app),
       ui(std::make_unique<Ui::MainWindow>()) {
@@ -50,7 +50,7 @@ smyth::MainWindow::MainWindow(App& app)
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
 }
 
-auto smyth::MainWindow::ApplySoundChanges() -> Result<> {
+auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
     auto Norm = [](QComboBox* cbox, QString plain) -> Result<QString> {
         const auto norm = [cbox] {
             switch (cbox->currentIndex()) {
@@ -124,7 +124,7 @@ auto smyth::MainWindow::ApplySoundChanges() -> Result<> {
     return {};
 }
 
-auto smyth::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Result<> {
+auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Result<> {
     QJSEngine js;
     qsizetype pos = 0;
     for (;;) {
@@ -147,35 +147,35 @@ auto smyth::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Re
     return {};
 }
 
-void smyth::MainWindow::HandleErrors(Result<> r) {
+void smyth::ui::MainWindow::HandleErrors(Result<> r) {
     if (r.is_err()) Error("{}", r.err().message);
 }
 
-void smyth::MainWindow::apply_sound_changes() {
+void smyth::ui::MainWindow::apply_sound_changes() {
     HandleErrors(ApplySoundChanges());
 }
 
-void smyth::MainWindow::closeEvent(QCloseEvent* event) {
+void smyth::ui::MainWindow::closeEvent(QCloseEvent* event) {
     app.quit(event);
 }
 
-auto smyth::MainWindow::mono_font() const -> QFont {
+auto smyth::ui::MainWindow::mono_font() const -> QFont {
     return ui->changes->font();
 }
 
-void smyth::MainWindow::new_project() {
+void smyth::ui::MainWindow::new_project() {
     app.new_project();
 }
 
-void smyth::MainWindow::open_project() {
+void smyth::ui::MainWindow::open_project() {
     HandleErrors(app.open());
 }
 
-void smyth::MainWindow::open_settings() {
+void smyth::ui::MainWindow::open_settings() {
     app.settings_dialog()->exec();
 }
 
-void smyth::MainWindow::persist() {
+void smyth::ui::MainWindow::persist() {
     /// Initialise persistent settings.
     ui->input->persist(app, "main.input");
     ui->changes->persist(app, "main.changes");
@@ -201,7 +201,7 @@ void smyth::MainWindow::persist() {
     HandleErrors(app.load_last_open_project());
 }
 
-void smyth::MainWindow::preview_changes_after_eval() {
+void smyth::ui::MainWindow::preview_changes_after_eval() {
     auto changes = ui->changes->toPlainText();
     if (auto res = EvaluateAndInterpolateJavaScript(changes); res.is_err()) {
         Error("{}", res.err().message);
@@ -217,19 +217,19 @@ void smyth::MainWindow::preview_changes_after_eval() {
     box.exec();
 }
 
-void smyth::MainWindow::save_project() {
+void smyth::ui::MainWindow::save_project() {
     HandleErrors(app.save());
 }
 
-auto smyth::MainWindow::serif_font() const -> QFont {
+auto smyth::ui::MainWindow::serif_font() const -> QFont {
     return ui->input->font();
 }
 
-void smyth::MainWindow::set_mono_font(QFont f) {
+void smyth::ui::MainWindow::set_mono_font(QFont f) {
     ui->changes->setFont(f);
 }
 
-void smyth::MainWindow::set_serif_font(QFont f) {
+void smyth::ui::MainWindow::set_serif_font(QFont f) {
     ui->input->setFont(f);
     ui->output->setFont(f);
 }

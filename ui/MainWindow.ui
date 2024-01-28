@@ -75,7 +75,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="SmythPlainTextEdit" name="input">
+                <widget class="smyth::ui::SmythPlainTextEdit" name="input">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -198,7 +198,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="SmythPlainTextEdit" name="changes">
+                <widget class="smyth::ui::SmythPlainTextEdit" name="changes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -311,7 +311,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="SmythPlainTextEdit" name="output">
+                <widget class="smyth::ui::SmythPlainTextEdit" name="output">
                  <property name="font">
                   <font>
                    <family>Charis SIL</family>
@@ -608,9 +608,9 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
  </widget>
  <customwidgets>
   <customwidget>
-   <class>SmythPlainTextEdit</class>
+   <class>smyth::ui::SmythPlainTextEdit</class>
    <extends>QPlainTextEdit</extends>
-   <header>SmythPlainTextEdit.hh</header>
+   <header>UI/SmythPlainTextEdit.hh</header>
   </customwidget>
  </customwidgets>
  <resources/>

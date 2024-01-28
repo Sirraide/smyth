@@ -1,8 +1,8 @@
 #ifndef SMYTH_UNICODE_HH
 #define SMYTH_UNICODE_HH
 
+#include <Smyth/Result.hh>
 #include <unicode/unistr.h>
-#include <Result.hh>
 
 namespace smyth {
 enum struct NormalisationForm {

@@ -1,13 +1,13 @@
-#include <App.hh>
 #include <filesystem>
-#include <MainWindow.hh>
 #include <mutex>
 #include <QCoreApplication>
 #include <QFileDialog>
+#include <QLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QLayout>
-#include <SettingsDialog.hh>
+#include <UI/App.hh>
+#include <UI/MainWindow.hh>
+#include <UI/SettingsDialog.hh>
 
 namespace fs = std::filesystem;
 
@@ -16,8 +16,8 @@ namespace fs = std::filesystem;
 /// ====================================================================
 ///  App
 /// ====================================================================
-smyth::App::~App() noexcept = default;
-smyth::App::App(ErrorMessageHandler handler) {
+smyth::ui::App::~App() noexcept = default;
+smyth::ui::App::App(ErrorMessageHandler handler) {
     smyth::RegisterMessageHandler(handler);
 
     /// Do not use a member init list for these as they have to be
@@ -34,12 +34,12 @@ smyth::App::App(ErrorMessageHandler handler) {
     main->persist();
 }
 
-void smyth::App::NoteLastOpenProject() {
+void smyth::ui::App::NoteLastOpenProject() {
     QSettings s{QSettings::UserScope};
     s.setValue(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY, save_path);
 }
 
-auto smyth::App::OpenProject(QString path) -> Result<> {
+auto smyth::ui::App::OpenProject(QString path) -> Result<> {
     /// Load it.
     db = Try(Database::Load(path.toStdString()));
     Try(store.reload_all(db));
@@ -50,7 +50,7 @@ auto smyth::App::OpenProject(QString path) -> Result<> {
     return {};
 }
 
-bool smyth::App::PromptCloseProject() {
+bool smyth::ui::App::PromptCloseProject() {
     enum struct State {
         Start,
         UnsavedChanges,
@@ -157,7 +157,7 @@ bool smyth::App::PromptCloseProject() {
     }
 }
 
-auto smyth::App::SaveImpl() -> Result<> {
+auto smyth::ui::App::SaveImpl() -> Result<> {
     /// Don’t save twice.
     std::unique_lock _{global_lock};
     Try(store.save_all(db));
@@ -169,7 +169,7 @@ auto smyth::App::SaveImpl() -> Result<> {
     return {};
 }
 
-auto smyth::App::apply_sound_changes(
+auto smyth::ui::App::apply_sound_changes(
     QString inputs,
     QString sound_changes,
     QString stop_before
@@ -177,7 +177,7 @@ auto smyth::App::apply_sound_changes(
     return lexurgy->apply(inputs, std::move(sound_changes), stop_before);
 }
 
-auto smyth::App::load_last_open_project() -> Result<> {
+auto smyth::ui::App::load_last_open_project() -> Result<> {
     /// Check if we have a last open project.
     QSettings s{QSettings::UserScope};
     auto path = s.value(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY).toString();
@@ -186,7 +186,7 @@ auto smyth::App::load_last_open_project() -> Result<> {
     return OpenProject(std::move(path));
 }
 
-void smyth::App::new_project() {
+void smyth::ui::App::new_project() {
     if (not PromptCloseProject()) return;
     db = Database::CreateInMemory();
     save_path = "";
@@ -196,7 +196,7 @@ void smyth::App::new_project() {
     settings->reset();
 }
 
-auto smyth::App::open() -> Result<> {
+auto smyth::ui::App::open() -> Result<> {
     auto path = QFileDialog::getOpenFileName(
         nullptr,
         "Open Project",
@@ -208,12 +208,12 @@ auto smyth::App::open() -> Result<> {
     return OpenProject(std::move(path));
 }
 
-void smyth::App::quit(QCloseEvent* e) {
+void smyth::ui::App::quit(QCloseEvent* e) {
     if (not PromptCloseProject()) return e->ignore();
     main_window()->QMainWindow::closeEvent(e);
 }
 
-auto smyth::App::save() -> Result<> {
+auto smyth::ui::App::save() -> Result<> {
     if (not save_path.isEmpty()) return SaveImpl();
 
     /// Determine save path.

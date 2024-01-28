@@ -1,8 +1,8 @@
 #ifndef SMYTH_RESULT_HH
 #define SMYTH_RESULT_HH
 
+#include <Smyth/Utils.hh>
 #include <string>
-#include <Utils.hh>
 #include <variant>
 
 namespace smyth {
@@ -23,7 +23,7 @@ struct Err {
 
 /// Check if a type is a result.
 template <typename T>
-concept IsResult = requires {typename T::_smyth_is_result_tag; };
+concept IsResult = requires { typename T::_smyth_is_result_tag; };
 
 /// Result type that can hold either a value or an error.
 template <typename Type = void, typename Error = Err, bool allow_construction_from_nullptr = not std::is_pointer_v<Type>>
@@ -117,11 +117,11 @@ public:
 /// Helper to handle errors.
 ///
 /// Use it like this: `auto foo = Try(some_function());`
-#define Try(X, ...)                                 \
-    ({                                              \
-        auto _result = X;                           \
-        if (_result.is_err()) return _result.err(); \
-        _Pragma("clang diagnostic push");           \
+#define Try(X, ...)                                                 \
+    ({                                                              \
+        auto _result = X;                                           \
+        if (_result.is_err()) return _result.err();                 \
+        _Pragma("clang diagnostic push");                           \
         _Pragma("clang diagnostic ignored \"-Wpessimizing-move\""); \
         std::move(_result.value()) _Pragma("clang diagnostic pop"); \
     })

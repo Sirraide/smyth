@@ -1,5 +1,5 @@
-#include <App.hh>
-#include <MainWindow.hh>
+#include <UI/App.hh>
+#include <UI/MainWindow.hh>
 #include <QApplication>
 #include <QMessageBox>
 
@@ -26,6 +26,6 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationName("Smyth");
     QCoreApplication::setApplicationName("Smyth");
     QCoreApplication::setOrganizationDomain("nguh.org");
-    smyth::App Smyth{ShowError};
+    smyth::ui::App Smyth{ShowError};
     return app.exec();
 }

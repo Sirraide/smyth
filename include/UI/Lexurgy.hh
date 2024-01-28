@@ -1,11 +1,11 @@
-#ifndef SMYTH_LEXURGY_HH
-#define SMYTH_LEXURGY_HH
+#ifndef SMYTH_UI_LEXURGY_HH
+#define SMYTH_UI_LEXURGY_HH
 
 #include <QProcess>
-#include <Result.hh>
-#include <Utils.hh>
+#include <Smyth/Result.hh>
+#include <Smyth/Utils.hh>
 
-namespace smyth {
+namespace smyth::ui {
 /// Lexurgy connexion.
 class Lexurgy {
     QProcess lexurgy_process;
@@ -40,6 +40,6 @@ private:
     /// Update sound changes.
     auto UpdateSoundChanges(QString changes) -> Result<>;
 };
-} // namespace smyth
+} // namespace smyth::ui
 
-#endif // SMYTH_LEXURGY_HH
+#endif // SMYTH_UI_LEXURGY_HH

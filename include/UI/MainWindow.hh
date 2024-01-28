@@ -1,8 +1,8 @@
-#ifndef SMYTH_MAINWINDOW_HH
-#define SMYTH_MAINWINDOW_HH
+#ifndef SMYTH_UI_MAINWINDOW_HH
+#define SMYTH_UI_MAINWINDOW_HH
 
-#include <App.hh>
 #include <QMainWindow>
+#include <UI/App.hh>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -10,17 +10,17 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-namespace smyth {
+namespace smyth::ui {
 class SettingsDialog;
-class MainWindow : public QMainWindow {
+class MainWindow final : public QMainWindow {
     Q_OBJECT
 
-    smyth::App& app;
+    App& app;
     std::unique_ptr<Ui::MainWindow> ui;
 
     /// App is the main controller of the program and needs to call protected
     /// functions sometimes.
-    friend smyth::App;
+    friend App;
 
 public:
     SMYTH_IMMOVABLE(MainWindow);
@@ -28,7 +28,7 @@ public:
     ~MainWindow() noexcept;
 
     /// Handle a user pressing the close button.
-    void closeEvent(QCloseEvent *event) override;
+    void closeEvent(QCloseEvent* event) override;
 
     /// Initialise persistent objects.
     void persist();
@@ -58,5 +58,5 @@ private:
     auto EvaluateAndInterpolateJavaScript(QString& in_string) -> Result<>;
     void HandleErrors(Result<> r);
 };
-} // namespace smyth
-#endif // SMYTH_MAINWINDOW_HH
+} // namespace smyth::ui
+#endif // SMYTH_UI_MAINWINDOW_HH

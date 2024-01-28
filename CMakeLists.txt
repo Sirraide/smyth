@@ -215,7 +215,7 @@ target_link_libraries(options INTERFACE fmt glaze::glaze)
 add_library(sqlite3 STATIC "${PROJECT_SOURCE_DIR}/thirdparty/sqlite/sqlite3.c")
 target_compile_options(sqlite3 PRIVATE -O3)
 
-file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/*.hh)
+file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/Smyth/*.hh)
 add_library(smyth-lib STATIC ${smyth-lib-sources} )
 target_include_directories(smyth-lib PUBLIC "${${PROJECT_SOURCE_DIR}/thirdparty/sqlite/}")
 set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
@@ -227,6 +227,7 @@ add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
 ##  Qt Stuff
 ## ============================================================================
 set(CMAKE_AUTOUIC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
+set(CMAKE_AUTOMOC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
 
 ## Can’t set this earlier; otherwise, FindICU will find the *libraries* of whatever
 ## outdated version of ICU is shipped with Qt, but the *headers* of the system ICU,
@@ -243,7 +244,7 @@ set(CMAKE_AUTORCC ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Gui Qml)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Gui Qml)
 
-file(GLOB_RECURSE smyth-sources src/*.cc src/*.hh ui/*.ui)
+file(GLOB_RECURSE smyth-sources src/*.cc include/UI/*.hh ui/*.ui)
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(smyth
         MANUAL_FINALIZATION

@@ -1,9 +1,9 @@
 #include <glaze/glaze.hpp>
-#include <Lexurgy.hh>
+#include <UI/Lexurgy.hh>
 #include <ranges>
-#include <Utils.hh>
+#include <Smyth/Utils.hh>
 
-namespace smyth::detail::lexurgy_requests { // clang-format off
+namespace smyth::ui::detail::lexurgy_requests { // clang-format off
 struct ApplyRequest {
     std::vector<std::string> words;
     std::optional<std::string> stopBefore;
@@ -23,7 +23,7 @@ using Response = std::variant<ChangedResponse, ErrorResponse, OkResponse>;
 static constexpr glz::opts IgnoreUnknown{.error_on_unknown_keys = false};
 } // clang-format on
 
-using namespace smyth::detail::lexurgy_requests;
+using namespace smyth::ui::detail::lexurgy_requests;
 using namespace std::literals;
 
 template <>
@@ -36,7 +36,7 @@ struct glz::meta<Response> {
 ///  Lexurgy – Implementation
 /// ====================================================================
 template <typename Res, typename Req>
-auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res> {
+auto smyth::ui::Lexurgy::SendRequest(Req&& r) -> Result<Res> {
     auto s = glz::write_json(std::move(r));
     lexurgy_process.write(s.data(), qint64(s.size()));
     lexurgy_process.write("\n");
@@ -60,7 +60,7 @@ auto smyth::Lexurgy::SendRequest(Req&& r) -> Result<Res> {
     else return Err("Unexpected response type '{}'", sv);
 }
 
-auto smyth::Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {
+auto smyth::ui::Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {
     auto tr = std::move(changes).trimmed();
     if (tr == sound_changes) return {};
     Try(SendRequest<OkResponse>(LoadStringRequest{changes.toStdString()}));
@@ -71,7 +71,7 @@ auto smyth::Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {
 /// ====================================================================
 ///  API
 /// ====================================================================
-smyth::Lexurgy::Lexurgy() {
+smyth::ui::Lexurgy::Lexurgy() {
     lexurgy_process.start(LEXURGY_ROOT "/bin/lexurgy", QStringList() << "server");
     if (not lexurgy_process.waitForStarted(5'000)) Fatal(
         "Failed to start lexurgy process. Expected lexurgy at '{}'",
@@ -79,11 +79,11 @@ smyth::Lexurgy::Lexurgy() {
     );
 }
 
-smyth::Lexurgy::~Lexurgy() {
+smyth::ui::Lexurgy::~Lexurgy() {
     lexurgy_process.close();
 }
 
-auto smyth::Lexurgy::apply(
+auto smyth::ui::Lexurgy::apply(
     QStringView input,
     QString changes,
     const QString& stop_before
