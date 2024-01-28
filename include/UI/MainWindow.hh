@@ -2,6 +2,7 @@
 #define SMYTH_UI_MAINWINDOW_HH
 
 #include <QMainWindow>
+#include <QStringListModel>
 #include <UI/App.hh>
 
 QT_BEGIN_NAMESPACE
@@ -15,8 +16,10 @@ class SettingsDialog;
 class MainWindow final : public QMainWindow {
     Q_OBJECT
 
-    App& app;
     std::unique_ptr<Ui::MainWindow> ui;
+
+    /// Model for character select table.
+    std::unique_ptr<QStringListModel> character_select_model;
 
     /// App is the main controller of the program and needs to call protected
     /// functions sometimes.
@@ -24,7 +27,7 @@ class MainWindow final : public QMainWindow {
 
 public:
     SMYTH_IMMOVABLE(MainWindow);
-    MainWindow(App& app);
+    MainWindow();
     ~MainWindow() noexcept;
 
     /// Handle a user pressing the close button.
@@ -34,10 +37,10 @@ public:
     void persist();
 
     /// Get the current default monospace font.
-    auto mono_font() const -> QFont;
+    auto mono_font() const -> const QFont&;
 
     /// Get the current default serif font.
-    auto serif_font() const -> QFont;
+    auto serif_font() const -> const QFont&;
 
     /// Set the default monospace font.
     void set_mono_font(QFont f);

@@ -39,9 +39,11 @@ void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
 /// Needs destructor that isn’t visible in the header.
 smyth::ui::MainWindow::~MainWindow() noexcept = default;
 
-smyth::ui::MainWindow::MainWindow(App& app)
+/// Only minimal initialisation here; the rest is done in `persist()`;
+/// this is because some fields (e.g. `App::main_window()`) are only
+/// initialised after this returns.
+smyth::ui::MainWindow::MainWindow()
     : QMainWindow(nullptr),
-      app(app),
       ui(std::make_unique<Ui::MainWindow>()) {
     ui->setupUi(this);
 
@@ -122,7 +124,7 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
     else stop_before = "";
 
     /// Dew it.
-    auto output = Try(app.apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before)));
+    auto output = Try(App::The().apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before)));
     ui->output->setPlainText(Try(Norm(ui->sca_cbox_output_norm, std::move(output))));
     return {};
 }
@@ -166,32 +168,35 @@ void smyth::ui::MainWindow::apply_sound_changes() {
 }
 
 void smyth::ui::MainWindow::closeEvent(QCloseEvent* event) {
-    app.quit(event);
+    App::The().quit(event);
 }
 
-auto smyth::ui::MainWindow::mono_font() const -> QFont {
+auto smyth::ui::MainWindow::mono_font() const -> const QFont& {
     return ui->changes->font();
 }
 
 void smyth::ui::MainWindow::new_project() {
-    app.new_project();
+    App::The().new_project();
 }
 
 void smyth::ui::MainWindow::open_project() {
-    HandleErrors(app.open());
+    HandleErrors(App::The().open());
 }
 
 void smyth::ui::MainWindow::open_settings() {
-    app.settings_dialog()->exec();
+    App::The().settings_dialog()->exec();
 }
 
 void smyth::ui::MainWindow::persist() {
+    auto& app = App::The();
+
     /// Initialise persistent settings.
     ui->input->persist(app, "main.input");
     ui->changes->persist(app, "main.changes");
     ui->output->persist(app, "main.output");
     app.persist<&QWidget::size, [](QWidget* w, QSize s) { w->resize(s); }>("main.window.size", this);
     app.persist<&QSplitter::sizes, &QSplitter::setSizes>("main.sca.splitter.sizes", ui->sca_text_edits);
+    app.persist<&QWidget::font, &QWidget::setFont>("charmap.font", ui->char_map);
     PersistCBox(app, "main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
     PersistCBox(app, "main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
     PersistCBox(app, "main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
@@ -209,6 +214,9 @@ void smyth::ui::MainWindow::persist() {
 
     /// Load last open project, if any.
     HandleErrors(app.load_last_open_project());
+
+    /// Init MVC stuff.
+    //ui->char_map->update();
 }
 
 void smyth::ui::MainWindow::preview_changes_after_eval() {
@@ -222,10 +230,10 @@ void smyth::ui::MainWindow::preview_changes_after_eval() {
 }
 
 void smyth::ui::MainWindow::save_project() {
-    HandleErrors(app.save());
+    HandleErrors(App::The().save());
 }
 
-auto smyth::ui::MainWindow::serif_font() const -> QFont {
+auto smyth::ui::MainWindow::serif_font() const -> const QFont& {
     return ui->input->font();
 }
 
@@ -242,4 +250,10 @@ void smyth::ui::MainWindow::set_serif_font(QFont f) {
     font.setFamily(f.family());
     ui->input->setFont(font);
     ui->output->setFont(font);
+
+    /// The font size of this one is larger.
+    QFont ctab_font{ui->char_map->font()};
+    ctab_font.setFamily(f.family());
+    ui->char_map->setFont(ctab_font);
+    ui->char_map->update();
 }

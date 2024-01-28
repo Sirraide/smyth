@@ -39,7 +39,6 @@ class MainWindow;
 class SettingsDialog;
 
 class App final {
-
     /// Lexurgy background process.
     std::unique_ptr<Lexurgy> lexurgy = std::make_unique<Lexurgy>();
 
@@ -62,6 +61,9 @@ class App final {
     ///
     /// Save on quit is part of why this is recursive.
     std::recursive_mutex global_lock;
+
+    /// Global app.
+    static App* the_app;
 
 public:
     /// Store that holds persistent data.
@@ -92,9 +94,6 @@ public:
     /// Load the last project we had open.
     auto load_last_open_project() -> Result<>;
 
-    /// Get the main window.
-    auto main_window() -> MainWindow* { return main.get(); }
-
     /// Open a new project.
     void new_project();
 
@@ -109,6 +108,12 @@ public:
 
     /// Get the settings dialog.
     auto settings_dialog() -> SettingsDialog* { return settings.get(); }
+
+    /// Get the main window.
+    static auto MainWindow() -> MainWindow* { return the_app->main.get(); }
+
+    /// Get the global app.
+    static auto The() -> App& { return *the_app; }
 
 private:
     /// Remember the last project we had open.
@@ -134,6 +139,28 @@ struct fmt::formatter<QString> : fmt::formatter<std::string> {
     template <typename FormatContext>
     auto format(const QString& s, FormatContext& ctx) {
         return fmt::formatter<std::string>::format(s.toStdString(), ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<QRect> : fmt::formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(const QRect& r, FormatContext& ctx) {
+        return fmt::formatter<std::string_view>::format(
+            fmt::format("[x: {}, y: {}, wd: {}, ht: {}]", r.x(), r.y(), r.width(), r.height()),
+            ctx
+        );
+    }
+};
+
+template<>
+struct fmt::formatter<QSize> : fmt::formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(QSize s, FormatContext& ctx) {
+        return fmt::formatter<std::string_view>::format(
+            fmt::format("({}, {})", s.width(), s.height()),
+            ctx
+        );
     }
 };
 

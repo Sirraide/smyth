@@ -7,6 +7,10 @@ project(Smyth VERSION 0.1 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_definitions(
+    -DSMYTH_ISSUES_URL="https://github.com/Sirraide/smyth/issues/new"
+)
+
 ## ============================================================================
 ##  Global compiler options.
 ## ============================================================================

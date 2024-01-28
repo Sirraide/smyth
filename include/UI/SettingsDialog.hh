@@ -14,12 +14,11 @@ namespace smyth::ui {
 class SettingsDialog final : public QDialog {
     Q_OBJECT
 
-    App& app;
     std::unique_ptr<Ui::SettingsDialog> ui;
 
 public:
     SMYTH_IMMOVABLE(SettingsDialog);
-    SettingsDialog(App& app);
+    SettingsDialog();
     ~SettingsDialog() noexcept;
 
     /// Reset the settings dialog as appropriate for a new project. This

@@ -155,7 +155,7 @@
                </size>
               </property>
               <property name="text">
-               <string>Monospace:</string>
+               <string>SCA</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

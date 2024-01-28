@@ -15,6 +15,39 @@
     cls(cls&&) = delete;                 \
     cls& operator=(cls&&) = delete
 
+// clang-format off
+#define SMYTH_ASSERT_IMPL(kind, cond, ...) (cond ? void(0) : \
+    ::smyth::detail::AssertFail(                             \
+        ::smyth::detail::AssertKind::kind,                   \
+        #cond,                                               \
+        __FILE__,                                            \
+        __LINE__                                             \
+        __VA_OPT__(, fmt::format(__VA_ARGS__))               \
+    )                                                        \
+)
+
+#define SMYTH_ABORT_IMPL(kind, ...)             \
+    ::smyth::detail::AssertFail(                \
+        ::smyth::detail::AssertKind::kind,      \
+        "",                                     \
+        __FILE__,                               \
+        __LINE__                                \
+        __VA_OPT__(, fmt::format(__VA_ARGS__))  \
+    )                                           \
+
+#define Assert(cond, ...) SMYTH_ASSERT_IMPL(AK_Assert, cond __VA_OPT__(, __VA_ARGS__))
+#define Todo(...) SMYTH_ABORT_IMPL(AK_Todo __VA_OPT__(, __VA_ARGS__))
+#define Unreachable(...) SMYTH_ABORT_IMPL(AK_Unreachable __VA_OPT__(, __VA_ARGS__))
+// clang-format on
+
+#ifndef NDEBUG
+#    define SMYTH_DEBUG(...) __VA_ARGS__
+#    define DebugAssert(cond, ...) SMYTH_ASSERT_IMPL(AK_DebugAssert, cond __VA_OPT__(, __VA_ARGS__))
+#else
+#    define SMYTH_DEBUG(...)
+#    define DebugAssert(cond, ...)
+#endif
+
 #define defer [[maybe_unused]] ::smyth::detail::DeferImpl _ = [&]
 
 namespace smyth {
@@ -41,6 +74,21 @@ enum struct ErrorMessageType {
 };
 
 namespace detail {
+enum struct AssertKind {
+    AK_Assert,
+    AK_DebugAssert,
+    AK_Todo,
+    AK_Unreachable,
+};
+
+[[noreturn]] void AssertFail(
+    AssertKind k,
+    std::string_view condition,
+    std::string_view file,
+    int line,
+    std::string&& message = ""
+);
+
 void MessageImpl(std::string message, ErrorMessageType type);
 
 template <typename Callable>

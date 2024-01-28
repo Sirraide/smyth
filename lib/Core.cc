@@ -1,8 +1,10 @@
 #include <atomic>
+#include <mutex>
 #include <Smyth/Persistent.hh>
 #include <Smyth/Unicode.hh>
 #include <Smyth/Utils.hh>
 #include <unicode/translit.h>
+#include <thread>
 
 /// ====================================================================
 ///  Error Handling
@@ -22,6 +24,30 @@ void DefaultHandler(std::string message, ErrorMessageType type) {
 std::atomic<ErrorMessageHandler*> handler = DefaultHandler;
 } // namespace
 } // namespace smyth
+
+void smyth::detail::AssertFail(
+    AssertKind k,
+    std::string_view condition,
+    std::string_view file,
+    int line,
+    std::string&& message
+) {
+    std::string text = [&] -> std::string {
+        switch (k) {
+            case AssertKind::AK_Assert: return "Assertion failed";
+            case AssertKind::AK_DebugAssert: return "Debug Assertion failed";
+            case AssertKind::AK_Todo: return "Not yet implemented";
+            case AssertKind::AK_Unreachable: return "Unreachable code reached";
+        }
+    }();
+
+    if (not condition.empty()) text += fmt::format(": ‘{}’", condition);
+    if (not message.empty()) text += fmt::format("\n  {}", message);
+    text += fmt::format("\n  at {}:{}\n\n", file, line);
+    text += "This is a bug in Smyth. Please file an issue at\n" SMYTH_ISSUES_URL;
+    MessageImpl(std::move(text), ErrorMessageType::Fatal);
+    std::exit(17);
+}
 
 void smyth::detail::MessageImpl(std::string message, ErrorMessageType type) {
     auto h = handler.load(std::memory_order_relaxed);

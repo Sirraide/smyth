@@ -3,6 +3,7 @@
 
 #include <QPlainTextEdit>
 #include <UI/App.hh>
+#include <UI/Common.hh>
 
 namespace smyth::ui {
 class SmythPlainTextEdit final : public QPlainTextEdit {
@@ -27,47 +28,12 @@ public:
     }
 
     void wheelEvent(QWheelEvent* event) override {
-        if (event->modifiers() & Qt::ControlModifier) {
-            if (event->angleDelta().y() > 0) ZoomIn();
-            else ZoomOut();
-            event->accept();
-        } else {
-            QPlainTextEdit::wheelEvent(event);
-        }
-    }
-
-    void ZoomIn() {
-        setFont(QFont(font().family(), font().pointSize() + 1));
-    }
-
-    void ZoomOut() {
-        setFont(QFont(font().family(), font().pointSize() - 1));
-    }
-
-    void ZoomReset() {
-        setFont(QFont(font().family(), 10));
+        if (common::HandleZoomEvent(this, event)) return;
+        QPlainTextEdit::wheelEvent(event);
     }
 
     void keyPressEvent(QKeyEvent* event) override {
-        if (event->modifiers() & Qt::ControlModifier) {
-            switch (event->key()) {
-                case Qt::Key_Plus:
-                    ZoomIn();
-                    event->accept();
-                    return;
-
-                case Qt::Key_Minus:
-                    ZoomOut();
-                    event->accept();
-                    return;
-
-                case Qt::Key_0:
-                    ZoomReset();
-                    event->accept();
-                    return;
-            }
-        }
-
+        if (common::HandleZoomEvent(this, event)) return;
         if (event->key() == Qt::Key_Tab) {
             insertPlainText("    ");
             event->accept();

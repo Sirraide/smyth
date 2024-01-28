@@ -16,16 +16,20 @@ namespace fs = std::filesystem;
 /// ====================================================================
 ///  App
 /// ====================================================================
+smyth::ui::App* smyth::ui::App::the_app = nullptr;
 smyth::ui::App::~App() noexcept = default;
 smyth::ui::App::App(ErrorMessageHandler handler) {
+    the_app = this;
+
+    /// Register error handler.
     smyth::RegisterMessageHandler(handler);
 
     /// Do not use a member init list for these as they have to be
     /// constructed *after* everything else. Also, only persist objects
     /// *after* showing the window so saving the default settings works
     /// properly.
-    main = std::make_unique<MainWindow>(*this);
-    settings = std::make_unique<SettingsDialog>(*this);
+    main = std::make_unique<class MainWindow>();
+    settings = std::make_unique<SettingsDialog>();
 
     /// Invalidate the layout to initialise the window to its default
     /// settings so we can cache those in `persist()`.
@@ -74,7 +78,7 @@ bool smyth::ui::App::PromptCloseProject() {
 
         /// Show the error to the user.
         auto retry = QMessageBox::critical(
-            main_window(),
+            MainWindow(),
             "Error",
             QString::fromStdString(str),
             buttons
@@ -129,7 +133,7 @@ bool smyth::ui::App::PromptCloseProject() {
 
                 /// Check if they want to save first.
                 auto res = QMessageBox::question(
-                    main_window(),
+                    MainWindow(),
                     "Unsaved changes",
                     QString::fromStdString(text),
                     QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel
@@ -211,7 +215,7 @@ auto smyth::ui::App::open() -> Result<> {
 
 void smyth::ui::App::quit(QCloseEvent* e) {
     if (not PromptCloseProject()) return e->ignore();
-    main_window()->QMainWindow::closeEvent(e);
+    MainWindow()->QMainWindow::closeEvent(e);
 }
 
 auto smyth::ui::App::save() -> Result<> {
