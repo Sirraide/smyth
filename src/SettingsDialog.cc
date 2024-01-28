@@ -7,7 +7,10 @@ smyth::SettingsDialog::~SettingsDialog() noexcept = default;
 smyth::SettingsDialog::SettingsDialog(App& app)
     : QDialog(app.main_window()), app(app), ui(std::make_unique<Ui::SettingsDialog>()) {
     ui->setupUi(this);
+    reset();
+}
 
+void smyth::SettingsDialog::reset() {
     /// Init font names.
     ui->font_default->setCurrentFont(app.main_window()->serif_font());
     ui->font_mono->setCurrentFont(app.main_window()->mono_font());

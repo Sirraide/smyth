@@ -22,6 +22,10 @@ public:
     SettingsDialog(App& app);
     ~SettingsDialog() noexcept;
 
+    /// Reset the settings dialog as appropriate for a new project. This
+    /// must be called after the main window has been initialised.
+    void reset();
+
 public slots:
     void set_default_font();
     void set_mono_font();

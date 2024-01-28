@@ -16,8 +16,9 @@ template <typename T>
 using MakeResult = std::conditional_t<IsResult<T>, T, Result<T>>;
 
 /// Helper to persist a ‘property’ of an object.
-template <typename Type, typename Object, auto Get, auto Set>
+template <typename RawType, typename Object, auto Get, auto Set>
 class PersistProperty : public PersistentBase {
+    using Type = std::decay_t<RawType>;
     Object* obj;
     Type default_value;
 
@@ -93,7 +94,7 @@ struct Serialiser<I> {
 };
 
 template <>
-struct Serialiser<const QFont&> {
+struct Serialiser<QFont> {
     static auto Deserialise(Column c) -> Result<QFont> {
         auto description = c.text();
         QFont f;
