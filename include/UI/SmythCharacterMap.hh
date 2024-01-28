@@ -18,6 +18,7 @@ class SmythCharacterMap final : public QWidget {
     int square_height{40};
     int square_width{40};
     int last_codepoint{1'000};
+    int selected_codepoint{-1};
     std::vector<QChar> chars;
 
 public:
@@ -29,6 +30,9 @@ public:
         if (common::HandleZoomEvent(this, event)) return;
         QWidget::keyPressEvent(event);
     }
+
+    /// Handle selecting a character.
+    void mousePressEvent(QMouseEvent* event) override;
 
     /// Draw the character map.
     void paintEvent(QPaintEvent* event) override;
@@ -47,6 +51,10 @@ public:
         if (common::HandleZoomEvent(this, event)) return;
         QWidget::wheelEvent(event);
     }
+
+signals:
+    /// A character was selected.
+    void selected(QChar);
 
 private:
     /// Get the minimum height we need.

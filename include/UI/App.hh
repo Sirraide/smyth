@@ -164,4 +164,15 @@ struct fmt::formatter<QSize> : fmt::formatter<std::string_view> {
     }
 };
 
+template<>
+struct fmt::formatter<QPointF> : fmt::formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(QPointF s, FormatContext& ctx) {
+        return fmt::formatter<std::string_view>::format(
+            fmt::format("({}, {})", s.x(), s.y()),
+            ctx
+        );
+    }
+};
+
 #endif // SMYTH_UI_APP_HH

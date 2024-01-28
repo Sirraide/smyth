@@ -38,6 +38,17 @@ void smyth::ui::SmythCharacterMap::UpdateSize() {
     square_width = std::max(m.height(), m.maxWidth()) + 10 + space_left / cols;
 }
 
+void smyth::ui::SmythCharacterMap::mousePressEvent(QMouseEvent* event) {
+    auto pos = mapFromGlobal(event->globalPosition());
+    auto idx = int(pos.y() / square_height) * cols + int(pos.x() / square_width);
+    fmt::print("pos: {}, idx: {} sqht: {}, sqwd: {}\n", pos, idx, square_height, square_width);
+    if (idx >= 0 and idx < int(chars.size())) {
+        selected_codepoint = idx;
+        emit selected(chars[usz(idx)]);
+        update();
+    }
+}
+
 /// Code below adapted from https://doc.qt.io/qt-5/qtwidgets-widgets-charactermap-example.html.
 void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
     QFontMetrics m{font()};
@@ -64,6 +75,12 @@ void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
             int x = c * square_width;
             int y = r * square_height;
             painter.drawRect(x, y, square_width, square_height);
+
+            /// Draw a background if this is the selected character.
+            if (int(r * cols + c) == selected_codepoint) {
+                QBrush brush{QApplication::palette().accent().color()};
+                painter.fillRect(x + 1, y + 1, square_width - 1, square_height - 1, brush);
+            }
         }
     }
 
