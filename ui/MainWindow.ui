@@ -519,6 +519,16 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="evaluate_button">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Evaluate JS and preview the resulting content of the sound changes window that will be passed to Lexurgy.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Evaluate</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="apply_button">
              <property name="text">
               <string>Apply</string>
@@ -765,6 +775,38 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>sca_chbox_enable_javascript</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>evaluate_button</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>214</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>653</x>
+     <y>544</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>evaluate_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>preview_changes_after_eval()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>653</x>
+     <y>544</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>open_project()</slot>
@@ -772,5 +814,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   <slot>apply_sound_changes()</slot>
   <slot>open_settings()</slot>
   <slot>new_project()</slot>
+  <slot>preview_changes_after_eval()</slot>
  </slots>
 </ui>

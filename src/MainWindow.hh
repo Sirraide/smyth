@@ -50,10 +50,12 @@ public slots:
     void new_project();
     void open_project();
     void open_settings();
+    void preview_changes_after_eval();
     void save_project();
 
 private:
     auto ApplySoundChanges() -> Result<>;
+    auto EvaluateAndInterpolateJavaScript(QString& in_string) -> Result<>;
     void HandleErrors(Result<> r);
 };
 } // namespace smyth

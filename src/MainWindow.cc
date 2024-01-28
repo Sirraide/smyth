@@ -1,6 +1,7 @@
 #include <MainWindow.hh>
 #include <QJSEngine>
 #include <QShortcut>
+#include <QMessageBox>
 #include <SettingsDialog.hh>
 #include <ui_MainWindow.h>
 #include <Unicode.hh>
@@ -72,27 +73,8 @@ auto smyth::MainWindow::ApplySoundChanges() -> Result<> {
 
     /// If javascript is enabled, find all instances of `§{}§` and replace them with
     /// the result of evaluating the javascript expression inside the braces.
-    if (ui->sca_chbox_enable_javascript->isChecked()) {
-        QJSEngine js;
-        qsizetype pos = 0;
-        for (;;) {
-            auto next = changes.indexOf("§{", pos);
-            if (next == -1) break;
-            auto end = changes.indexOf("}§", next);
-            if (end == -1) break;
-            auto expr = changes.mid(next + 2, end - next - 2);
-            auto result = js.evaluate(expr);
-            if (result.isError()) return Err(
-                "Exception in JS Evaluation: {}\nWhile evaluating:\n{}",
-                result.toString(),
-                expr
-            );
-
-            auto str = result.toString();
-            changes.replace(next, end - next + 2, str);
-            pos = next + str.size();
-        }
-    }
+    if (ui->sca_chbox_enable_javascript->isChecked())
+        Try(EvaluateAndInterpolateJavaScript(changes));
 
     /// Remember the 'Stop Before' rule that is currently selected.
     auto stop_before = ui->sca_cbox_stop_before->currentText();
@@ -139,6 +121,29 @@ auto smyth::MainWindow::ApplySoundChanges() -> Result<> {
     /// Dew it.
     auto output = Try(app.apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before)));
     ui->output->setPlainText(Try(Norm(ui->sca_cbox_output_norm, std::move(output))));
+    return {};
+}
+
+auto smyth::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Result<> {
+    QJSEngine js;
+    qsizetype pos = 0;
+    for (;;) {
+        auto next = changes.indexOf("§{", pos);
+        if (next == -1) break;
+        auto end = changes.indexOf("}§", next);
+        if (end == -1) break;
+        auto expr = changes.mid(next + 2, end - next - 2);
+        auto result = js.evaluate(expr);
+        if (result.isError()) return Err(
+            "Exception in JS Evaluation: {}\nWhile evaluating:\n{}",
+            result.toString(),
+            expr
+        );
+
+        auto str = result.toString();
+        changes.replace(next, end - next + 2, str);
+        pos = next + str.size();
+    }
     return {};
 }
 
@@ -194,6 +199,22 @@ void smyth::MainWindow::persist() {
 
     /// Load last open project, if any.
     HandleErrors(app.load_last_open_project());
+}
+
+void smyth::MainWindow::preview_changes_after_eval() {
+    auto changes = ui->changes->toPlainText();
+    if (auto res = EvaluateAndInterpolateJavaScript(changes); res.is_err()) {
+        Error("{}", res.err().message);
+        return;
+    }
+
+    QMessageBox box;
+    box.setIcon(QMessageBox::Information);
+    box.setWindowTitle("Preview");
+    box.setInformativeText("JavaScript evaluation successful.");
+    box.setDetailedText(changes);
+    box.setWindowFlags(box.windowFlags() & ~(Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint));
+    box.exec();
 }
 
 void smyth::MainWindow::save_project() {
