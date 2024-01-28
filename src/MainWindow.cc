@@ -1,9 +1,11 @@
 #include <QJSEngine>
 #include <QMessageBox>
 #include <QShortcut>
+#include <QRegularExpression>
 #include <Smyth/Unicode.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
+#include <UI/TextPreviewDialog.hh>
 #include <ui_MainWindow.h>
 
 namespace smyth::ui {
@@ -93,11 +95,12 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
         ) continue;
 
         /// If the line contains a colon, and everything before the colon
-        /// does not contain whitespace, then this is the name of a rule.
+        /// does not contain whitespace, then this is the name of a rule;
+        /// take everything up to the first whitespace character.
         auto colon = line.indexOf(':');
         if (colon == -1) continue;
-        auto name = line.mid(0, colon).trimmed();
-        if (name.contains(' ')) continue;
+        auto ws = line.indexOf(QRegularExpression("\\s"));
+        auto name = line.mid(0, ws == -1 ? colon : std::min(colon, ws));
         rule_names.push_back(name);
     }
 
@@ -140,9 +143,16 @@ auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -
             expr
         );
 
-        auto str = result.toString();
-        changes.replace(next, end - next + 2, str);
-        pos = next + str.size();
+        /// Do not insert null or undefined.
+        if (not result.isNull() and not result.isUndefined()) {
+            auto str = result.toString();
+            changes.replace(next, end - next + 2, str);
+            pos = next + str.size();
+        } else {
+            changes.remove(next, end - next + 2);
+            pos = next;
+        }
+
     }
     return {};
 }
@@ -208,13 +218,7 @@ void smyth::ui::MainWindow::preview_changes_after_eval() {
         return;
     }
 
-    QMessageBox box;
-    box.setIcon(QMessageBox::Information);
-    box.setWindowTitle("Preview");
-    box.setInformativeText("JavaScript evaluation successful.");
-    box.setDetailedText(changes);
-    box.setWindowFlags(box.windowFlags() & ~(Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint));
-    box.exec();
+    TextPreviewDialog::Show("Sound Changes: Preview", changes, ui->changes->font(), this);
 }
 
 void smyth::ui::MainWindow::save_project() {

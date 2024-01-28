@@ -90,7 +90,7 @@
                   </font>
                  </property>
                  <property name="tabChangesFocus">
-                  <bool>true</bool>
+                  <bool>false</bool>
                  </property>
                  <property name="placeholderText">
                   <string>Words</string>
@@ -458,8 +458,7 @@
            <item>
             <widget class="QCheckBox" name="sca_chbox_enable_javascript">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable JavaScript execution in the sound changes panel: any text between &lt;code&gt;§{&lt;/code&gt;
- and &lt;code&gt;}§&lt;/code&gt; will be treated as JavaScript, the result of evaluating which is then inserted in that position in the sound changes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable JavaScript execution in the sound changes panel: any text between &lt;code&gt;§{&lt;/code&gt; and &lt;code&gt;}§&lt;/code&gt; will be treated as JavaScript, the result of evaluating which is then inserted in that position in the sound changes, unless it evaluates to &lt;code&gt;undefined&lt;/code&gt; or &lt;code&gt;null&lt;/code&gt; &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Enable JavaScript</string>

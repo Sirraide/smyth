@@ -12,9 +12,7 @@ class SmythPlainTextEdit final : public QPlainTextEdit {
 
 public:
     SmythPlainTextEdit(QWidget* parent = nullptr)
-        : QPlainTextEdit(parent) {
-        setTabChangesFocus(true);
-    }
+        : QPlainTextEdit(parent) {}
 
     void persist(App& app, std::string_view key) {
         app.persist<&This::toPlainText, &This::setPlainText>(
@@ -68,6 +66,12 @@ public:
                     event->accept();
                     return;
             }
+        }
+
+        if (event->key() == Qt::Key_Tab) {
+            insertPlainText("    ");
+            event->accept();
+            return;
         }
 
         QPlainTextEdit::keyPressEvent(event);

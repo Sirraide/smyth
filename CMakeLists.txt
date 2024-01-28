@@ -227,7 +227,6 @@ add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
 ##  Qt Stuff
 ## ============================================================================
 set(CMAKE_AUTOUIC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
-set(CMAKE_AUTOMOC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
 
 ## Can’t set this earlier; otherwise, FindICU will find the *libraries* of whatever
 ## outdated version of ICU is shipped with Qt, but the *headers* of the system ICU,
