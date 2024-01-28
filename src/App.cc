@@ -193,6 +193,7 @@ void smyth::App::new_project() {
     last_save_time = std::nullopt;
     lexurgy = std::make_unique<Lexurgy>();
     store.reset_all();
+    settings->reset();
 }
 
 auto smyth::App::open() -> Result<> {
