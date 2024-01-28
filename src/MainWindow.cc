@@ -60,6 +60,12 @@ smyth::ui::MainWindow::MainWindow()
     auto open = new QShortcut(QKeySequence::Open, this);
     connect(save, &QShortcut::activated, this, &MainWindow::save_project);
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
+
+    /// Call debug() when F12 is pressed.
+    SMYTH_DEBUG(
+        auto debug = new QShortcut(QKeySequence(Qt::Key_F12), this);
+        connect(debug, &QShortcut::activated, this, &MainWindow::debug);
+    )
 }
 
 auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
@@ -176,6 +182,25 @@ void smyth::ui::MainWindow::apply_sound_changes() {
 
 void smyth::ui::MainWindow::closeEvent(QCloseEvent* event) {
     App::The().quit(event);
+}
+
+void smyth::ui::MainWindow::debug() {
+    fmt::print("SIZE: {}\n", ui->char_map_splitter->sizes());
+}
+
+void smyth::ui::MainWindow::init() {
+    /// Show the window to force widgets to render.
+    show();
+
+    /// Focus all tabs to initialise everything.
+    for (int i = 0; i < ui->main_tabs->count(); i++) {
+        ui->main_tabs->setCurrentIndex(i);
+        layout()->invalidate();
+    }
+
+    /// Switch to first tab and initialise persistent state.
+    ui->main_tabs->setCurrentIndex(0);
+    persist();
 }
 
 auto smyth::ui::MainWindow::mono_font() const -> const QFont& {

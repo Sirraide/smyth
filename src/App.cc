@@ -30,12 +30,7 @@ smyth::ui::App::App(ErrorMessageHandler handler) {
     /// properly.
     main = std::make_unique<class MainWindow>();
     settings = std::make_unique<SettingsDialog>();
-
-    /// Invalidate the layout to initialise the window to its default
-    /// settings so we can cache those in `persist()`.
-    main->layout()->invalidate();
-    main->show();
-    main->persist();
+    main->init();
 }
 
 void smyth::ui::App::NoteLastOpenProject() {

@@ -33,11 +33,18 @@ public:
     /// Handle a user pressing the close button.
     void closeEvent(QCloseEvent* event) override;
 
-    /// Initialise persistent objects.
-    void persist();
+    /// Usually does nothing, but may be defined to do something if
+    /// App needs to access the ui.
+    [[maybe_unused]] void debug();
+
+    /// Show the window to the user. This is called once during startup.
+    void init();
 
     /// Get the current default monospace font.
     auto mono_font() const -> const QFont&;
+
+    /// Initialise persistent objects.
+    void persist();
 
     /// Get the current default serif font.
     auto serif_font() const -> const QFont&;
