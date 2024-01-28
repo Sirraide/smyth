@@ -7,6 +7,7 @@
 #include <UI/SettingsDialog.hh>
 #include <UI/TextPreviewDialog.hh>
 #include <ui_MainWindow.h>
+#include <QDir>
 
 namespace smyth::ui {
 namespace {
@@ -292,4 +293,21 @@ void smyth::ui::MainWindow::set_serif_font(QFont f) {
     ctab_font.setFamily(f.family());
     ui->char_map->setFont(ctab_font);
     ui->char_map->update();
+}
+
+void smyth::ui::MainWindow::set_window_path(QString path) {
+    if (path.isEmpty()) {
+        setWindowFilePath("");
+        setWindowTitle("Smyth");
+        return;
+    }
+
+    /// Strip home directory from path.
+#ifdef __linux__
+    auto home_path = QDir::homePath();
+    if (path.startsWith(home_path)) path = "~" + path.mid(home_path.size());
+#endif
+
+    setWindowFilePath(path);
+    setWindowTitle(QString::fromStdString(fmt::format("Smyth | {}", path.toStdString())));
 }

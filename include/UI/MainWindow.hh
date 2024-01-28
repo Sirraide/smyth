@@ -55,6 +55,9 @@ public:
     /// Set the default serif font.
     void set_serif_font(QFont f);
 
+    /// Set the path to be shown in the window title.
+    void set_window_path(QString path);
+
 public slots:
     void apply_sound_changes();
     void new_project();

@@ -36,6 +36,7 @@ smyth::ui::App::App(ErrorMessageHandler handler) {
 void smyth::ui::App::NoteLastOpenProject() {
     QSettings s{QSettings::UserScope};
     s.setValue(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY, save_path);
+    MainWindow()->set_window_path(save_path);
 }
 
 auto smyth::ui::App::OpenProject(QString path) -> Result<> {
@@ -194,6 +195,7 @@ void smyth::ui::App::new_project() {
     lexurgy = std::make_unique<Lexurgy>();
     store.reset_all();
     settings->reset_dialog();
+    MainWindow()->set_window_path("");
 }
 
 auto smyth::ui::App::open() -> Result<> {
