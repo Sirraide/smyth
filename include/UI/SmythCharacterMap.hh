@@ -19,7 +19,19 @@ class SmythCharacterMap final : public QWidget {
     int square_width{40};
     int selected_idx{-1};
     char32_t last_codepoint{0x10'FFFF};
-    std::vector<QString> chars;
+
+    /// Cache the last query so that we can re-execute it when the font changes.
+    QString last_query;
+
+    /// All characters that the current font can display. We also
+    /// store a copy of all of them as a QString for rendering.
+    std::vector<char32_t> all_codepoints;
+    std::vector<QString> all_chars;
+
+    /// The characters that are currently being displayed. If empty,
+    /// display all_chars instead.
+    std::vector<char32_t> matched_codepoints;
+    std::vector<QString> matched_chars;
 
     struct Range {
         char32_t from; ///< 0 if no lower bound.
@@ -79,6 +91,10 @@ signals:
     void selected(char32_t);
 
 private:
+    /// Get whichever vector of chars/codepoints is currently being displayed.
+    auto DisplayedChars() const -> const std::vector<QString>&;
+    auto DisplayedCodepoints() const -> const std::vector<char32_t>&;
+
     /// Get the minimum height we need.
     auto MinHeight() const -> int;
 
@@ -87,6 +103,9 @@ private:
 
     /// Parse a query string.
     auto ParseQuery(QStringView query) -> Query;
+
+    /// Apply a query string to the character map.
+    void ProcessQuery(QStringView query);
 
     /// Update the characters to be drawn.
     void UpdateChars();

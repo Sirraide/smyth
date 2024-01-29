@@ -3,6 +3,14 @@
 #include <UI/MainWindow.hh>
 #include <UI/SmythCharacterMap.hh>
 
+auto smyth::ui::SmythCharacterMap::DisplayedChars() const -> const std::vector<QString>& {
+    return last_query.isEmpty() ? all_chars : matched_chars;
+}
+
+auto smyth::ui::SmythCharacterMap::DisplayedCodepoints() const -> const std::vector<char32_t>& {
+    return last_query.isEmpty() ? all_codepoints : matched_codepoints;
+}
+
 auto smyth::ui::SmythCharacterMap::MinHeight() const -> int {
     /// Add one to account for the bottom line of the grid.
     return Rows() * square_height + 1;
@@ -11,7 +19,7 @@ auto smyth::ui::SmythCharacterMap::MinHeight() const -> int {
 auto smyth::ui::SmythCharacterMap::Rows() const -> int {
     /// Ensure we always have at least one column.
     if (cols == 0) return 1;
-    return int(chars.size()) / cols + (int(chars.size()) % cols ? 1 : 0);
+    return int(DisplayedChars().size()) / cols + (int(DisplayedChars().size()) % cols ? 1 : 0);
 }
 
 /// <query>          ::= <codepoint> | <range> | <name> | <literals>
@@ -99,16 +107,44 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
     return Literal{query.toString()};
 }
 
+void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) {
+    using namespace utils;
+    matched_chars.clear();
+    matched_codepoints.clear();
+    visit(ParseQuery(query), Overloaded {
+        [](std::monostate){},
+        /// If this codepoint exists in the current font, display only it.
+        [&](Codepoint c){
+            if (rgs::binary_search(all_codepoints, c.value)) {
+                matched_codepoints = {c.value};
+                matched_chars = {QString::fromUcs4(&c.value, 1)};
+            }
+        },
+
+        [](Range r){ fmt::print("Got Range: (U+{:04X}, U+{:04X})\n", u32(r.from), u32(r.to)); },
+        [](const Name& n){ fmt::print("Got Name: {}\n", n.value.toStdString()); },
+        [](const Literal& l){ fmt::print("Got Literal: {}\n", l.value.toStdString()); },
+    });
+    update();
+}
+
 void smyth::ui::SmythCharacterMap::UpdateChars() {
     QFontMetrics m{font()};
-    chars.clear();
-    for (char32_t i = FirstPrintChar; i < last_codepoint; i++)
-        if (m.inFontUcs4(i))
-            chars.push_back(QString::fromUcs4(&i, 1));
+    all_chars.clear();
+    all_codepoints.clear();
+    for (char32_t i = FirstPrintChar; i < last_codepoint; i++) {
+        if (m.inFontUcs4(i)) {
+            all_codepoints.push_back(i);
+            all_chars.push_back(QString::fromUcs4(&i, 1));
+        }
+    }
 
     /// Determine the size of each square relative to the font size.
     square_height = std::max(m.height(), m.maxWidth()) + 10;
     UpdateSize();
+
+    /// Execute last query again.
+    ProcessQuery(last_query);
 }
 
 void smyth::ui::SmythCharacterMap::UpdateSize() {
@@ -129,9 +165,9 @@ void smyth::ui::SmythCharacterMap::UpdateSize() {
 void smyth::ui::SmythCharacterMap::mousePressEvent(QMouseEvent* event) {
     auto pos = mapFromGlobal(event->globalPosition());
     auto idx = int(pos.y() / square_height) * cols + int(pos.x() / square_width);
-    if (idx >= 0 and idx < int(chars.size())) {
+    if (idx >= 0 and idx < int(DisplayedCodepoints().size())) {
         selected_idx = idx;
-        emit selected(chars[usz(idx)].toUcs4().front());
+        emit selected(DisplayedCodepoints()[usz(idx)]);
         update();
     }
 }
@@ -146,6 +182,7 @@ void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
     /// Determine the area that we need to redraw.
     ///
     /// Take care not to draw more characters than we have.
+    const auto& chars = DisplayedChars();
     const int max_char = int(chars.size());
     const int max_rows = max_char / cols + (max_char % cols ? 1 : 0);
     const int row_begin = redraw.top() / square_height;
@@ -153,7 +190,7 @@ void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
     const int col_begin = redraw.left() / square_height;
 
     /// Draw grid.
-    QPen grid{QApplication::palette().accent().color()};
+    QPen grid{QApplication::palette().light().color()};
     painter.setPen(grid);
     for (int r = row_begin; r < row_end; ++r) {
         for (int c = col_begin; c < cols; ++c) {
@@ -202,14 +239,8 @@ void smyth::ui::SmythCharacterMap::resizeEvent(QResizeEvent* event) {
 }
 
 void smyth::ui::SmythCharacterMap::search(QString query) { // clang-format off
-    using namespace utils;
-    visit(ParseQuery(query), Overloaded {
-        [](std::monostate){},
-        [](Range r){ fmt::print("Got Range: (U+{:04X}, U+{:04X})\n", u32(r.from), u32(r.to)); },
-        [](Codepoint c){ fmt::print("Got Codepoint: U+{:04X}\n", u32(c.value)); },
-        [](const Name& n){ fmt::print("Got Name: {}\n", n.value.toStdString()); },
-        [](const Literal& l){ fmt::print("Got Literal: {}\n", l.value.toStdString()); },
-    });
+    ProcessQuery(query);
+    last_query = std::move(query);
 } // clang-format on
 
 void smyth::ui::SmythCharacterMap::setFont(const QFont& font) {
