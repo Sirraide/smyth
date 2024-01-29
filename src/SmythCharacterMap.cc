@@ -1,21 +1,22 @@
 #include <QApplication>
 #include <QPainter>
+#include <set>
 #include <UI/MainWindow.hh>
 #include <UI/SmythCharacterMap.hh>
 
 void smyth::ui::SmythCharacterMap::CollectChars(
     const QFontMetrics& m,
-    char32_t from,
-    char32_t to,
+    c32 from,
+    c32 to,
     std::vector<QString>& chars,
-    std::vector<char32_t>& codepoints
+    std::vector<c32>& codepoints
 ) {
     chars.clear();
     codepoints.clear();
-    for (char32_t i = from; i <= to; i++) {
+    for (c32 i = from; i <= to; i++) {
         if (m.inFontUcs4(i)) {
             codepoints.push_back(i);
-            chars.push_back(QString::fromUcs4(&i, 1));
+            chars.push_back(QString::fromUcs4(&i.value, 1));
         }
     }
 }
@@ -24,7 +25,7 @@ auto smyth::ui::SmythCharacterMap::DisplayedChars() const -> const std::vector<Q
     return last_query.isEmpty() ? all_chars : matched_chars;
 }
 
-auto smyth::ui::SmythCharacterMap::DisplayedCodepoints() const -> const std::vector<char32_t>& {
+auto smyth::ui::SmythCharacterMap::DisplayedCodepoints() const -> const std::vector<c32>& {
     return last_query.isEmpty() ? all_codepoints : matched_codepoints;
 }
 
@@ -101,14 +102,14 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
             auto second_str = res.captured(3);
 
             /// We only have a delimiter. Treat this as literal text.
-            char32_t first = first_str.isNull() ? 0 : first_str.toUInt(nullptr, 16);
-            char32_t second = second_str.isNull() ? 0 : second_str.toUInt(nullptr, 16);
+            c32 first = first_str.isNull() ? c32(0) : c32(first_str.toUInt(nullptr, 16));
+            c32 second = second_str.isNull() ? c32(0) : c32(second_str.toUInt(nullptr, 16));
             if (first == 0 and second == 0) return Literal{res.captured(2)};
 
             /// If we have a delimiter, then this is a range.
             if (not res.captured(2).isNull()) return Range{
                 first == 0 ? FirstPrintChar : std::max(FirstPrintChar, first),
-                second == 0 ? LastCodepoint : std::min(LastCodepoint, second)
+                second == 0 ? unicode::LastCodepoint : std::min<c32>(unicode::LastCodepoint, second)
             };
             Assert(first != 0, "Invalid codepoint");
             return Codepoint{first};
@@ -131,6 +132,24 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
     using namespace utils;
     matched_chars.clear();
     matched_codepoints.clear();
+
+    /// Unique characters and sort them. There is no reason to preserve
+    /// the order since, if the user wants to copy them, they can just
+    /// copy them from the search bar.
+    auto HandleLiteral = [&] (const QString& lit) {
+        std::set<c32> chars;
+        auto str = lit.toStdU32String();
+
+        for (auto& c : str)
+            if (rgs::binary_search(all_codepoints, c32(c)))
+                chars.insert(c);
+
+        for (auto c : chars) {
+            matched_codepoints.push_back(c);
+            matched_chars.push_back(QString::fromUcs4(&c.value, 1));
+        }
+    };
+
     visit(ParseQuery(query), Overloaded{
         [](std::monostate) {},
 
@@ -138,7 +157,7 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
         [&](Codepoint c) {
             if (rgs::binary_search(all_codepoints, c.value)) {
                 matched_codepoints = {c.value};
-                matched_chars = {QString::fromUcs4(&c.value, 1)};
+                matched_chars = {QString::fromUcs4(&c.value.value, 1)};
             }
         },
 
@@ -152,12 +171,33 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
             /// Do NOT use '!=' here as `last` may be < `it`!
             for (auto it = first; it < last; ++it) {
                 matched_codepoints.push_back(*it);
-                matched_chars.push_back(QString::fromUcs4(&*it, 1));
+                matched_chars.push_back(QString::fromUcs4(&it->value, 1));
             }
         },
 
-        [](const Name& n) { fmt::print("Got Name: {}\n", n.value.toStdString()); },
-        [](const Literal& l) { fmt::print("Got Literal: {}\n", l.value.toStdString()); },
+        /// Find characters whose name contains the given string.
+        /// TODO: Split by spaces and search for substrings instead.
+        [&](const Name& n) {
+            matched_codepoints = unicode::FindCharsByName(
+                n.value.toStdString(),
+                all_codepoints.front(),
+                all_codepoints.back(),
+                [&](c32 c) { return rgs::binary_search(all_codepoints, c); }
+            );
+
+            /// If we couldn’t find any characters, just treat is as a literal.
+            if (matched_codepoints.empty()) {
+                HandleLiteral(n.value);
+                return;
+            }
+
+            /// Otherwise, display the chars we found.
+            for (auto& c : matched_codepoints) {
+                matched_chars.push_back(QString::fromUcs4(&c.value, 1));
+            }
+        },
+
+        [&](const Literal& l) { HandleLiteral(l.value); },
     });
 
     /// Also update the size of the widget since we most likely have
@@ -168,7 +208,7 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
 
 void smyth::ui::SmythCharacterMap::UpdateChars() {
     QFontMetrics m{font()};
-    CollectChars(m, FirstPrintChar, LastCodepoint, all_chars, all_codepoints);
+    CollectChars(m, FirstPrintChar, unicode::LastCodepoint, all_chars, all_codepoints);
 
     /// Determine the size of each square relative to the font size.
     square_height = std::max(m.height(), m.maxWidth()) + 10;

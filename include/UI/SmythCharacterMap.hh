@@ -6,14 +6,14 @@
 #include <Smyth/Utils.hh>
 #include <UI/App.hh>
 #include <UI/Common.hh>
+#include <Smyth/Unicode.hh>
 
 namespace smyth::ui {
 class SmythCharacterMap final : public QWidget {
     Q_OBJECT
 
     /// First printable character.
-    static constexpr char32_t FirstPrintChar = ' ';
-    static constexpr char32_t LastCodepoint = 0x10'FFFF;
+    static constexpr c32 FirstPrintChar = U' ';
 
     int cols{20};
     int square_height{40};
@@ -25,21 +25,21 @@ class SmythCharacterMap final : public QWidget {
 
     /// All characters that the current font can display. We also
     /// store a copy of all of them as a QString for rendering.
-    std::vector<char32_t> all_codepoints;
+    std::vector<c32> all_codepoints;
     std::vector<QString> all_chars;
 
     /// The characters that are currently being displayed. If empty,
     /// display all_chars instead.
-    std::vector<char32_t> matched_codepoints;
+    std::vector<c32> matched_codepoints;
     std::vector<QString> matched_chars;
 
     struct Range {
-        char32_t from; ///< 0 if no lower bound.
-        char32_t to;   ///< 0 if no upper bound.
+        c32 from; ///< 0 if no lower bound.
+        c32 to;   ///< 0 if no upper bound.
     };
 
     struct Codepoint {
-        char32_t value;
+        c32 value;
     };
 
     struct Name {
@@ -88,21 +88,21 @@ public slots:
 
 signals:
     /// A character was selected.
-    void selected(char32_t);
+    void selected(c32);
 
 private:
     /// Collect all characters in a range that a font actually supports.
     void CollectChars(
         const QFontMetrics& m,
-        char32_t from,
-        char32_t to,
+        c32 from,
+        c32 to,
         std::vector<QString>& chars,
-        std::vector<char32_t>& codepoints
+        std::vector<c32>& codepoints
     );
 
     /// Get whichever vector of chars/codepoints is currently being displayed.
     auto DisplayedChars() const -> const std::vector<QString>&;
-    auto DisplayedCodepoints() const -> const std::vector<char32_t>&;
+    auto DisplayedCodepoints() const -> const std::vector<c32>&;
 
     /// Get the minimum height we need.
     auto MinHeight() const -> int;

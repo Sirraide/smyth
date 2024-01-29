@@ -188,6 +188,37 @@ auto smyth::unicode::c32::to_upper() const -> c32 {
     return u_toupper(UChar32(value));
 }
 
+auto smyth::unicode::FindCharsByName(
+    std::string_view query,
+    c32 from,
+    c32 to,
+    std::move_only_function<bool(c32)> filter
+) -> std::vector<c32> {
+    UErrorCode ec{U_ZERO_ERROR};
+    std::vector<c32> chars;
+    struct Ctx {
+        std::vector<c32>& chars; ///< Not the actual vector to support NRVO.
+        std::string_view query;
+        decltype(filter) filter;
+    } ctx{chars, query, std::move(filter)};
+
+    auto Enum = []( // clang-format off
+        void* context,
+        UChar32 code,
+        UCharNameChoice,
+        const char* name,
+        int32_t length
+    ) -> UBool {
+        auto& ctx = *static_cast<Ctx*>(context);
+        if (std::string_view{name, usz(length)}.contains(ctx.query) and ctx.filter(c32(code)))
+            ctx.chars.push_back(c32(code));
+        return true;
+    }; // clang-format on
+
+    u_enumCharNames(UChar32(from), UChar32(to), Enum, &ctx, U_UNICODE_CHAR_NAME, &ec);
+    return chars;
+}
+
 auto smyth::unicode::Normalise(NormalisationForm form, UnicodeString str) -> Result<UnicodeString> {
     if (form == NormalisationForm::None) return str;
     auto GetTransliterator = [](const char* spec) -> Result<Transliterator*> {
