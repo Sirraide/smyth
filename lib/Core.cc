@@ -6,6 +6,7 @@
 #include <Smyth/Utils.hh>
 #include <thread>
 #include <unicode/translit.h>
+#include <unicode/uchar.h>
 
 /// ====================================================================
 ///  Error Handling
@@ -160,11 +161,38 @@ auto smyth::PersistentStore::save_all(DBRef db) -> Result<> {
 /// ====================================================================
 ///  Unicode
 /// ====================================================================
-auto smyth::Normalise(NormalisationForm form, icu::UnicodeString str) -> Result<icu::UnicodeString> {
+auto smyth::unicode::c32::category() const -> UCharCategory {
+    return UCharCategory(u_charType(UChar32(value)));
+}
+
+auto smyth::unicode::c32::name() const -> Result<std::string> {
+    UErrorCode ec{U_ZERO_ERROR};
+    std::array<char, 1'024> char_name{};
+    auto len = u_charName(UChar32(value), U_UNICODE_CHAR_NAME, char_name.data(), i32(char_name.size()), &ec);
+    if (U_FAILURE(ec)) return Err("Failed to get name for codepoint: {}", u_errorName(ec));
+    return std::string{char_name.data(), usz(len)};
+}
+
+auto smyth::unicode::c32::swap_case() const -> c32 {
+    auto cat = category();
+    if (cat == UCharCategory::U_UPPERCASE_LETTER) return to_lower();
+    if (cat == UCharCategory::U_LOWERCASE_LETTER) return to_upper();
+    return *this;
+}
+
+auto smyth::unicode::c32::to_lower() const -> c32 {
+    return u_tolower(UChar32(value));
+}
+
+auto smyth::unicode::c32::to_upper() const -> c32 {
+    return u_toupper(UChar32(value));
+}
+
+auto smyth::unicode::Normalise(NormalisationForm form, UnicodeString str) -> Result<UnicodeString> {
     if (form == NormalisationForm::None) return str;
-    auto GetTransliterator = [](const char* spec) -> Result<icu::Transliterator*> {
+    auto GetTransliterator = [](const char* spec) -> Result<Transliterator*> {
         UErrorCode ec{U_ZERO_ERROR};
-        auto norm = icu::Transliterator::createInstance(
+        auto norm = Transliterator::createInstance(
             spec,
             UTRANS_FORWARD,
             ec

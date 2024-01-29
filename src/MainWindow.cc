@@ -62,6 +62,9 @@ smyth::ui::MainWindow::MainWindow()
     connect(save, &QShortcut::activated, this, &MainWindow::save_project);
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
 
+    /// Initialise other signals.
+    connect(ui->char_map, &SmythCharacterMap::selected, this, &MainWindow::char_map_update_selection);
+
     /// Call debug() when F12 is pressed.
     SMYTH_DEBUG(
         auto debug = new QShortcut(QKeySequence(Qt::Key_F12), this);
@@ -73,13 +76,13 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
     auto Norm = [](QComboBox* cbox, QString plain) -> Result<QString> {
         const auto norm = [cbox] {
             switch (cbox->currentIndex()) {
-                default: return NormalisationForm::None;
-                case 1: return NormalisationForm::NFC;
-                case 2: return NormalisationForm::NFD;
+                default: return unicode::NormalisationForm::None;
+                case 1: return unicode::NormalisationForm::NFC;
+                case 2: return unicode::NormalisationForm::NFD;
             }
         }();
 
-        auto normed = Try(Normalise(
+        auto normed = Try(unicode::Normalise(
             norm,
             icu::UnicodeString(reinterpret_cast<char16_t*>(plain.data()), i32(plain.size()))
         ));
@@ -181,6 +184,32 @@ void smyth::ui::MainWindow::apply_sound_changes() {
     HandleErrors(ApplySoundChanges());
 }
 
+void smyth::ui::MainWindow::char_map_update_selection(char32_t codepoint) {
+    static constexpr auto LC = UCharCategory::U_LOWERCASE_LETTER;
+    static constexpr auto UC = UCharCategory::U_UPPERCASE_LETTER;
+    static constexpr std::string_view templ = R"html(
+        <h2>U+{:04X}</h2>
+        <h4>{}</h4>
+        {}
+    )html";
+    c32 c = codepoint;
+
+    auto cat = c.category();
+    std::string swap_case =
+          cat == LC ? fmt::format("Uppercase: U+{:04X}", c.to_upper())
+        : cat == UC ? fmt::format("Lowercase: U+{:04X}", c.to_lower())
+                    : "";
+
+    auto html = fmt::format(
+        templ,
+        u32(c),
+        c.name().value_or("<error retrieving char name>"),
+        swap_case.empty() ? "" : fmt::format("<p><strong>{}</strong></p>", swap_case)
+    );
+
+    ui->char_map_details_panel->setHtml(QString::fromStdString(html));
+}
+
 void smyth::ui::MainWindow::closeEvent(QCloseEvent* event) {
     App::The().quit(event);
 }
@@ -234,6 +263,7 @@ void smyth::ui::MainWindow::persist() {
     ui->input->persist(app, "main.input");
     ui->changes->persist(app, "main.changes");
     ui->output->persist(app, "main.output");
+    ui->char_map_details_panel->persist(app, "charmap.details", false);
     app.persist<&QWidget::font, &QWidget::setFont>("charmap.font", ui->char_map);
     PersistSplitter(app, "main.sca.splitter.sizes", ui->sca_text_edits);
     PersistSplitter(app, "charmap.splitter.sizes", ui->char_map_splitter);

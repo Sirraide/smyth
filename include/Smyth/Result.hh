@@ -91,6 +91,19 @@ public:
     /// Get the error. Moved to simplify returning the error.
     [[nodiscard]] auto err() -> Error&& { return std::move(std::get<Error>(data)); }
 
+    /// Get the value or a default value.
+    [[nodiscard]] auto value_or(ValueType default_value) && -> ValueType {
+        if (is_err()) return default_value;
+        return std::move(value());
+    }
+
+    /// Get the value or a default value.
+    template <typename Function>
+    [[nodiscard]] auto or_else(Function&& default_value) && -> ValueType {
+        if (is_err()) return std::invoke(std::forward<Function>(default_value));
+        return std::move(value());
+    }
+
     /// Check if this has a value.
     explicit operator bool() { return is_value(); }
 

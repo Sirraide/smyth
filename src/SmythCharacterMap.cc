@@ -17,9 +17,9 @@ auto smyth::ui::SmythCharacterMap::MinHeight() const -> int {
 void smyth::ui::SmythCharacterMap::UpdateChars() {
     QFontMetrics m{font()};
     chars.clear();
-    for (char16_t i = FirstPrintChar; i < last_codepoint; i++)
-        if (m.inFont(i))
-            chars.push_back(i);
+    for (char32_t i = FirstPrintChar; i < last_codepoint; i++)
+        if (m.inFontUcs4(i))
+            chars.push_back(QString::fromUcs4(&i, 1));
 
     /// Determine the size of each square relative to the font size.
     square_height = std::max(m.height(), m.maxWidth()) + 10;
@@ -45,8 +45,8 @@ void smyth::ui::SmythCharacterMap::mousePressEvent(QMouseEvent* event) {
     auto pos = mapFromGlobal(event->globalPosition());
     auto idx = int(pos.y() / square_height) * cols + int(pos.x() / square_width);
     if (idx >= 0 and idx < int(chars.size())) {
-        selected_codepoint = idx;
-        emit selected(chars[usz(idx)]);
+        selected_idx = idx;
+        emit selected(chars[usz(idx)].toUcs4().front());
         update();
     }
 }
@@ -79,7 +79,7 @@ void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
             painter.drawRect(x, y, square_width, square_height);
 
             /// Draw a background if this is the selected character.
-            if (int(r * cols + c) == selected_codepoint) {
+            if (int(r * cols + c) == selected_idx) {
                 QBrush brush{QApplication::palette().accent().color()};
                 painter.fillRect(x + 1, y + 1, square_width - 1, square_height - 1, brush);
             }
@@ -98,14 +98,14 @@ draw_chars:
             if (k_idx >= chars.size()) return;
 
             /// Draw the character.
-            QChar k{chars[k_idx]};
+            auto& s = chars[k_idx];
             int x = c * square_width;
             int y = r * square_height;
             painter.setClipRect(x, y, square_width, square_height);
             painter.drawText(
-                x + (square_width / 2) - m.horizontalAdvance(k) / 2,
+                x + (square_width / 2) - m.horizontalAdvance(s) / 2,
                 y + square_height - (square_height - default_char_height) / 2 - m.descent(),
-                k
+                s
             );
         }
     }

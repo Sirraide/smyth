@@ -12,14 +12,25 @@ class SmythCharacterMap final : public QWidget {
     Q_OBJECT
 
     /// First printable character.
-    static constexpr char16_t FirstPrintChar = ' ';
+    static constexpr char32_t FirstPrintChar = ' ';
 
     int cols{20};
     int square_height{40};
     int square_width{40};
-    int last_codepoint{1'000};
-    int selected_codepoint{-1};
-    std::vector<QChar> chars;
+    int selected_idx{-1};
+    char32_t last_codepoint{0x10'FFFF};
+    std::vector<QString> chars;
+
+    /// TODO: Search bar:
+    ///
+    /// <query>     ::= <codepoint> | <range> | <name> | <literals>
+    /// <codepoint> ::= [ "U" | "u" ] [ "+" ] <hex-digits>
+    /// <name>      ::= sequence starting with any ASCII letter other than "U" or "u", or with any two ASCII letters.
+    /// <literals>  ::= sequence containing any other character
+    /// <range>     ::= [ <codepoint> ] <to> [ <codepoint> ]
+    /// <to>        ::= "-" | "–" | ":"
+    ///
+    /// Leading and trailing whitespace is ignored for any rule except <literals>.
 
 public:
     SMYTH_IMMOVABLE(SmythCharacterMap);
@@ -54,7 +65,7 @@ public:
 
 signals:
     /// A character was selected.
-    void selected(QChar);
+    void selected(char32_t);
 
 private:
     /// Get the minimum height we need.

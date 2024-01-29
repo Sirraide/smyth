@@ -60,6 +60,7 @@ public:
 
 public slots:
     void apply_sound_changes();
+    void char_map_update_selection(char32_t c);
     void new_project();
     void open_project();
     void open_settings();
