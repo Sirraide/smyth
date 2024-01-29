@@ -13,12 +13,12 @@ class SmythCharacterMap final : public QWidget {
 
     /// First printable character.
     static constexpr char32_t FirstPrintChar = ' ';
+    static constexpr char32_t LastCodepoint = 0x10'FFFF;
 
     int cols{20};
     int square_height{40};
     int square_width{40};
     int selected_idx{-1};
-    char32_t last_codepoint{0x10'FFFF};
 
     /// Cache the last query so that we can re-execute it when the font changes.
     QString last_query;
@@ -91,6 +91,15 @@ signals:
     void selected(char32_t);
 
 private:
+    /// Collect all characters in a range that a font actually supports.
+    void CollectChars(
+        const QFontMetrics& m,
+        char32_t from,
+        char32_t to,
+        std::vector<QString>& chars,
+        std::vector<char32_t>& codepoints
+    );
+
     /// Get whichever vector of chars/codepoints is currently being displayed.
     auto DisplayedChars() const -> const std::vector<QString>&;
     auto DisplayedCodepoints() const -> const std::vector<char32_t>&;

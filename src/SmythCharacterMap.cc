@@ -3,6 +3,23 @@
 #include <UI/MainWindow.hh>
 #include <UI/SmythCharacterMap.hh>
 
+void smyth::ui::SmythCharacterMap::CollectChars(
+    const QFontMetrics& m,
+    char32_t from,
+    char32_t to,
+    std::vector<QString>& chars,
+    std::vector<char32_t>& codepoints
+) {
+    chars.clear();
+    codepoints.clear();
+    for (char32_t i = from; i <= to; i++) {
+        if (m.inFontUcs4(i)) {
+            codepoints.push_back(i);
+            chars.push_back(QString::fromUcs4(&i, 1));
+        }
+    }
+}
+
 auto smyth::ui::SmythCharacterMap::DisplayedChars() const -> const std::vector<QString>& {
     return last_query.isEmpty() ? all_chars : matched_chars;
 }
@@ -89,7 +106,10 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
             if (first == 0 and second == 0) return Literal{res.captured(2)};
 
             /// If we have a delimiter, then this is a range.
-            if (not res.captured(2).isNull()) return Range{first, second};
+            if (not res.captured(2).isNull()) return Range{
+                first == 0 ? FirstPrintChar : std::max(FirstPrintChar, first),
+                second == 0 ? LastCodepoint : std::min(LastCodepoint, second)
+            };
             Assert(first != 0, "Invalid codepoint");
             return Codepoint{first};
         }
@@ -107,37 +127,48 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
     return Literal{query.toString()};
 }
 
-void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) {
+void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-format off
     using namespace utils;
     matched_chars.clear();
     matched_codepoints.clear();
-    visit(ParseQuery(query), Overloaded {
-        [](std::monostate){},
+    visit(ParseQuery(query), Overloaded{
+        [](std::monostate) {},
+
         /// If this codepoint exists in the current font, display only it.
-        [&](Codepoint c){
+        [&](Codepoint c) {
             if (rgs::binary_search(all_codepoints, c.value)) {
                 matched_codepoints = {c.value};
                 matched_chars = {QString::fromUcs4(&c.value, 1)};
             }
         },
 
-        [](Range r){ fmt::print("Got Range: (U+{:04X}, U+{:04X})\n", u32(r.from), u32(r.to)); },
-        [](const Name& n){ fmt::print("Got Name: {}\n", n.value.toStdString()); },
-        [](const Literal& l){ fmt::print("Got Literal: {}\n", l.value.toStdString()); },
+        /// Display all characters in this range that exist in the current font.
+        [&](Range r) {
+            auto first = rgs::lower_bound(all_codepoints, r.from);
+            auto last = rgs::upper_bound(all_codepoints, r.to);
+            if (first == last) return;
+            if (first == all_codepoints.end()) first = all_codepoints.begin();
+
+            /// Do NOT use '!=' here as `last` may be < `it`!
+            for (auto it = first; it < last; ++it) {
+                matched_codepoints.push_back(*it);
+                matched_chars.push_back(QString::fromUcs4(&*it, 1));
+            }
+        },
+
+        [](const Name& n) { fmt::print("Got Name: {}\n", n.value.toStdString()); },
+        [](const Literal& l) { fmt::print("Got Literal: {}\n", l.value.toStdString()); },
     });
+
+    /// Also update the size of the widget since we most likely have
+    /// a different number of characters that we need to display.
+    UpdateSize();
     update();
-}
+} // clang-format on
 
 void smyth::ui::SmythCharacterMap::UpdateChars() {
     QFontMetrics m{font()};
-    all_chars.clear();
-    all_codepoints.clear();
-    for (char32_t i = FirstPrintChar; i < last_codepoint; i++) {
-        if (m.inFontUcs4(i)) {
-            all_codepoints.push_back(i);
-            all_chars.push_back(QString::fromUcs4(&i, 1));
-        }
-    }
+    CollectChars(m, FirstPrintChar, LastCodepoint, all_chars, all_codepoints);
 
     /// Determine the size of each square relative to the font size.
     square_height = std::max(m.height(), m.maxWidth()) + 10;
@@ -238,10 +269,10 @@ void smyth::ui::SmythCharacterMap::resizeEvent(QResizeEvent* event) {
     UpdateSize();
 }
 
-void smyth::ui::SmythCharacterMap::search(QString query) { // clang-format off
+void smyth::ui::SmythCharacterMap::search(QString query) {
     ProcessQuery(query);
     last_query = std::move(query);
-} // clang-format on
+}
 
 void smyth::ui::SmythCharacterMap::setFont(const QFont& font) {
     QFont f(font);
