@@ -103,7 +103,24 @@ public:
     DeferImpl(Callable cb) : cb(cb) {}
     ~DeferImpl() { cb(); }
 };
+
 } // namespace detail
+
+namespace utils {
+template <typename ...Funcs>
+struct Overloaded : Funcs... {
+    using Funcs::operator()...;
+};
+
+template <typename ...Funcs>
+Overloaded(Funcs...) -> Overloaded<Funcs...>;
+
+/// std::visit, but with a better order of arguments.
+template <typename Variant, typename Visitor>
+constexpr decltype(auto) visit(Visitor&& visitor, Variant&& variant) {
+    return std::visit(std::forward<Variant>(variant), std::forward<Visitor>(visitor));
+}
+}
 
 using ErrorMessageHandler = void(std::string, ErrorMessageType type);
 

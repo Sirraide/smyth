@@ -3,15 +3,100 @@
 #include <UI/MainWindow.hh>
 #include <UI/SmythCharacterMap.hh>
 
+auto smyth::ui::SmythCharacterMap::MinHeight() const -> int {
+    /// Add one to account for the bottom line of the grid.
+    return Rows() * square_height + 1;
+}
+
 auto smyth::ui::SmythCharacterMap::Rows() const -> int {
     /// Ensure we always have at least one column.
     if (cols == 0) return 1;
     return int(chars.size()) / cols + (int(chars.size()) % cols ? 1 : 0);
 }
 
-auto smyth::ui::SmythCharacterMap::MinHeight() const -> int {
-    /// Add one to account for the bottom line of the grid.
-    return Rows() * square_height + 1;
+/// <query>          ::= <codepoint> | <range> | <name> | <literals>
+///
+/// <codepoint>      ::= [ "U" | "u" ] [ "+" ] <hex-digits>
+/// <literals>       ::= sequence containing any other character
+/// <range>          ::= [ <codepoint> ] <to> [ <codepoint> ]
+/// <name>           ::= <alnum-ws> <alnum-ws> { <alnum-ws> }
+///                    | <q-sequence>
+///
+/// <alnum-ws>       ::= any alphanumeric ASCII character or whitespace
+/// <ascii>          ::= any ASCII character
+/// <to>             ::= "-" | ":" | ".." | "..."
+/// <q-sequence>     ::= "'" { <any-character> } "'"
+///                    | '"' { <any-character> } '"'
+///                    | "`" { <any-character> } "`"
+///
+/// Leading and trailing whitespace is ignored for any rule except <literals>.
+auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
+    static const QRegularExpression codepoint_or_range{// clang-format off
+        "^\\s*"
+        "(?:"
+            "(?:u|U)?"
+            "\\+?"
+            "([a-fA-F0-9]+)"
+        ")?"
+        "(?:"
+            "([:-]|\\.\\.\\.?)"
+            "(?:"
+                "(?:u|U)?"
+                "\\+?"
+                "([a-fA-F0-9]+)"
+            ")?"
+        ")?"
+        "\\s*$"
+    }; // clang-format on
+
+    static const QRegularExpression quoted_sequence{
+        "^\\s*(?:['\"`])(.+)\\1\\s*$"
+    };
+
+    static const QRegularExpression name{
+        "^\\s*([a-zA-Z0-9 ]+)\\s*$"
+    };
+
+    /// Might as well get this out of the way early.
+    if (query.isEmpty()) return std::monostate{};
+
+    /// Codepoint or range.
+    if (
+        query.startsWith(u'u') or
+        query.startsWith(u'U') or
+        query.startsWith(u'+') or
+        query.startsWith(u'-') or
+        query.startsWith(u':') or
+        query.startsWith(u'.')
+    ) {
+        auto res = codepoint_or_range.match(query);
+        Assert(res.isValid(), "Invalid regular expression: {}", codepoint_or_range.pattern());
+        if (res.hasMatch()) {
+            auto first_str = res.captured(1);
+            auto second_str = res.captured(3);
+
+            /// We only have a delimiter. Treat this as literal text.
+            char32_t first = first_str.isNull() ? 0 : first_str.toUInt(nullptr, 16);
+            char32_t second = second_str.isNull() ? 0 : second_str.toUInt(nullptr, 16);
+            if (first == 0 and second == 0) return Literal{res.captured(2)};
+
+            /// If we have a delimiter, then this is a range.
+            if (not res.captured(2).isNull()) return Range{first, second};
+            Assert(first != 0, "Invalid codepoint");
+            return Codepoint{first};
+        }
+    }
+
+    /// Quoted sequence.
+    if (auto res = quoted_sequence.match(query); res.hasMatch())
+        return Literal{res.captured(2)};
+
+    /// Name.
+    if (auto res = name.match(query); res.hasMatch())
+        return Name{res.captured(1)};
+
+    /// Literal.
+    return Literal{query.toString()};
 }
 
 void smyth::ui::SmythCharacterMap::UpdateChars() {
@@ -116,6 +201,17 @@ void smyth::ui::SmythCharacterMap::resizeEvent(QResizeEvent* event) {
     UpdateSize();
 }
 
+void smyth::ui::SmythCharacterMap::search(QString query) { // clang-format off
+    using namespace utils;
+    visit(ParseQuery(query), Overloaded {
+        [](std::monostate){},
+        [](Range r){ fmt::print("Got Range: (U+{:04X}, U+{:04X})\n", u32(r.from), u32(r.to)); },
+        [](Codepoint c){ fmt::print("Got Codepoint: U+{:04X}\n", u32(c.value)); },
+        [](const Name& n){ fmt::print("Got Name: {}\n", n.value.toStdString()); },
+        [](const Literal& l){ fmt::print("Got Literal: {}\n", l.value.toStdString()); },
+    });
+} // clang-format on
+
 void smyth::ui::SmythCharacterMap::setFont(const QFont& font) {
     QFont f(font);
     f.setStyleStrategy(QFont::NoFontMerging);
@@ -125,6 +221,6 @@ void smyth::ui::SmythCharacterMap::setFont(const QFont& font) {
 
 auto smyth::ui::SmythCharacterMap::sizeHint() const -> QSize {
     /// Add one to account for the right line of the grid.
-    QSize s {parentWidget()->width(), MinHeight()};
+    QSize s{parentWidget()->width(), MinHeight()};
     return s;
 }

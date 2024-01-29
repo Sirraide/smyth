@@ -21,16 +21,24 @@ class SmythCharacterMap final : public QWidget {
     char32_t last_codepoint{0x10'FFFF};
     std::vector<QString> chars;
 
-    /// TODO: Search bar:
-    ///
-    /// <query>     ::= <codepoint> | <range> | <name> | <literals>
-    /// <codepoint> ::= [ "U" | "u" ] [ "+" ] <hex-digits>
-    /// <name>      ::= sequence starting with any ASCII letter other than "U" or "u", or with any two ASCII letters.
-    /// <literals>  ::= sequence containing any other character
-    /// <range>     ::= [ <codepoint> ] <to> [ <codepoint> ]
-    /// <to>        ::= "-" | "–" | ":"
-    ///
-    /// Leading and trailing whitespace is ignored for any rule except <literals>.
+    struct Range {
+        char32_t from; ///< 0 if no lower bound.
+        char32_t to;   ///< 0 if no upper bound.
+    };
+
+    struct Codepoint {
+        char32_t value;
+    };
+
+    struct Name {
+        QString value;
+    };
+
+    struct Literal {
+        QString value;
+    };
+
+    using Query = std::variant<Range, Codepoint, Name, Literal, std::monostate>;
 
 public:
     SMYTH_IMMOVABLE(SmythCharacterMap);
@@ -63,6 +71,9 @@ public:
         QWidget::wheelEvent(event);
     }
 
+public slots:
+    void search(QString query);
+
 signals:
     /// A character was selected.
     void selected(char32_t);
@@ -73,6 +84,9 @@ private:
 
     /// Get the number of rows we need.
     auto Rows() const -> int;
+
+    /// Parse a query string.
+    auto ParseQuery(QStringView query) -> Query;
 
     /// Update the characters to be drawn.
     void UpdateChars();
