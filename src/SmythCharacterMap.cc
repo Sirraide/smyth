@@ -76,7 +76,7 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
     }; // clang-format on
 
     static const QRegularExpression quoted_sequence{
-        "^\\s*(?:['\"`])(.+)\\1\\s*$"
+        "^\\s*(['\"`])(.+)\\1\\s*$"
     };
 
     static const QRegularExpression name{
