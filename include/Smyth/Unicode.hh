@@ -55,14 +55,13 @@ struct c32 {
 /// Highest valid unicode codepoint.
 static constexpr c32 LastCodepoint = 0x10'FFFF;
 
-/// Find all characters whose name contains the given string.
+/// Find all characters whose name contains one of the given strings.
 ///
 /// If the query is empty, the result is unspecified.
 [[nodiscard]] auto FindCharsByName(
-    std::string_view query,
+    std::move_only_function<bool(c32, std::string_view)> filter,
     c32 from = 0,
-    c32 to = LastCodepoint,
-    std::move_only_function<bool(c32)> filter = [](c32) { return true; }
+    c32 to = LastCodepoint
 ) -> std::vector<c32>;
 
 /// Convert a string to a normalised form.

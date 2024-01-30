@@ -189,18 +189,16 @@ auto smyth::unicode::c32::to_upper() const -> c32 {
 }
 
 auto smyth::unicode::FindCharsByName(
-    std::string_view query,
+    std::move_only_function<bool(c32, std::string_view)> filter,
     c32 from,
-    c32 to,
-    std::move_only_function<bool(c32)> filter
+    c32 to
 ) -> std::vector<c32> {
     UErrorCode ec{U_ZERO_ERROR};
     std::vector<c32> chars;
     struct Ctx {
         std::vector<c32>& chars; ///< Not the actual vector to support NRVO.
-        std::string_view query;
         decltype(filter) filter;
-    } ctx{chars, query, std::move(filter)};
+    } ctx{chars, std::move(filter)};
 
     auto Enum = []( // clang-format off
         void* context,
@@ -210,7 +208,7 @@ auto smyth::unicode::FindCharsByName(
         int32_t length
     ) -> UBool {
         auto& ctx = *static_cast<Ctx*>(context);
-        if (std::string_view{name, usz(length)}.contains(ctx.query) and ctx.filter(c32(code)))
+        if (ctx.filter(c32(code), std::string_view{name, usz(length)}))
             ctx.chars.push_back(c32(code));
         return true;
     }; // clang-format on

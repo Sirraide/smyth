@@ -183,15 +183,18 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
             }
         },
 
-        /// Find characters whose name contains the given string.
-        /// TODO: Split by spaces and search for substrings instead.
+        /// Find characters whose name contains the given string(s).
         [&](const Name& n) {
-            matched_codepoints = unicode::FindCharsByName(
-                n.value.toStdString(),
-                all_codepoints.front(),
-                all_codepoints.back(),
-                [&](c32 c) { return rgs::binary_search(all_codepoints, c); }
-            );
+            auto s = n.value.toStdString();
+            auto view = s | vws::split(' ') | vws::filter([](auto&& r) { return rgs::distance(r) != 0; });
+            for (auto c : all_codepoints) {
+                auto name = c.name();
+                if (not name) continue;
+                if (rgs::all_of(view, [&](auto&& r) { return name->contains(std::string_view{r}); })) {
+                    matched_codepoints.push_back(c);
+                    matched_chars.push_back(QString::fromUcs4(&c.value, 1));
+                }
+            }
 
             /// If we couldn’t find any characters, just treat is as a literal.
             if (matched_codepoints.empty()) {
