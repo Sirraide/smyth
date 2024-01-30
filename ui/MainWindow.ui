@@ -579,7 +579,11 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
              <number>0</number>
             </property>
             <item>
-             <widget class="QLineEdit" name="char_map_search_bar"/>
+             <widget class="QLineEdit" name="char_map_search_bar">
+              <property name="placeholderText">
+               <string>Search... (e.g. U1A3F, U40..U50, U40.., LATIN, &quot;abcd&quot;; double-click below to copy)</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QScrollArea" name="scrollArea">

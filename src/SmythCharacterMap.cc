@@ -1,8 +1,16 @@
 #include <QApplication>
+#include <QClipboard>
 #include <QPainter>
 #include <set>
 #include <UI/MainWindow.hh>
 #include <UI/SmythCharacterMap.hh>
+
+auto smyth::ui::SmythCharacterMap::ClickToIndex(QMouseEvent* event) -> std::optional<int> {
+    auto pos = mapFromGlobal(event->globalPosition());
+    auto idx = int(pos.y() / square_height) * cols + int(pos.x() / square_width);
+    if (idx >= 0 and idx < int(DisplayedCodepoints().size())) return idx;
+    return std::nullopt;
+}
 
 void smyth::ui::SmythCharacterMap::CollectChars(
     const QFontMetrics& m,
@@ -233,12 +241,16 @@ void smyth::ui::SmythCharacterMap::UpdateSize() {
     setMinimumWidth(square_width);
 }
 
+void smyth::ui::SmythCharacterMap::mouseDoubleClickEvent(QMouseEvent* event) {
+    if (auto idx = ClickToIndex(event)) {
+        QApplication::clipboard()->setText(DisplayedChars()[usz(*idx)]);
+    }
+}
+
 void smyth::ui::SmythCharacterMap::mousePressEvent(QMouseEvent* event) {
-    auto pos = mapFromGlobal(event->globalPosition());
-    auto idx = int(pos.y() / square_height) * cols + int(pos.x() / square_width);
-    if (idx >= 0 and idx < int(DisplayedCodepoints().size())) {
-        selected_idx = idx;
-        emit selected(DisplayedCodepoints()[usz(idx)]);
+    if (auto idx = ClickToIndex(event)) {
+        selected_idx = *idx;
+        emit selected(DisplayedCodepoints()[usz(*idx)]);
         update();
     }
 }

@@ -62,6 +62,9 @@ public:
         QWidget::keyPressEvent(event);
     }
 
+    /// Copy a character to the clipboard.
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
+
     /// Handle selecting a character.
     void mousePressEvent(QMouseEvent* event) override;
 
@@ -91,6 +94,9 @@ signals:
     void selected(c32);
 
 private:
+    /// Get a character index from a click.
+    auto ClickToIndex(QMouseEvent* event) -> std::optional<int>;
+
     /// Collect all characters in a range that a font actually supports.
     void CollectChars(
         const QFontMetrics& m,
