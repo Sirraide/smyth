@@ -185,7 +185,7 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
 
         /// Find characters whose name contains the given string(s).
         [&](const Name& n) {
-            auto s = n.value.toStdString();
+            auto s = n.value.toUpper().toStdString();
             auto view = s | vws::split(' ') | vws::filter([](auto&& r) { return rgs::distance(r) != 0; });
             for (auto c : all_codepoints) {
                 auto name = c.name();
