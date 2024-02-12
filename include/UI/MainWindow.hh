@@ -11,8 +11,11 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+
 namespace smyth::ui {
 class SettingsDialog;
+class VFSTreeModel;
+
 class MainWindow final : public QMainWindow {
     Q_OBJECT
 
@@ -20,6 +23,15 @@ class MainWindow final : public QMainWindow {
 
     /// Model for character select table.
     std::unique_ptr<QStringListModel> character_select_model;
+
+    /// Model for VFS tree.
+    VFSTreeModel* const vfs_tree_model;
+
+    /// Popup menu for VFS tree.
+    QMenu* const vfs_context_menu;
+
+    /// Current position of the vfs context menu.
+    QPoint vfs_context_menu_pos;
 
     /// App is the main controller of the program and needs to call protected
     /// functions sometimes.
@@ -66,6 +78,8 @@ public slots:
     void open_settings();
     void preview_changes_after_eval();
     void save_project();
+    void show_vfs_context_menu(QPoint pos);
+    void vfs_new_file();
 
 private:
     auto ApplySoundChanges() -> Result<>;

@@ -72,6 +72,14 @@ public:
         else data = std::move(other.value());
     }
 
+    /// A Result<void> can be constructed from any other result.
+    template <typename T, typename U>
+    requires (std::is_void_v<Type>)
+    Result(Result<T, U>&& other) {
+        if (other.is_err()) data = std::move(other.err());
+        else data = std::monostate{};
+    }
+
     /// Check if the result holds a error.
     bool is_err() { return std::holds_alternative<Error>(data); }
 
@@ -101,6 +109,12 @@ public:
     template <typename Function>
     [[nodiscard]] auto or_else(Function&& default_value) && -> ValueType {
         if (is_err()) return std::invoke(std::forward<Function>(default_value));
+        return std::move(value());
+    }
+
+    /// Assert that this is a value.
+    auto unwrap() && -> ValueType {
+        if (is_err()) Fatal("unwrap() called on error result: {}", err().message);
         return std::move(value());
     }
 

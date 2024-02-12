@@ -23,8 +23,14 @@
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QTabWidget" name="main_tabs">
+      <property name="tabShape">
+       <enum>QTabWidget::Rounded</enum>
+      </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
+      </property>
+      <property name="movable">
+       <bool>false</bool>
       </property>
       <widget class="QWidget" name="sca_tab">
        <attribute name="title">
@@ -718,6 +724,59 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="vfs_tab">
+       <attribute name="title">
+        <string>Files and Notes</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_10">
+        <item>
+         <widget class="QFrame" name="vfs_frame">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QSplitter" name="vfs_splitter">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="opaqueResize">
+              <bool>true</bool>
+             </property>
+             <widget class="QTreeView" name="vfs_tree_view">
+              <property name="contextMenuPolicy">
+               <enum>Qt::CustomContextMenu</enum>
+              </property>
+              <property name="animated">
+               <bool>true</bool>
+              </property>
+              <attribute name="headerVisible">
+               <bool>false</bool>
+              </attribute>
+             </widget>
+             <widget class="smyth::ui::SmythRichTextEdit" name="vfs_text_edit"/>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -1010,6 +1069,22 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>vfs_tree_view</sender>
+   <signal>customContextMenuRequested(QPoint)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>show_vfs_context_menu(QPoint)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>208</x>
+     <y>313</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>open_project()</slot>
@@ -1018,5 +1093,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   <slot>open_settings()</slot>
   <slot>new_project()</slot>
   <slot>preview_changes_after_eval()</slot>
+  <slot>show_vfs_context_menu(QPoint)</slot>
  </slots>
 </ui>
