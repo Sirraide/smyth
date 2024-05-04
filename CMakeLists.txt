@@ -150,29 +150,26 @@ endif()
 ## ============================================================================
 ##  Submodules and include dirs.
 ## ============================================================================
+include(FetchContent)
+
 ## Find ICU.
 set(ICU_FIND_COMPONENTS uc i18n data)
 include(FindICU)
 if (NOT ICU_FOUND)
-    message(WARNING "ICU not found, disabling dictionary generation...")
+    message(FATAL_ERROR "ICU not found. Required components are: uc, i18n, data.")
 endif ()
 
-## Find libfmt.
-find_package(fmt CONFIG)
-if (NOT fmt_FOUND)
-    include(FetchContent)
-	message(STATUS "Fmtlib not found, downloading ...")
-	FetchContent_Declare(fmtlib
-		GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-		GIT_TAG 10.0.0
-		SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/fmt"
-    )
-	FetchContent_MakeAvailable(fmtlib)
-endif()
+## Add dependencies.
+message(STATUS "Downloading fmtlib ...")
+FetchContent_Declare(fmtlib
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 10.0.0
+    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/fmt"
+)
+FetchContent_MakeAvailable(fmtlib)
 
 ## Add glaze.
-include(FetchContent)
-message(STATUS "Glaze not found, downloading ...")
+message(STATUS "Downloading glaze ...")
 FetchContent_Declare(glaze
     GIT_REPOSITORY git@github.com:stephenberry/glaze.git
     GIT_TAG v2.0.6
@@ -181,12 +178,7 @@ FetchContent_Declare(glaze
 FetchContent_MakeAvailable(glaze)
 
 ## ‘src’ should be an include directory.
-target_include_directories(options INTERFACE src)
-
-## ‘include’ too, if it exists.
-if (EXISTS ${PROJECT_SOURCE_DIR}/include)
-    target_include_directories(options INTERFACE include)
-endif()
+target_include_directories(options INTERFACE src include)
 
 ## As well as everything in ‘libs’.
 if (EXISTS ${PROJECT_SOURCE_DIR}/libs)
@@ -244,18 +236,15 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Gui Qml)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets Gui Qml)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Gui Qml)
 
-file(GLOB_RECURSE smyth-sources src/*.cc include/UI/*.hh ui/*.ui)
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(smyth
-        MANUAL_FINALIZATION
-        ${smyth-sources}
-    )
-else()
-    add_executable(smyth ${smyth-sources})
+if (${QT_VERSION_MAJOR} LESS 6)
+    message(FATAL_ERROR "Qt6 or later is required, but Qt${QT_VERSION_MAJOR} was found.")
 endif()
+
+file(GLOB_RECURSE smyth-sources src/*.cc include/UI/*.hh ui/*.ui)
+qt_add_executable(smyth MANUAL_FINALIZATION ${smyth-sources})
 
 target_link_libraries(smyth PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
@@ -287,6 +276,4 @@ install(TARGETS smyth
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(smyth)
-endif()
+qt_finalize_executable(smyth)

@@ -124,6 +124,14 @@ constexpr decltype(auto) visit(Visitor&& visitor, Variant&& variant) {
 
 using ErrorMessageHandler = void(std::string, ErrorMessageType type);
 
+/// Print a debug message to the terminal.
+template <typename... arguments>
+void Debug(fmt::format_string<arguments...> fmt, arguments&&... args) {
+    fmt::print(stderr, "\033[1;33m[Smyth] ");
+    fmt::print(stderr, fmt, std::forward<arguments>(args)...);
+    fmt::print(stderr, "\033[m\n");
+}
+
 /// Display an informational message to the user.
 template <typename... arguments>
 void Info(fmt::format_string<arguments...> fmt, arguments&&... args) {

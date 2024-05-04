@@ -10,7 +10,7 @@ smyth::ui::SettingsDialog::SettingsDialog()
 }
 
 void smyth::ui::SettingsDialog::reset_dialog() {
-    /// Init font names.
+    // Init font names.
     ui->font_default->setCurrentFont(App::MainWindow()->serif_font());
     ui->font_mono->setCurrentFont(App::MainWindow()->mono_font());
 }

@@ -29,7 +29,7 @@ void PersistChBox(App& app, std::string key, QCheckBox* cbox) {
 /// Like PersistCBox, but the entries are generated dynamically.
 void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
     app.persist<&QComboBox::currentText, [](QComboBox* cbox, QString str) {
-        /// If the item does not exists yet, add it.
+        // If the item does not exists yet, add it.
         if (cbox->findText(str) == -1) cbox->addItem(str);
         cbox->setCurrentText(str);
     }>(std::move(key), cbox);
@@ -38,8 +38,12 @@ void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
 /// Splitters may crash if we supply a value that is larger than the total width.
 void PersistSplitter(App& app, std::string key, QSplitter* splitter) {
     app.persist<&QSplitter::sizes, [](QSplitter* w, QList<int> sz) {
-        /// If the sum is greater than the width, ignore.
-        if (std::accumulate(sz.begin(), sz.end(), 0) > w->width()) return;
+        // If the sum is greater than the width, ignore.
+        if (std::accumulate(sz.begin(), sz.end(), 0) > w->width()) {
+            Debug("Ignoring invalid saved splitter sizes: {} vs total width {}", sz, w->width());
+            return;
+        }
+
         w->setSizes(sz);
     }>(std::move(key), splitter);
 }
@@ -57,16 +61,16 @@ smyth::ui::MainWindow::MainWindow()
       ui(std::make_unique<Ui::MainWindow>()) {
     ui->setupUi(this);
 
-    /// Initialise shortcuts.
+    // Initialise shortcuts.
     auto save = new QShortcut(QKeySequence::Save, this);
     auto open = new QShortcut(QKeySequence::Open, this);
     connect(save, &QShortcut::activated, this, &MainWindow::save_project);
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
 
-    /// Initialise other signals.
+    // Initialise other signals.
     connect(ui->char_map, &SmythCharacterMap::selected, this, &MainWindow::char_map_update_selection);
 
-    /// Call debug() when F12 is pressed.
+    // Call debug() when F12 is pressed.
     SMYTH_DEBUG(
         auto debug = new QShortcut(QKeySequence(Qt::Key_F12), this);
         connect(debug, &QShortcut::activated, this, &MainWindow::debug);
@@ -94,17 +98,17 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
     auto input = Try(Norm(ui->sca_cbox_input_norm, ui->input->toPlainText()));
     auto changes = Try(Norm(ui->sca_cbox_changes_norm, ui->changes->toPlainText()));
 
-    /// If javascript is enabled, find all instances of `§{}§` and replace them with
-    /// the result of evaluating the javascript expression inside the braces.
+    // If javascript is enabled, find all instances of `§{}§` and replace them with
+    // the result of evaluating the javascript expression inside the braces.
     if (ui->sca_chbox_enable_javascript->isChecked())
         Try(EvaluateAndInterpolateJavaScript(changes));
 
-    /// Remember the 'Stop Before' rule that is currently selected.
+    // Remember the 'Stop Before' rule that is currently selected.
     auto stop_before = ui->sca_cbox_stop_before->currentText();
 
-    /// Parse the sound changes to figure out what rules we have for the
-    /// 'Stop Before' dropdown; rule names are lines that start with a name
-    /// followed by a colon.
+    // Parse the sound changes to figure out what rules we have for the
+    // 'Stop Before' dropdown; rule names are lines that start with a name
+    // followed by a colon.
     std::vector<QString> rule_names;
     for (auto line : changes.split('\n')) {
         line = line.trimmed();
@@ -115,9 +119,9 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
             line.contains("=>")
         ) continue;
 
-        /// If the line contains a colon, and everything before the colon
-        /// does not contain whitespace, then this is the name of a rule;
-        /// take everything up to the first whitespace character.
+        // If the line contains a colon, and everything before the colon
+        // does not contain whitespace, then this is the name of a rule;
+        // take everything up to the first whitespace character.
         auto colon = line.indexOf(':');
         if (colon == -1) continue;
         auto ws = line.indexOf(QRegularExpression("\\s"));
@@ -125,24 +129,24 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
         rule_names.push_back(name);
     }
 
-    /// Filter out special rules.
+    // Filter out special rules.
     std::erase_if(rule_names, [](const QString& str) {
         return str.startsWith("romanizer") or
                str == "deromanizer" or
                str == "Syllables";
     });
 
-    /// Update the 'Stop Before' dropdown.
+    // Update the 'Stop Before' dropdown.
     ui->sca_cbox_stop_before->clear();
     ui->sca_cbox_stop_before->addItem("");
     for (const auto& name : rule_names) ui->sca_cbox_stop_before->addItem(name);
 
-    /// If the rule that was selected before still exists, select it again; if
-    /// not, do not stop before any rule.
+    // If the rule that was selected before still exists, select it again; if
+    // not, do not stop before any rule.
     if (rgs::contains(rule_names, stop_before)) ui->sca_cbox_stop_before->setCurrentText(stop_before);
     else stop_before = "";
 
-    /// Dew it.
+    // Dew it.
     auto output = Try(App::The().apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before)));
     ui->output->setPlainText(Try(Norm(ui->sca_cbox_output_norm, std::move(output))));
     return {};
@@ -164,7 +168,7 @@ auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -
             expr
         );
 
-        /// Do not insert null or undefined.
+        // Do not insert null or undefined.
         if (not result.isNull() and not result.isUndefined()) {
             auto str = result.toString();
             changes.replace(next, end - next + 2, str);
@@ -220,16 +224,19 @@ void smyth::ui::MainWindow::debug() {
 }
 
 void smyth::ui::MainWindow::init() {
-    /// Show the window to force widgets to render.
+    // FIXME: I think we need to set the window size before
+    // doing any of this here.
+
+    // Show the window to force widgets to render.
     show();
 
-    /// Focus all tabs to initialise everything.
+    // Focus all tabs to initialise everything.
     for (int i = 0; i < ui->main_tabs->count(); i++) {
         ui->main_tabs->setCurrentIndex(i);
         layout()->invalidate();
     }
 
-    /// Switch to first tab and initialise persistent state.
+    // Switch to first tab and initialise persistent state.
     ui->main_tabs->setCurrentIndex(0);
     persist();
 }
@@ -253,14 +260,14 @@ void smyth::ui::MainWindow::open_settings() {
 void smyth::ui::MainWindow::persist() {
     auto& app = App::The();
 
-    /// Window needs to be updated before everything else to ensure that
-    /// the rest of the objects are working with the correct size.
+    // Window needs to be updated before everything else to ensure that
+    // the rest of the objects are working with the correct size.
     app.persist<&QWidget::size, [](QWidget* w, QSize s) {
         w->resize(s);
         QApplication::processEvents();
     }>("main.window.size", this, 1);
 
-    /// Initialise persistent settings.
+    // Initialise persistent settings.
     ui->input->persist(app, "main.input");
     ui->changes->persist(app, "main.changes");
     ui->output->persist(app, "main.output");
@@ -275,7 +282,7 @@ void smyth::ui::MainWindow::persist() {
     PersistChBox(app, "main.sca.chbox.details", ui->sca_chbox_details);
     PersistChBox(app, "main.sca.chbox.enable.js", ui->sca_chbox_enable_javascript);
 
-    /// Hide the details panels if the checkbox is unchecked.
+    // Hide the details panels if the checkbox is unchecked.
     if (not ui->sca_chbox_details->isChecked()) {
         ui->sca_frame_input_bottom->setVisible(false);
         ui->sca_frame_changes_bottom->setVisible(false);
@@ -283,7 +290,7 @@ void smyth::ui::MainWindow::persist() {
         ui->frame_stop_before->setVisible(false);
     }
 
-    /// Load last open project, if any.
+    // Load last open project, if any.
     HandleErrors(app.load_last_open_project());
 }
 
@@ -306,20 +313,20 @@ auto smyth::ui::MainWindow::serif_font() const -> const QFont& {
 }
 
 void smyth::ui::MainWindow::set_mono_font(QFont f) {
-    /// Set only the family and keep size etc. as is.
+    // Set only the family and keep size etc. as is.
     QFont font{ui->changes->font()};
     font.setFamily(f.family());
     ui->changes->setFont(font);
 }
 
 void smyth::ui::MainWindow::set_serif_font(QFont f) {
-    /// Set only the family and keep size etc. as is.
+    // Set only the family and keep size etc. as is.
     QFont font{ui->input->font()};
     font.setFamily(f.family());
     ui->input->setFont(font);
     ui->output->setFont(font);
 
-    /// The font size of this one is larger.
+    // The font size of this one is larger.
     QFont ctab_font{ui->char_map->font()};
     ctab_font.setFamily(f.family());
     ui->char_map->setFont(ctab_font);
@@ -333,7 +340,7 @@ void smyth::ui::MainWindow::set_window_path(QString path) {
         return;
     }
 
-    /// Strip home directory from path.
+    // Strip home directory from path.
 #ifdef __linux__
     auto home_path = QDir::homePath();
     if (path.startsWith(home_path)) path = "~" + path.mid(home_path.size());

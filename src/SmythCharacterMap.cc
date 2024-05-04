@@ -38,12 +38,12 @@ auto smyth::ui::SmythCharacterMap::DisplayedCodepoints() const -> const std::vec
 }
 
 auto smyth::ui::SmythCharacterMap::MinHeight() const -> int {
-    /// Add one to account for the bottom line of the grid.
+    // Add one to account for the bottom line of the grid.
     return Rows() * square_height + 1;
 }
 
 auto smyth::ui::SmythCharacterMap::Rows() const -> int {
-    /// Ensure we always have at least one column.
+    // Ensure we always have at least one column.
     if (cols == 0) return 1;
     return int(DisplayedChars().size()) / cols + (int(DisplayedChars().size()) % cols ? 1 : 0);
 }
@@ -91,10 +91,10 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
         "^\\s*([a-zA-Z0-9 ]+)\\s*$"
     };
 
-    /// Might as well get this out of the way early.
+    // Might as well get this out of the way early.
     if (query.isEmpty()) return std::monostate{};
 
-    /// Codepoint or range.
+    // Codepoint or range.
     if (
         query.startsWith(u'u') or
         query.startsWith(u'U') or
@@ -109,12 +109,12 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
             auto first_str = res.captured(1);
             auto second_str = res.captured(3);
 
-            /// We only have a delimiter. Treat this as literal text.
+            // We only have a delimiter. Treat this as literal text.
             c32 first = first_str.isNull() ? c32(0) : c32(first_str.toUInt(nullptr, 16));
             c32 second = second_str.isNull() ? c32(0) : c32(second_str.toUInt(nullptr, 16));
             if (first == 0 and second == 0) return Literal{res.captured(2)};
 
-            /// If we have a delimiter, then this is a range.
+            // If we have a delimiter, then this is a range.
             if (not res.captured(2).isNull()) return Range{
                 first == 0 ? FirstPrintChar : std::max(FirstPrintChar, first),
                 second == 0 ? unicode::LastCodepoint : std::min<c32>(unicode::LastCodepoint, second)
@@ -124,15 +124,15 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
         }
     }
 
-    /// Quoted sequence.
+    // Quoted sequence.
     if (auto res = quoted_sequence.match(query); res.hasMatch())
         return Literal{res.captured(2)};
 
-    /// Name.
+    // Name.
     if (auto res = name.match(query); res.hasMatch())
         return Name{res.captured(1)};
 
-    /// Literal.
+    // Literal.
     return Literal{query.toString()};
 }
 
@@ -141,9 +141,9 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
     matched_chars.clear();
     matched_codepoints.clear();
 
-    /// Unique characters and sort them. There is no reason to preserve
-    /// the order since, if the user wants to copy them, they can just
-    /// copy them from the search bar.
+    // Unique characters and sort them. There is no reason to preserve
+    // the order since, if the user wants to copy them, they can just
+    // copy them from the search bar.
     auto HandleLiteral = [&] (const QString& lit) {
         std::set<c32> chars;
         auto str = lit.toStdU32String();
@@ -161,7 +161,7 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
     visit(ParseQuery(query), Overloaded{
         [](std::monostate) {},
 
-        /// If this codepoint exists in the current font, display only it.
+        // If this codepoint exists in the current font, display only it.
         [&](Codepoint c) {
             if (rgs::binary_search(all_codepoints, c.value)) {
                 matched_codepoints = {c.value};
@@ -169,21 +169,21 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
             }
         },
 
-        /// Display all characters in this range that exist in the current font.
+        // Display all characters in this range that exist in the current font.
         [&](Range r) {
             auto first = rgs::lower_bound(all_codepoints, r.from);
             auto last = rgs::upper_bound(all_codepoints, r.to);
             if (first == last) return;
             if (first == all_codepoints.end()) first = all_codepoints.begin();
 
-            /// Do NOT use '!=' here as `last` may be < `it`!
+            // Do NOT use '!=' here as `last` may be < `it`!
             for (auto it = first; it < last; ++it) {
                 matched_codepoints.push_back(*it);
                 matched_chars.push_back(QString::fromUcs4(&it->value, 1));
             }
         },
 
-        /// Find characters whose name contains the given string(s).
+        // Find characters whose name contains the given string(s).
         [&](const Name& n) {
             auto s = n.value.toUpper().toStdString();
             auto view = s | vws::split(' ') | vws::filter([](auto&& r) { return rgs::distance(r) != 0; });
@@ -196,13 +196,13 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
                 }
             }
 
-            /// If we couldn’t find any characters, just treat is as a literal.
+            // If we couldn’t find any characters, just treat is as a literal.
             if (matched_codepoints.empty()) {
                 HandleLiteral(n.value);
                 return;
             }
 
-            /// Otherwise, display the chars we found.
+            // Otherwise, display the chars we found.
             for (auto& c : matched_codepoints) {
                 matched_chars.push_back(QString::fromUcs4(&c.value, 1));
             }
@@ -211,8 +211,8 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
         [&](const Literal& l) { HandleLiteral(l.value); },
     });
 
-    /// Also update the size of the widget since we most likely have
-    /// a different number of characters that we need to display.
+    // Also update the size of the widget since we most likely have
+    // a different number of characters that we need to display.
     UpdateSize();
     update();
 } // clang-format on
@@ -221,24 +221,24 @@ void smyth::ui::SmythCharacterMap::UpdateChars() {
     QFontMetrics m{font()};
     CollectChars(m, FirstPrintChar, unicode::LastCodepoint, all_chars, all_codepoints);
 
-    /// Determine the size of each square relative to the font size.
+    // Determine the size of each square relative to the font size.
     square_height = std::max(m.height(), m.maxWidth()) + 10;
     UpdateSize();
 
-    /// Execute last query again.
+    // Execute last query again.
     ProcessQuery(last_query);
 }
 
 void smyth::ui::SmythCharacterMap::UpdateSize() {
     QFontMetrics m{font()};
 
-    /// Determine the number of columns that we can draw and adjust our dimensions.
+    // Determine the number of columns that we can draw and adjust our dimensions.
     cols = parentWidget()->width() / square_height;
     adjustSize();
     setMinimumHeight(MinHeight());
 
-    /// Recalculate the square size to include the remaining space that we
-    /// couldn’t fit another square into.
+    // Recalculate the square size to include the remaining space that we
+    // couldn’t fit another square into.
     const auto space_left = width() - square_height * cols;
     square_width = std::max(m.height(), m.maxWidth()) + 10 + space_left / cols;
     setMinimumWidth(square_width);
@@ -265,9 +265,9 @@ void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
     QRect redraw = event->rect();
     painter.setFont(font());
 
-    /// Determine the area that we need to redraw.
-    ///
-    /// Take care not to draw more characters than we have.
+    // Determine the area that we need to redraw.
+    //
+    // Take care not to draw more characters than we have.
     const auto& chars = DisplayedChars();
     const int max_char = int(chars.size());
     const int max_rows = max_char / cols + (max_char % cols ? 1 : 0);
@@ -275,18 +275,18 @@ void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
     const int row_end = std::min(max_rows, redraw.bottom() / square_height + 1);
     const int col_begin = redraw.left() / square_height;
 
-    /// Draw grid.
+    // Draw grid.
     QPen grid{QApplication::palette().light().color()};
     painter.setPen(grid);
     for (int r = row_begin; r < row_end; ++r) {
         for (int c = col_begin; c < cols; ++c) {
-            /// Last row may be incomplete.
+            // Last row may be incomplete.
             if (usz(r * cols + c) >= chars.size()) goto draw_chars;
             int x = c * square_width;
             int y = r * square_height;
             painter.drawRect(x, y, square_width, square_height);
 
-            /// Draw a background if this is the selected character.
+            // Draw a background if this is the selected character.
             if (int(r * cols + c) == selected_idx) {
                 QBrush brush{QApplication::palette().accent().color()};
                 painter.fillRect(x + 1, y + 1, square_width - 1, square_height - 1, brush);
@@ -295,17 +295,17 @@ void smyth::ui::SmythCharacterMap::paintEvent(QPaintEvent* event) {
     }
 
 draw_chars:
-    /// Draw characters.
+    // Draw characters.
     const int default_char_height = m.descent() + m.ascent();
     QPen pen{QApplication::palette().text().color()};
     painter.setPen(pen);
     for (int r = row_begin; r < row_end; ++r) {
         for (int c = col_begin; c < cols; ++c) {
-            /// Last row may be incomplete.
+            // Last row may be incomplete.
             auto k_idx = usz(r * cols + c);
             if (k_idx >= chars.size()) return;
 
-            /// Draw the character.
+            // Draw the character.
             auto& s = chars[k_idx];
             int x = c * square_width;
             int y = r * square_height;
@@ -337,7 +337,7 @@ void smyth::ui::SmythCharacterMap::setFont(const QFont& font) {
 }
 
 auto smyth::ui::SmythCharacterMap::sizeHint() const -> QSize {
-    /// Add one to account for the right line of the grid.
+    // Add one to account for the right line of the grid.
     QSize s{parentWidget()->width(), MinHeight()};
     return s;
 }

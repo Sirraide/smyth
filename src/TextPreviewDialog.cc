@@ -1,4 +1,3 @@
-#include <UI/MainWindow.hh>
 #include <UI/TextPreviewDialog.hh>
 #include <ui_TextPreviewDialog.h>
 

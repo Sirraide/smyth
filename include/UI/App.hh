@@ -2,6 +2,7 @@
 #define SMYTH_UI_APP_HH
 
 #include <chrono>
+#include <mutex>
 #include <QCloseEvent>
 #include <Smyth/Database.hh>
 #include <Smyth/Result.hh>

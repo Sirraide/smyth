@@ -1,7 +1,6 @@
 #ifndef SMYTH_UI_PERSISTOBJECTS_HH
 #define SMYTH_UI_PERSISTOBJECTS_HH
 
-#include <glaze/glaze.hpp>
 #include <QFont>
 #include <QSize>
 #include <QString>
@@ -68,13 +67,13 @@ struct Serialiser<QString> {
 template <>
 struct Serialiser<QSize> {
     static auto Deserialise(Column c) -> QSize {
-        /// 32 lower bits are width, 32 upper bits are height.
+        // 32 lower bits are width, 32 upper bits are height.
         auto encoded = c.integer();
         return QSize{static_cast<int>(encoded & 0xFFFF'FFFF), static_cast<int>(encoded >> 32)};
     }
 
     static void Serialise(QueryParamRef q, QSize s) {
-        /// 32 lower bits are width, 32 upper bits are height.
+        // 32 lower bits are width, 32 upper bits are height.
         auto encoded = static_cast<u64>(s.width()) | (static_cast<u64>(s.height()) << 32);
         q.bind(encoded);
     }
@@ -109,23 +108,40 @@ struct Serialiser<QFont> {
     }
 };
 
-template <typename Internal>
-requires std::is_trivially_constructible_v<Internal> /// For memcpy().
-struct Serialiser<QList<Internal>> {
-    static auto Deserialise(Column c) -> Result<QList<Internal>> {
-        QList<Internal> result;
-        auto blob = c.blob();
-        if (glz::read_binary_untagged(result, blob) == 0) return result;
-        return Err("Failed to deserialise {}", glz::name_v<QList<Internal>>);
+/// Lists of integers.
+///
+/// Note that we don’t just allow storing arbitrary lists as the
+/// objects contained within them may change size, which would cause
+/// deserialisation to fail; integers and enums are always encoded
+/// as 64-bit numbers, so they’re safe from that.
+template <typename Int>
+requires std::integral<Int> or std::is_enum_v<Int>
+struct Serialiser<QList<Int>> {
+    static_assert(sizeof(Int) <= sizeof(i64), "Integer or enum too large");
+    static auto Deserialise(Column c) -> Result<QList<Int>> {
+        QList<Int> result;
+        const auto blob = c.blob();
+        const auto count = blob.size() / sizeof(i64);
+        result.reserve(qsizetype(count));
+        for (usz i = 0; i < count; ++i) {
+            i64 item;
+            std::memcpy(&item, blob.data() + i * sizeof(i64), sizeof(i64));
+            result.push_back(Int(item));
+        }
+        return result;
     }
 
-    static void Serialise(QueryParamRef q, const QList<Internal>& list) {
+    static void Serialise(QueryParamRef q, const QList<Int>& list) {
         std::vector<std::byte> blob;
-        glz::write_binary_untagged(std::span<const Internal>{list.data(), usz(list.size())}, blob);
+        const auto size = usz(list.size());
+        blob.resize(size * sizeof(i64));
+        for (usz i = 0; i < size; ++i) {
+            i64 item = i64(list[qsizetype(i)]);
+            std::memcpy(blob.data() + i * sizeof(i64), &item, sizeof(i64));
+        }
         q.bind(std::span{blob});
     }
 };
-
 } // namespace smyth::ui::detail
 
 #endif // SMYTH_UI_PERSISTOBJECTS_HH
