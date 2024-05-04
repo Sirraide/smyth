@@ -10,3 +10,6 @@
 
 ## Valgrind.
 callgrind.out.*
+
+## Qt
+CMakeLists.txt.user

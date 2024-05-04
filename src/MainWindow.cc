@@ -8,7 +8,6 @@
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
 #include <UI/TextPreviewDialog.hh>
-#include <UI/VFSTree.hh>
 #include <ui_MainWindow.h>
 
 namespace smyth::ui {
@@ -55,9 +54,7 @@ smyth::ui::MainWindow::~MainWindow() noexcept = default;
 /// initialised after this returns.
 smyth::ui::MainWindow::MainWindow()
     : QMainWindow(nullptr),
-      ui(std::make_unique<Ui::MainWindow>()),
-      vfs_tree_model(new VFSTreeModel(this)),
-      vfs_context_menu(new QMenu(this)) {
+      ui(std::make_unique<Ui::MainWindow>()) {
     ui->setupUi(this);
 
     /// Initialise shortcuts.
@@ -68,13 +65,6 @@ smyth::ui::MainWindow::MainWindow()
 
     /// Initialise other signals.
     connect(ui->char_map, &SmythCharacterMap::selected, this, &MainWindow::char_map_update_selection);
-
-    /// Set model for tree view.
-    ui->vfs_tree_view->setModel(vfs_tree_model);
-    vfs_tree_model->root->appendRow(new VFSTreeItem(vfs::FileID{42}, "foobar"));
-
-    /// Initialise context menu for tree view.
-    vfs_context_menu->addAction("New File", this, &MainWindow::vfs_new_file);
 
     /// Call debug() when F12 is pressed.
     SMYTH_DEBUG(
@@ -353,14 +343,3 @@ void smyth::ui::MainWindow::set_window_path(QString path) {
     setWindowTitle(QString::fromStdString(fmt::format("Smyth | {}", path.toStdString())));
 }
 
-void smyth::ui::MainWindow::show_vfs_context_menu(QPoint pos) {
-    vfs_context_menu_pos = pos;
-    vfs_context_menu->popup(ui->vfs_tree_view->viewport()->mapToGlobal(pos));
-}
-
-void smyth::ui::MainWindow::vfs_new_file() {
-    auto name = QInputDialog::getText(this, "New File", "Enter the name of the new file:").trimmed();
-    if (name.isEmpty()) return;
-    auto item = vfs_tree_model->item(ui->vfs_tree_view->indexAt(vfs_context_menu_pos));
-    vfs_tree_model->insert(item, new VFSTreeItem(vfs::FileID{2}, std::move(name)));
-}

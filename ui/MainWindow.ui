@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <property name="movable">
        <bool>false</bool>
@@ -724,59 +724,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="vfs_tab">
-       <attribute name="title">
-        <string>Files and Notes</string>
-       </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_10">
-        <item>
-         <widget class="QFrame" name="vfs_frame">
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Plain</enum>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_9">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QSplitter" name="vfs_splitter">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="opaqueResize">
-              <bool>true</bool>
-             </property>
-             <widget class="QTreeView" name="vfs_tree_view">
-              <property name="contextMenuPolicy">
-               <enum>Qt::CustomContextMenu</enum>
-              </property>
-              <property name="animated">
-               <bool>true</bool>
-              </property>
-              <attribute name="headerVisible">
-               <bool>false</bool>
-              </attribute>
-             </widget>
-             <widget class="smyth::ui::SmythRichTextEdit" name="vfs_text_edit"/>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
      </widget>
     </item>
    </layout>
@@ -910,14 +857,30 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
    </hints>
   </connection>
   <connection>
-   <sender>apply_button</sender>
-   <signal>clicked()</signal>
+   <sender>action_settings</sender>
+   <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>apply_sound_changes()</slot>
+   <slot>open_settings()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>739</x>
-     <y>544</y>
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_new</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>new_project()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -928,7 +891,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   <connection>
    <sender>sca_chbox_details</sender>
    <signal>toggled(bool)</signal>
-   <receiver>sca_frame_changes_bottom</receiver>
+   <receiver>frame_stop_before</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -936,8 +899,40 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
      <y>543</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>511</y>
+     <x>613</x>
+     <y>544</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>char_map_search_bar</sender>
+   <signal>textEdited(QString)</signal>
+   <receiver>char_map</receiver>
+   <slot>search(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>269</x>
+     <y>83</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>269</x>
+     <y>329</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_chbox_enable_javascript</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>evaluate_button</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>214</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>653</x>
+     <y>544</y>
     </hint>
    </hints>
   </connection>
@@ -974,70 +969,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
    </hints>
   </connection>
   <connection>
-   <sender>sca_chbox_details</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>frame_stop_before</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>53</x>
-     <y>543</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>613</x>
-     <y>544</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>action_settings</sender>
-   <signal>triggered()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>open_settings()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>action_new</sender>
-   <signal>triggered()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>new_project()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>sca_chbox_enable_javascript</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>evaluate_button</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>214</x>
-     <y>543</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>653</x>
-     <y>544</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>evaluate_button</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
@@ -1054,30 +985,30 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
    </hints>
   </connection>
   <connection>
-   <sender>char_map_search_bar</sender>
-   <signal>textEdited(QString)</signal>
-   <receiver>char_map</receiver>
-   <slot>search(QString)</slot>
+   <sender>sca_chbox_details</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sca_frame_changes_bottom</receiver>
+   <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>269</x>
-     <y>83</y>
+     <x>53</x>
+     <y>543</y>
     </hint>
     <hint type="destinationlabel">
-     <x>269</x>
-     <y>329</y>
+     <x>399</x>
+     <y>511</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>vfs_tree_view</sender>
-   <signal>customContextMenuRequested(QPoint)</signal>
+   <sender>apply_button</sender>
+   <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
-   <slot>show_vfs_context_menu(QPoint)</slot>
+   <slot>apply_sound_changes()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>208</x>
-     <y>313</y>
+     <x>739</x>
+     <y>544</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
