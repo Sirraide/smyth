@@ -213,7 +213,7 @@ target_compile_options(sqlite3 PRIVATE -O3)
 
 file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/Smyth/*.hh)
 add_library(smyth-lib STATIC ${smyth-lib-sources} )
-target_include_directories(smyth-lib PUBLIC "${${PROJECT_SOURCE_DIR}/thirdparty/sqlite/}")
+target_include_directories(smyth-lib PUBLIC "${PROJECT_SOURCE_DIR}/thirdparty/sqlite/")
 set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
 target_link_libraries(smyth-lib PRIVATE options sqlite3 ICU::i18n ICU::uc ICU::data)
 
