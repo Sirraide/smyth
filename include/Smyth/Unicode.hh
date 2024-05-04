@@ -59,7 +59,7 @@ static constexpr c32 LastCodepoint = 0x10'FFFF;
 ///
 /// If the query is empty, the result is unspecified.
 [[nodiscard]] auto FindCharsByName(
-    std::move_only_function<bool(c32, std::string_view)> filter,
+    std::function<bool(c32, std::string_view)> filter,
     c32 from = 0,
     c32 to = LastCodepoint
 ) -> std::vector<c32>;

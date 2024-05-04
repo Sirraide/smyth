@@ -191,7 +191,7 @@ auto smyth::unicode::c32::to_upper() const -> c32 {
 }
 
 auto smyth::unicode::FindCharsByName(
-    std::move_only_function<bool(c32, std::string_view)> filter,
+    std::function<bool(c32, std::string_view)> filter,
     c32 from,
     c32 to
 ) -> std::vector<c32> {
