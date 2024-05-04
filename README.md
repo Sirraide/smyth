@@ -20,10 +20,10 @@ Building this application requires:
 
 Other dependencies will be downloaded at build time.
 
-To build the application, run the following commands
+To build the application, `cd` into the project direcotry and run the following commands
 ```bash
 cmake -S . -B out -DSMYTH_QT_PREFIX_PATH=<path-to-qt>/<qt-version>/<platform>
-cmake --build out
+cmake --build out -- -j`nproc`
 ``` 
 where `<qt-version>` is the version of Qt installed on your system, and `<platform>` 
 the name of your platform. When in doubt, check your `Qt` directory for the version
