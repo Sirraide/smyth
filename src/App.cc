@@ -22,7 +22,7 @@ smyth::ui::App::App(ErrorMessageHandler handler) {
     the_app = this;
 
     /// Register error handler.
-    smyth::RegisterMessageHandler(handler);
+    RegisterMessageHandler(handler);
 
     /// Do not use a member init list for these as they have to be
     /// constructed *after* everything else. Also, only persist objects

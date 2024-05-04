@@ -3,11 +3,17 @@
 
 #include <QTextEdit>
 #include <UI/App.hh>
-#include <UI/Common.hh>
+#include <UI/Mixins.hh>
 
 namespace smyth::ui {
-class SmythRichTextEdit final : public QTextEdit {
+class SmythRichTextEdit;
+} // namespace smyth::ui
+
+class smyth::ui::SmythRichTextEdit final : public QTextEdit
+    , mixins::Zoom {
     Q_OBJECT
+
+    friend Zoom;
 
     using This = SmythRichTextEdit;
 
@@ -28,12 +34,14 @@ public:
     }
 
     void wheelEvent(QWheelEvent* event) override {
-        if (common::HandleZoomEvent(this, event)) return;
+        if (HandleZoomEvent(event)) return;
         QTextEdit::wheelEvent(event);
     }
 
     void keyPressEvent(QKeyEvent* event) override {
-        if (common::HandleZoomEvent(this, event)) return;
+        if (HandleZoomEvent(event)) return;
+
+        // Tabs suck.
         if (event->key() == Qt::Key_Tab) {
             insertPlainText("    ");
             event->accept();
@@ -43,6 +51,5 @@ public:
         QTextEdit::keyPressEvent(event);
     }
 };
-} // namespace smyth::ui
 
 #endif // SMYTH_UI_SMYTHRICHTEXTEDIT_HH

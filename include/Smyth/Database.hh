@@ -12,12 +12,16 @@ struct sqlite3;
 struct sqlite3_stmt;
 
 namespace smyth {
-class Statement;
+class Column;
 class Database;
+class QueryParamRef;
+class Statement;
+class Row;
 
 using DBRef = std::shared_ptr<Database>;
+} // namespace smyth
 
-class Database : public std::enable_shared_from_this<Database> {
+class smyth::Database : public std::enable_shared_from_this<Database> {
     struct _make_shared_tag {};
 
     sqlite3* handle{};
@@ -60,7 +64,7 @@ private:
     static auto Open(std::string_view path, int flags = 0) -> Result<DBRef>;
 };
 
-class Row {
+class smyth::Row {
     sqlite3_stmt* stmt{};
 
 public:
@@ -72,7 +76,7 @@ public:
     auto text(int index) -> std::string;
 };
 
-class Column {
+class smyth::Column {
     Row row;
     int index{};
 
@@ -84,7 +88,7 @@ public:
     auto text() -> std::string { return row.text(index); }
 };
 
-class Statement {
+class smyth::Statement {
     DBRef handle{};
     sqlite3_stmt* stmt{};
 
@@ -115,9 +119,7 @@ public:
     /// Bind any integer type.
     void bind(int index, std::integral auto value)
     requires (not std::is_same_v<decltype(value), i64>)
-    {
-        bind(index, static_cast<i64>(value));
-    }
+    { bind(index, static_cast<i64>(value)); }
 
     /// Execute the statement.
     auto exec() -> Result<>;
@@ -136,7 +138,7 @@ public:
     void reset();
 };
 
-class QueryParamRef {
+class smyth::QueryParamRef {
     Statement* stmt;
     int index;
 
@@ -147,7 +149,5 @@ public:
     void bind(std::span<const std::byte> raw) { stmt->bind(index, raw); }
     void bind(std::integral auto value) { stmt->bind(index, value); }
 };
-
-} // namespace smyth
 
 #endif // SMYTH_DATABASE_HH

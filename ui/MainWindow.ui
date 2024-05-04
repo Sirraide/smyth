@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="movable">
        <bool>false</bool>
@@ -130,7 +130,7 @@
                   <item>
                    <widget class="QLabel" name="sca_label_input_norm">
                     <property name="text">
-                     <string>Xfrm:</string>
+                     <string>Norm:</string>
                     </property>
                    </widget>
                   </item>
@@ -249,7 +249,7 @@
                   <item>
                    <widget class="QLabel" name="sca_label_changes_norm">
                     <property name="text">
-                     <string>Xfrm:</string>
+                     <string>Norm:</string>
                     </property>
                    </widget>
                   </item>
@@ -357,7 +357,7 @@
                   <item>
                    <widget class="QLabel" name="sca_label_output_norm">
                     <property name="text">
-                     <string>Xfrm:</string>
+                     <string>Norm:</string>
                     </property>
                    </widget>
                   </item>

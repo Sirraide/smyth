@@ -11,11 +11,7 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-
 namespace smyth::ui {
-class SettingsDialog;
-class VFSTreeModel;
-
 class MainWindow final : public QMainWindow {
     Q_OBJECT
 

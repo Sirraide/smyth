@@ -239,7 +239,7 @@ void smyth::ui::SmythCharacterMap::UpdateSize() {
 
     /// Recalculate the square size to include the remaining space that we
     /// couldn’t fit another square into.
-    const auto space_left = (width() - (square_height * cols));
+    const auto space_left = width() - square_height * cols;
     square_width = std::max(m.height(), m.maxWidth()) + 10 + space_left / cols;
     setMinimumWidth(square_width);
 }

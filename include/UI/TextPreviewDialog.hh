@@ -11,7 +11,10 @@ class TextPreviewDialog;
 QT_END_NAMESPACE
 
 namespace smyth::ui {
-class TextPreviewDialog final : public QDialog {
+class TextPreviewDialog;
+} // namespace smyth::ui
+
+class smyth::ui::TextPreviewDialog final : public QDialog {
     Q_OBJECT
 
     std::unique_ptr<Ui::TextPreviewDialog> ui;
@@ -30,6 +33,5 @@ public:
 
 public slots:
 };
-} // namespace smyth::ui
 
 #endif // SMYTH_UI_TEXTPREVIEWDIALOG_HH

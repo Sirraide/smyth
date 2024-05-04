@@ -186,8 +186,8 @@ void smyth::ui::MainWindow::apply_sound_changes() {
 }
 
 void smyth::ui::MainWindow::char_map_update_selection(char32_t codepoint) {
-    static constexpr auto LC = UCharCategory::U_LOWERCASE_LETTER;
-    static constexpr auto UC = UCharCategory::U_UPPERCASE_LETTER;
+    static constexpr auto LC = U_LOWERCASE_LETTER;
+    static constexpr auto UC = U_UPPERCASE_LETTER;
     static constexpr std::string_view templ = R"html(
         <h2>U+{:04X}</h2>
         <h4>{}</h4>

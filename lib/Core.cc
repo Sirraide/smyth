@@ -41,6 +41,8 @@ void smyth::detail::AssertFail(
             case AssertKind::AK_Todo: return "Not yet implemented";
             case AssertKind::AK_Unreachable: return "Unreachable code reached";
         }
+
+        Unreachable("Invalid assert kind");
     }();
 
     if (not condition.empty()) text += fmt::format(": ‘{}’", condition);
@@ -175,8 +177,8 @@ auto smyth::unicode::c32::name() const -> Result<std::string> {
 
 auto smyth::unicode::c32::swap_case() const -> c32 {
     auto cat = category();
-    if (cat == UCharCategory::U_UPPERCASE_LETTER) return to_lower();
-    if (cat == UCharCategory::U_LOWERCASE_LETTER) return to_upper();
+    if (cat == U_UPPERCASE_LETTER) return to_lower();
+    if (cat == U_LOWERCASE_LETTER) return to_upper();
     return *this;
 }
 
@@ -196,7 +198,7 @@ auto smyth::unicode::FindCharsByName(
     UErrorCode ec{U_ZERO_ERROR};
     std::vector<c32> chars;
     struct Ctx {
-        std::vector<c32>& chars; ///< Not the actual vector to support NRVO.
+        std::vector<c32>& chars; // Not the actual vector to support NRVO.
         decltype(filter) filter;
     } ctx{chars, std::move(filter)};
 

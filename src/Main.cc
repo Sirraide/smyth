@@ -1,7 +1,7 @@
-#include <UI/App.hh>
-#include <UI/MainWindow.hh>
 #include <QApplication>
 #include <QMessageBox>
+#include <UI/App.hh>
+#include <UI/MainWindow.hh>
 
 void ShowError(std::string message, smyth::ErrorMessageType type) {
     using Ty = smyth::ErrorMessageType;

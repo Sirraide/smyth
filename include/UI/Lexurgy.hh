@@ -6,8 +6,11 @@
 #include <Smyth/Utils.hh>
 
 namespace smyth::ui {
+class Lexurgy;
+} // namespace smyth::ui
+
 /// Lexurgy connexion.
-class Lexurgy {
+class smyth::ui::Lexurgy {
     QProcess lexurgy_process;
 
     /// Cache the sound changes to avoid pointless requests.
@@ -40,6 +43,5 @@ private:
     /// Update sound changes.
     auto UpdateSoundChanges(QString changes) -> Result<>;
 };
-} // namespace smyth::ui
 
 #endif // SMYTH_UI_LEXURGY_HH

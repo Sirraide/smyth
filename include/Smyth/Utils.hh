@@ -42,7 +42,7 @@
 // clang-format on
 
 #ifndef NDEBUG
-#    define SMYTH_DEBUG(...) __VA_ARGS__
+#    define SMYTH_DEBUG(...)       __VA_ARGS__
 #    define DebugAssert(cond, ...) SMYTH_ASSERT_IMPL(AK_DebugAssert, cond __VA_OPT__(, __VA_ARGS__))
 #else
 #    define SMYTH_DEBUG(...)
@@ -107,12 +107,12 @@ public:
 } // namespace detail
 
 namespace utils {
-template <typename ...Funcs>
+template <typename... Funcs>
 struct Overloaded : Funcs... {
     using Funcs::operator()...;
 };
 
-template <typename ...Funcs>
+template <typename... Funcs>
 Overloaded(Funcs...) -> Overloaded<Funcs...>;
 
 /// std::visit, but with a better order of arguments.
@@ -120,7 +120,7 @@ template <typename Variant, typename Visitor>
 constexpr decltype(auto) visit(Visitor&& visitor, Variant&& variant) {
     return std::visit(std::forward<Variant>(variant), std::forward<Visitor>(visitor));
 }
-}
+} // namespace utils
 
 using ErrorMessageHandler = void(std::string, ErrorMessageType type);
 

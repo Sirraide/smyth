@@ -11,7 +11,10 @@ class SettingsDialog;
 QT_END_NAMESPACE
 
 namespace smyth::ui {
-class SettingsDialog final : public QDialog {
+class SettingsDialog;
+} // namespace smyth::ui
+
+class smyth::ui::SettingsDialog final : public QDialog {
     Q_OBJECT
 
     std::unique_ptr<Ui::SettingsDialog> ui;
@@ -32,6 +35,5 @@ public slots:
     void set_default_font();
     void set_mono_font();
 };
-} // namespace smyth::ui
 
 #endif // SMYTH_UI_SETTINGSDIALOG_HH

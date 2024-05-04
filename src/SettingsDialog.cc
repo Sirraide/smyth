@@ -1,5 +1,5 @@
-#include <UI/SettingsDialog.hh>
 #include <UI/MainWindow.hh>
+#include <UI/SettingsDialog.hh>
 #include <ui_SettingsDialog.h>
 
 smyth::ui::SettingsDialog::~SettingsDialog() noexcept = default;

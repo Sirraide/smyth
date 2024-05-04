@@ -155,10 +155,10 @@ public:
 } // namespace smyth
 
 template <>
-struct fmt::formatter<smyth::Err> : fmt::formatter<std::string_view> {
+struct fmt::formatter<smyth::Err> : formatter<std::string_view> {
     template <typename FormatContext>
     auto format(const smyth::Err& err, FormatContext& ctx) {
-        return fmt::formatter<std::string_view>::format(err.message, ctx);
+        return formatter<std::string_view>::format(err.message, ctx);
     }
 };
 

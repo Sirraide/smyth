@@ -3,46 +3,27 @@
 
 #include <chrono>
 #include <QCloseEvent>
-#include <QObject>
-#include <QUrl>
 #include <Smyth/Database.hh>
 #include <Smyth/Result.hh>
 #include <Smyth/Utils.hh>
 #include <UI/Lexurgy.hh>
 #include <UI/PersistObjects.hh>
-
-#define SMYTH_MAIN_STORE_KEY "store"
+#include <UI/Utils.hh>
 
 namespace smyth::ui {
 namespace chr = std::chrono;
+class App;
+} // namespace smyth::ui
 
-namespace detail {
-template <typename>
-struct ExtractTypeImpl;
-
-template <typename Type, typename Object>
-struct ExtractTypeImpl<Type(Object::*)> {
-    using type = Type;
-};
-
-template <typename Type, typename Object>
-struct ExtractTypeImpl<Type (Object::*)() const> {
-    using type = Type;
-};
-
-template <typename Type>
-using ExtractType = typename ExtractTypeImpl<Type>::type;
-
-} // namespace detail
-
-class MainWindow;
-class SettingsDialog;
-
-class App final {
+class smyth::ui::App final {
     /// Lexurgy background process.
     std::unique_ptr<Lexurgy> lexurgy = std::make_unique<Lexurgy>();
 
-    /// Database used for saving.
+    /// In-memory database; this holds a copy of the database stored on
+    /// disk that is the actual project file and is used for saving and
+    /// checking if we need to save.
+    ///
+    /// TODO: Make this the actual DB and add an auto-save feature.
     DBRef db = Database::CreateInMemory();
 
     /// The path to the project that is currently open.
@@ -55,7 +36,7 @@ class App final {
     std::unique_ptr<MainWindow> main;
     std::unique_ptr<SettingsDialog> settings;
 
-    /// Used for operations like saving and closing that may content with one
+    /// Used for operations like saving and closing that may contend with one
     /// another or cause data corruption if executed at the same time, though
     /// not for everything.
     ///
@@ -75,10 +56,15 @@ public:
 
     /// Persist a QString property in the store.
     template <auto Get, auto Set, typename Object>
-    auto persist(std::string key, Object* obj, usz priority = smyth::detail::DefaultPriority) -> smyth::detail::PersistentBase* {
+    auto persist(
+        std::string key,
+        Object* obj,
+        usz priority = smyth::detail::DefaultPriority
+    ) -> smyth::detail::PersistentBase* {
         using namespace smyth::detail;
         using namespace detail;
-        std::unique_ptr<PersistentBase> e{new PersistProperty<ExtractType<decltype(Get)>, Object, Get, Set>(obj)};
+        using Property = PersistProperty<ExtractType<decltype(Get)>, Object, Get, Set>;
+        std::unique_ptr<PersistentBase> e{new Property(obj)};
         auto ptr = e.get();
         store.register_entry(std::move(key), {std::move(e), priority});
         return ptr;
@@ -130,60 +116,6 @@ private:
     /// This only handles the actual saving; everything else must
     /// be done before that.
     auto SaveImpl() -> Result<>;
-};
-
-} // namespace smyth::ui
-
-template <>
-struct fmt::formatter<QString> : fmt::formatter<std::string> {
-    template <typename FormatContext>
-    auto format(const QString& s, FormatContext& ctx) {
-        return fmt::formatter<std::string>::format(s.toStdString(), ctx);
-    }
-};
-
-template<>
-struct fmt::formatter<QRect> : fmt::formatter<std::string_view> {
-    template <typename FormatContext>
-    auto format(const QRect& r, FormatContext& ctx) {
-        return fmt::formatter<std::string_view>::format(
-            fmt::format("[x: {}, y: {}, wd: {}, ht: {}]", r.x(), r.y(), r.width(), r.height()),
-            ctx
-        );
-    }
-};
-
-template<>
-struct fmt::formatter<QSize> : fmt::formatter<std::string_view> {
-    template <typename FormatContext>
-    auto format(QSize s, FormatContext& ctx) {
-        return fmt::formatter<std::string_view>::format(
-            fmt::format("({}, {})", s.width(), s.height()),
-            ctx
-        );
-    }
-};
-
-template<>
-struct fmt::formatter<QPointF> : fmt::formatter<std::string_view> {
-    template <typename FormatContext>
-    auto format(QPointF s, FormatContext& ctx) {
-        return fmt::formatter<std::string_view>::format(
-            fmt::format("({}, {})", s.x(), s.y()),
-            ctx
-        );
-    }
-};
-
-template<typename T>
-struct fmt::formatter<QList<T>> : fmt::formatter<std::string_view> {
-    template <typename FormatContext>
-    auto format(const QList<T> s, FormatContext& ctx) {
-        return fmt::formatter<std::string_view>::format(
-            fmt::format("[{}]", fmt::join(s, ", ")),
-            ctx
-        );
-    }
 };
 
 #endif // SMYTH_UI_APP_HH

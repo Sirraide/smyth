@@ -7,11 +7,14 @@
 
 namespace smyth {
 class PersistentStore;
+} // namespace smyth
 
-namespace detail {
+namespace smyth::detail {
 inline constexpr usz DefaultPriority = ~0zu;
+class PersistentBase;
+} // namespace smyth::detail
 
-class PersistentBase {
+class smyth::detail::PersistentBase {
 protected:
     PersistentBase() = default;
 
@@ -34,10 +37,9 @@ private:
     /// Save this entry to the DB.
     virtual auto save(QueryParamRef param) -> Result<> = 0;
 };
-} // namespace detail
 
 /// Persistent data store.
-class PersistentStore {
+class smyth::PersistentStore {
 public:
     struct Entry {
         std::unique_ptr<detail::PersistentBase> entry;
@@ -106,6 +108,5 @@ private:
 
     auto Init(Database& db) -> Result<>;
 };
-} // namespace smyth
 
 #endif // SMYTH_PERSISTENT_HH

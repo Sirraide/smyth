@@ -1,7 +1,6 @@
 #ifndef SMYTH_UI_PERSISTOBJECTS_HH
 #define SMYTH_UI_PERSISTOBJECTS_HH
 
-#include <bit>
 #include <glaze/glaze.hpp>
 #include <QFont>
 #include <QSize>
@@ -117,7 +116,7 @@ struct Serialiser<QList<Internal>> {
         QList<Internal> result;
         auto blob = c.blob();
         if (glz::read_binary_untagged(result, blob) == 0) return result;
-        else return Err("Failed to deserialise {}", glz::name_v<QList<Internal>>);
+        return Err("Failed to deserialise {}", glz::name_v<QList<Internal>>);
     }
 
     static void Serialise(QueryParamRef q, const QList<Internal>& list) {
@@ -127,6 +126,6 @@ struct Serialiser<QList<Internal>> {
     }
 };
 
-} // namespace smyth::detail
+} // namespace smyth::ui::detail
 
 #endif // SMYTH_UI_PERSISTOBJECTS_HH

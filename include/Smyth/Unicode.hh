@@ -76,10 +76,10 @@ using unicode::c32;
 }
 
 template <>
-struct fmt::formatter<smyth::unicode::c32> : fmt::formatter<smyth::u32> {
+struct fmt::formatter<smyth::unicode::c32> : formatter<smyth::u32> {
     template <typename FormatContext>
     auto format(const smyth::unicode::c32& c, FormatContext& ctx) {
-        return fmt::formatter<smyth::u32>::format(smyth::u32(c.value), ctx);
+        return formatter<smyth::u32>::format(smyth::u32(c.value), ctx);
     }
 };
 

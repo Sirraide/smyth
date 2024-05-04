@@ -1,7 +1,7 @@
 #include <glaze/glaze.hpp>
-#include <UI/Lexurgy.hh>
 #include <ranges>
 #include <Smyth/Utils.hh>
+#include <UI/Lexurgy.hh>
 
 namespace smyth::ui::detail::lexurgy_requests { // clang-format off
 struct ApplyRequest {
@@ -57,7 +57,7 @@ auto smyth::ui::Lexurgy::SendRequest(Req&& r) -> Result<Res> {
 
     /// Make sure the response is of the right type.
     if (auto val = std::get_if<Res>(&res)) return std::move(*val);
-    else return Err("Unexpected response type '{}'", sv);
+    return Err("Unexpected response type '{}'", sv);
 }
 
 auto smyth::ui::Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {

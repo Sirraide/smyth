@@ -33,7 +33,7 @@ auto smyth::Database::CreateInMemory() -> std::shared_ptr<Database> {
 }
 
 auto smyth::Database::Load(std::string_view path) -> Result<std::shared_ptr<Database>> {
-    auto db = Database::CreateInMemory();
+    auto db = CreateInMemory();
     auto from = Try(Open(path, SQLITE_OPEN_READONLY));
     Try(BackupInternal(*db, *from));
     return db;
@@ -84,7 +84,7 @@ auto smyth::Database::prepare(std::string_view query) -> Result<Statement> {
 }
 
 auto smyth::Row::blob(int index) -> std::vector<char> {
-    auto data = reinterpret_cast<const char*>(sqlite3_column_blob(stmt, index));
+    auto data = static_cast<const char*>(sqlite3_column_blob(stmt, index));
     auto size = sqlite3_column_bytes(stmt, index);
     return {data, data + size};
 }

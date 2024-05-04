@@ -1,6 +1,6 @@
+#include <UI/MainWindow.hh>
 #include <UI/TextPreviewDialog.hh>
 #include <ui_TextPreviewDialog.h>
-#include <UI/MainWindow.hh>
 
 smyth::ui::TextPreviewDialog::~TextPreviewDialog() noexcept = default;
 

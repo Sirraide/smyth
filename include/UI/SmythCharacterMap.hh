@@ -3,14 +3,20 @@
 
 #include <QListView>
 #include <QStringListModel>
+#include <Smyth/Unicode.hh>
 #include <Smyth/Utils.hh>
 #include <UI/App.hh>
-#include <UI/Common.hh>
-#include <Smyth/Unicode.hh>
+#include <UI/Mixins.hh>
 
 namespace smyth::ui {
-class SmythCharacterMap final : public QWidget {
+class SmythCharacterMap;
+} // namespace smyth::ui
+
+class smyth::ui::SmythCharacterMap final : public QWidget
+    , mixins::Zoom {
     Q_OBJECT
+
+    friend Zoom;
 
     /// First printable character.
     static constexpr c32 FirstPrintChar = U' ';
@@ -58,7 +64,7 @@ public:
 
     /// Zooming.
     void keyPressEvent(QKeyEvent* event) override {
-        if (common::HandleZoomEvent(this, event)) return;
+        if (HandleZoomEvent(event)) return;
         QWidget::keyPressEvent(event);
     }
 
@@ -82,7 +88,7 @@ public:
 
     /// Zooming.
     void wheelEvent(QWheelEvent* event) override {
-        if (common::HandleZoomEvent(this, event)) return;
+        if (HandleZoomEvent(event)) return;
         QWidget::wheelEvent(event);
     }
 
@@ -128,6 +134,5 @@ private:
     /// Update the size of the character map.
     void UpdateSize();
 };
-} // namespace smyth::ui
 
 #endif // SMYTH_UI_SMYTHCHARACTERMAP_HH
