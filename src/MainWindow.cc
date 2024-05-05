@@ -94,6 +94,7 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
     // Filter out special rules.
     std::erase_if(rule_names, [](const QString& str) {
         return str.startsWith("romanizer") or
+               str == "Then" or
                str == "deromanizer" or
                str == "Syllables";
     });
