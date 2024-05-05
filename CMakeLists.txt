@@ -132,6 +132,9 @@ endif()
 
 ## Debug/Release flags.
 if (NOT MSVC)
+    target_compile_definitions(options INTERFACE
+        $<$<CONFIG:RELEASE>:-DNDEBUG>
+    )
     target_compile_options(options INTERFACE
         $<$<CONFIG:DEBUG>:-O0 -g3 -ggdb3>
         $<$<CONFIG:RELEASE>:-O3 -march=native>

@@ -1,10 +1,17 @@
 #ifndef SMYTH_UI_PERSISTOBJECTS_HH
 #define SMYTH_UI_PERSISTOBJECTS_HH
 
+#include <QCheckBox>
+#include <QComboBox>
 #include <QFont>
 #include <QSize>
+#include <QSplitter>
 #include <QString>
 #include <Smyth/Persistent.hh>
+
+namespace smyth::ui {
+class App;
+}
 
 namespace smyth::ui::detail {
 template <typename>
@@ -143,5 +150,16 @@ struct Serialiser<QList<Int>> {
     }
 };
 } // namespace smyth::ui::detail
+
+namespace smyth::ui {
+void PersistCBox(std::string key, QComboBox* cbox);
+void PersistChBox(std::string key, QCheckBox* cbox);
+
+/// Like PersistCBox, but the entries are generated dynamically.
+void PersistDynCBox(std::string key, QComboBox* cbox);
+
+/// Splitters may crash if we supply a value that is larger than the total width.
+void PersistSplitter(std::string key, QSplitter* splitter);
+}
 
 #endif // SMYTH_UI_PERSISTOBJECTS_HH

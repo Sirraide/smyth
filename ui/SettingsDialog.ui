@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>470</width>
+    <width>494</width>
     <height>535</height>
    </rect>
   </property>
@@ -181,6 +181,25 @@
              </widget>
             </item>
            </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="settings_debug">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QCheckBox" name="debug_show_json">
+           <property name="text">
+            <string>Dump JSON Requests</string>
+           </property>
           </widget>
          </item>
         </layout>

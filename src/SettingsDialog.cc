@@ -9,6 +9,12 @@ smyth::ui::SettingsDialog::SettingsDialog()
     ui->setupUi(this);
 }
 
+void smyth::ui::SettingsDialog::init() {
+#ifdef SMYTH_DEBUG
+    PersistChBox("debug:settings_dump_json_requests", ui->debug_show_json);
+#endif
+}
+
 void smyth::ui::SettingsDialog::reset_dialog() {
     // Init font names.
     ui->font_default->setCurrentFont(App::MainWindow()->serif_font());
@@ -21,4 +27,8 @@ void smyth::ui::SettingsDialog::set_default_font() {
 
 void smyth::ui::SettingsDialog::set_mono_font() {
     App::MainWindow()->set_mono_font(ui->font_mono->currentFont());
+}
+
+bool smyth::ui::SettingsDialog::show_json_requests() const {
+    return ui->debug_show_json->isChecked();
 }

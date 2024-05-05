@@ -1,6 +1,9 @@
+#include "UI/SettingsDialog.hh"
+
 #include <glaze/glaze.hpp>
 #include <ranges>
 #include <Smyth/Utils.hh>
+#include <UI/App.hh>
 #include <UI/Lexurgy.hh>
 
 namespace smyth::ui::detail::lexurgy_requests { // clang-format off
@@ -38,7 +41,10 @@ struct glz::meta<Response> {
 template <typename Res, typename Req>
 auto smyth::ui::Lexurgy::SendRequest(Req&& r) -> Result<Res> {
     auto s = glz::write_json(std::move(r));
-    lexurgy_process.write(s.data(), qint64(s.size()));
+    std::string_view req{s.data(), s.size()};
+    if (App::The().settings_dialog()->show_json_requests())
+        Debug(" -> Lexurgy: {}", req);
+    lexurgy_process.write(req.data(), qint64(req.size()));
     lexurgy_process.write("\n");
     lexurgy_process.waitForReadyRead(5'000);
     auto line = lexurgy_process.readLine();

@@ -24,12 +24,18 @@ public:
     SettingsDialog();
     ~SettingsDialog() noexcept;
 
+    /// Initialise the dialog.
+    void init();
+
     /// Reset the settings dialog as appropriate for a new project. This
     /// must be called after the main window has been initialised.
     ///
     /// This is not just called `reset()` because I’ve accidentally called
     /// `std::unique_ptr::reset()` on this thing before...
     void reset_dialog();
+
+    /// Check whether we should show JSON requests.
+    bool show_json_requests() const;
 
 public slots:
     void set_default_font();

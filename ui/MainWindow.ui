@@ -521,7 +521,14 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
                </widget>
               </item>
               <item>
-               <widget class="QComboBox" name="sca_cbox_stop_before"/>
+               <widget class="QComboBox" name="sca_cbox_stop_before">
+                <property name="minimumSize">
+                 <size>
+                  <width>200</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>

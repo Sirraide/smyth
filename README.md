@@ -14,6 +14,7 @@ However, the project file format is expected to remain stable.
 ## Building
 Building this application requires:
 - a recent C++ compiler (Clang 18 or later);
+- a recent version of libstdc++ (libc++ isn’t tested and also won’t work unless you link Qt against it);
 - a recent version of CMake (3.27 or later);
 - an installation of Qt6 (6.6.1 or later should work);
 - ICU (International Components for Unicode).
@@ -32,3 +33,7 @@ and available platforms.
 For example, my Qt installation is in `/opt/Qt`, my Qt version is `6.6.1`, and my
 platform is x86_64, for which there is a `gcc_64` directory. Putting all of these
 together, the path I need to specify ends up being `/opt/Qt/6.6.1/gcc_64`.
+
+If your Qt installation is split up across several directories, set
+your path to `/usr/lib` or `/usr/lib64`. The path you need is the
+one that contains `Qt6Config.cmake` in one of its subdirectories.

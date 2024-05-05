@@ -10,46 +10,6 @@
 #include <UI/TextPreviewDialog.hh>
 #include <ui_MainWindow.h>
 
-namespace smyth::ui {
-namespace {
-void PersistCBox(App& app, std::string key, QComboBox* cbox) {
-    app.persist<&QComboBox::currentIndex, &QComboBox::setCurrentIndex>(
-        std::move(key),
-        cbox
-    );
-}
-
-void PersistChBox(App& app, std::string key, QCheckBox* cbox) {
-    app.persist<&QCheckBox::checkState, &QCheckBox::setCheckState>(
-        std::move(key),
-        cbox
-    );
-}
-
-/// Like PersistCBox, but the entries are generated dynamically.
-void PersistDynCBox(App& app, std::string key, QComboBox* cbox) {
-    app.persist<&QComboBox::currentText, [](QComboBox* cbox, QString str) {
-        // If the item does not exists yet, add it.
-        if (cbox->findText(str) == -1) cbox->addItem(str);
-        cbox->setCurrentText(str);
-    }>(std::move(key), cbox);
-}
-
-/// Splitters may crash if we supply a value that is larger than the total width.
-void PersistSplitter(App& app, std::string key, QSplitter* splitter) {
-    app.persist<&QSplitter::sizes, [](QSplitter* w, QList<int> sz) {
-        // If the sum is greater than the width, ignore.
-        if (std::accumulate(sz.begin(), sz.end(), 0) > w->width()) {
-            Debug("Ignoring invalid saved splitter sizes: {} vs total width {}", sz, w->width());
-            return;
-        }
-
-        w->setSizes(sz);
-    }>(std::move(key), splitter);
-}
-} // namespace
-} // namespace smyth::ui
-
 /// Needs destructor that isn’t visible in the header.
 smyth::ui::MainWindow::~MainWindow() noexcept = default;
 
@@ -64,8 +24,10 @@ smyth::ui::MainWindow::MainWindow()
     // Initialise shortcuts.
     auto save = new QShortcut(QKeySequence::Save, this);
     auto open = new QShortcut(QKeySequence::Open, this);
+    auto quit = new QShortcut(QKeySequence::Quit, this);
     connect(save, &QShortcut::activated, this, &MainWindow::save_project);
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
+    connect(quit, &QShortcut::activated, this, &MainWindow::close);
 
     // Initialise other signals.
     connect(ui->char_map, &SmythCharacterMap::selected, this, &MainWindow::char_map_update_selection);
@@ -273,14 +235,14 @@ void smyth::ui::MainWindow::persist() {
     ui->output->persist(app, "main.output");
     ui->char_map_details_panel->persist(app, "charmap.details", false);
     app.persist<&QWidget::font, &QWidget::setFont>("charmap.font", ui->char_map);
-    PersistSplitter(app, "main.sca.splitter.sizes", ui->sca_text_edits);
-    PersistSplitter(app, "charmap.splitter.sizes", ui->char_map_splitter);
-    PersistCBox(app, "main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
-    PersistCBox(app, "main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
-    PersistCBox(app, "main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
-    PersistDynCBox(app, "main.sca.cbox.stop.before", ui->sca_cbox_stop_before);
-    PersistChBox(app, "main.sca.chbox.details", ui->sca_chbox_details);
-    PersistChBox(app, "main.sca.chbox.enable.js", ui->sca_chbox_enable_javascript);
+    PersistSplitter("main.sca.splitter.sizes", ui->sca_text_edits);
+    PersistSplitter("charmap.splitter.sizes", ui->char_map_splitter);
+    PersistCBox("main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
+    PersistCBox("main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
+    PersistCBox("main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
+    PersistDynCBox("main.sca.cbox.stop.before", ui->sca_cbox_stop_before);
+    PersistChBox("main.sca.chbox.details", ui->sca_chbox_details);
+    PersistChBox("main.sca.chbox.enable.js", ui->sca_chbox_enable_javascript);
 
     // Hide the details panels if the checkbox is unchecked.
     if (not ui->sca_chbox_details->isChecked()) {

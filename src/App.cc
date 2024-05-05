@@ -31,6 +31,7 @@ smyth::ui::App::App(ErrorMessageHandler handler) {
     main = std::make_unique<class MainWindow>();
     settings = std::make_unique<SettingsDialog>();
     main->init();
+    settings->init();
 }
 
 void smyth::ui::App::NoteLastOpenProject() {
