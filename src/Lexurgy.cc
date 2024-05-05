@@ -69,7 +69,7 @@ auto smyth::ui::Lexurgy::SendRequest(Req&& r) -> Result<Res> {
 auto smyth::ui::Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {
     auto tr = std::move(changes).trimmed();
     if (tr == sound_changes) return {};
-    Try(SendRequest<OkResponse>(LoadStringRequest{changes.toStdString()}));
+    Try(SendRequest<OkResponse>(LoadStringRequest{tr.toStdString()}));
     sound_changes = std::move(tr);
     return {};
 }
