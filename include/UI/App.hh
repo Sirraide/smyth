@@ -87,8 +87,10 @@ public:
     /// Open a project from a file.
     auto open() -> Result<>;
 
-    /// Quit the program.
-    void quit(QCloseEvent* e);
+    /// Ask the user if we should close the current project.
+    ///
+    /// \return Whether we should close the project.
+    bool prompt_close_project();
 
     /// Save project to a file.
     auto save() -> Result<>;
@@ -108,9 +110,6 @@ private:
 
     /// Open a project.
     auto OpenProject(QString path) -> Result<>;
-
-    /// Ask the user if we should close the current project.
-    bool PromptCloseProject();
 
     /// Save project to a file.
     ///

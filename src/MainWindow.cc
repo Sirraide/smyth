@@ -27,7 +27,7 @@ smyth::ui::MainWindow::MainWindow()
     auto quit = new QShortcut(QKeySequence::Quit, this);
     connect(save, &QShortcut::activated, this, &MainWindow::save_project);
     connect(open, &QShortcut::activated, this, &MainWindow::open_project);
-    connect(quit, &QShortcut::activated, this, &MainWindow::close);
+    connect(quit, &QShortcut::activated, this, &MainWindow::close); // FIXME: Should prompt for save
 
     // Initialise other signals.
     connect(ui->char_map, &SmythCharacterMap::selected, this, &MainWindow::char_map_update_selection);
@@ -179,7 +179,8 @@ void smyth::ui::MainWindow::char_map_update_selection(char32_t codepoint) {
 }
 
 void smyth::ui::MainWindow::closeEvent(QCloseEvent* event) {
-    App::The().quit(event);
+    if (not App::The().prompt_close_project()) return event->ignore();
+    QMainWindow::closeEvent(event);
 }
 
 void smyth::ui::MainWindow::debug() {
@@ -265,6 +266,11 @@ void smyth::ui::MainWindow::preview_changes_after_eval() {
     }
 
     TextPreviewDialog::Show("Sound Changes: Preview", changes, ui->changes->font(), this);
+}
+
+void smyth::ui::MainWindow::prompt_quit() {
+    if (not App::The().prompt_close_project()) return;
+    close();
 }
 
 void smyth::ui::MainWindow::save_project() {

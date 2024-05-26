@@ -52,7 +52,7 @@ auto smyth::ui::App::OpenProject(QString path) -> Result<> {
     return {};
 }
 
-bool smyth::ui::App::PromptCloseProject() {
+bool smyth::ui::App::prompt_close_project() {
     enum struct State {
         Start,
         UnsavedChanges,
@@ -189,7 +189,7 @@ auto smyth::ui::App::load_last_open_project() -> Result<> {
 }
 
 void smyth::ui::App::new_project() {
-    if (not PromptCloseProject()) return;
+    if (not prompt_close_project()) return;
     db = Database::CreateInMemory();
     save_path = "";
     last_save_time = std::nullopt;
@@ -209,11 +209,6 @@ auto smyth::ui::App::open() -> Result<> {
 
     if (path.isEmpty()) return {};
     return OpenProject(std::move(path));
-}
-
-void smyth::ui::App::quit(QCloseEvent* e) {
-    if (not PromptCloseProject()) return e->ignore();
-    MainWindow()->QMainWindow::closeEvent(e);
 }
 
 auto smyth::ui::App::save() -> Result<> {

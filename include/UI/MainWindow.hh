@@ -64,6 +64,7 @@ public slots:
     void open_project();
     void open_settings();
     void preview_changes_after_eval();
+    void prompt_quit();
     void save_project();
 
 private:
