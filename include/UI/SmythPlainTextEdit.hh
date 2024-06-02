@@ -27,12 +27,6 @@ public:
             std::format("{}.text", key),
             this
         );
-
-        Persist<&This::font, &This::setFont>(
-            store,
-            std::format("{}.font", key),
-            this
-        );
     }
 
     void wheelEvent(QWheelEvent* event) override {

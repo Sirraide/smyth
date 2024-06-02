@@ -34,12 +34,10 @@ public:
     /// `std::unique_ptr::reset()` on this thing before...
     void reset_dialog();
 
-    /// Check whether we should show JSON requests.
-    bool show_json_requests() const;
-
 public slots:
     void set_default_font();
     void set_mono_font();
+    void toggle_show_json_requests();
 };
 
 #endif // SMYTH_UI_SETTINGSDIALOG_HH

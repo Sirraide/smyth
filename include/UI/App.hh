@@ -7,6 +7,7 @@
 #include <Smyth/Utils.hh>
 #include <UI/Lexurgy.hh>
 #include <UI/PersistObjects.hh>
+#include <UI/UserSettings.hh>
 #include <UI/Utils.hh>
 
 namespace smyth::ui {
@@ -19,7 +20,8 @@ class App;
 ///     constituent classes, and add a 'RunApplication' function.
 class smyth::ui::App final {
     /// Hack to make sure 'the_app' is initialised before everything else.
-    struct _init {} _init_;
+    struct _init {
+    } _init_;
 
     /// Lexurgy background process.
     std::unique_ptr<Lexurgy> lexurgy_ptr;
@@ -41,8 +43,13 @@ public:
     /// Used for global settings.
     PersistentStore global_store;
 
+    /// Per-user settings.
+    UserSetting<QFont> mono_font{"mono.font", QFont{"monospace"}};
+    UserSetting<QFont> serif_font{"serif.font", QFont{"serif"}};
+    UserSetting<> last_open_project{"last_open_project", ""};
+
 #ifdef SMYTH_DEBUG
-    PersistentStore& debug_store = CreateStore("__debug__", global_store);
+    UserSetting<bool> dump_json_requests{"__debug__/dump_json_requests", false};
 #endif
 
     SMYTH_IMMOVABLE(App);
@@ -55,9 +62,6 @@ public:
         QString sound_changes,
         QString stop_before
     ) -> Result<QString>;
-
-    /// Load the last project we had open.
-    auto load_last_open_project() -> Result<>;
 
     /// Open a new project.
     void new_project();
@@ -95,8 +99,8 @@ private:
     /// Create or get the current lexurgy instance.
     auto GetLexurgy() -> Result<Lexurgy&>;
 
-    /// Remember the last project we had open.
-    void NoteLastOpenProject();
+    /// Load the last project we had open.
+    void LoadLastOpenProject();
 
     /// Open a project.
     auto OpenProject(QString path) -> Result<>;

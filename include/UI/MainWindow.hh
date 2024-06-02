@@ -23,6 +23,7 @@ class MainWindow final : public QMainWindow {
     /// App is the main controller of the program and needs to call protected
     /// functions sometimes.
     friend App;
+
 public:
     SMYTH_IMMOVABLE(MainWindow);
     MainWindow();
@@ -38,20 +39,8 @@ public:
     /// Show the window to the user. This is called once during startup.
     void init();
 
-    /// Get the current default monospace font.
-    auto mono_font() const -> const QFont&;
-
     /// Initialise persistent objects.
     void persist();
-
-    /// Get the current default serif font.
-    auto serif_font() const -> const QFont&;
-
-    /// Set the default monospace font.
-    void set_mono_font(QFont f);
-
-    /// Set the default serif font.
-    void set_serif_font(QFont f);
 
     /// Set the path to be shown in the window title.
     void set_window_path(QString path);

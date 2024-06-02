@@ -3,7 +3,6 @@
 #include <Smyth/Utils.hh>
 #include <UI/App.hh>
 #include <UI/Lexurgy.hh>
-#include <UI/SettingsDialog.hh>
 
 using namespace smyth;
 using namespace smyth::ui;
@@ -11,8 +10,9 @@ using json = json_utils::json;
 
 static auto SendRequest(QProcess& lexurgy_process, const json& request) -> Result<json> {
     auto req = request.dump();
-    if (App::The().settings_dialog()->show_json_requests())
-        Debug(" -> Lexurgy: {}", req);
+#ifdef SMYTH_DEBUG
+    if (*App::The().dump_json_requests) Debug(" -> Lexurgy: {}", req);
+#endif
     lexurgy_process.write(req.data(), qint64(req.size()));
     lexurgy_process.write("\n");
     lexurgy_process.waitForReadyRead(5'000);

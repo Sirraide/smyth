@@ -22,6 +22,14 @@ struct fmt::formatter<QString> : formatter<std::string> {
 };
 
 template <>
+struct fmt::formatter<QAnyStringView> : formatter<std::string> {
+    template <typename FormatContext>
+    auto format(QAnyStringView s, FormatContext& ctx) {
+        return formatter<std::string>::format(s.toString().toStdString(), ctx);
+    }
+};
+
+template <>
 struct fmt::formatter<QRect> : formatter<std::string_view> {
     template <typename FormatContext>
     auto format(const QRect& r, FormatContext& ctx) {

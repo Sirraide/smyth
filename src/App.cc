@@ -2,12 +2,11 @@
 #include <QCoreApplication>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QSettings>
 #include <UI/App.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
-
-#define SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY "last_open_project"
+#include <UI/SmythCharacterMap.hh>
+#include <UI/SmythPlainTextEdit.hh>
 
 using namespace smyth::ui;
 
@@ -25,6 +24,9 @@ App::App() : _init_{[&] { the_app = this; return _init{}; }()} {
     settings = std::make_unique<SettingsDialog>();
     main->init();
     settings->init();
+    detail::user_settings::Init();
+    MainWindow()->setWindowTitle("Smyth");
+    LoadLastOpenProject();
 }
 
 auto App::CreateStore(std::string name, PersistentStore& parent) -> PersistentStore& {
@@ -41,10 +43,13 @@ auto App::GetLexurgy() -> Result<Lexurgy&> {
     return *lexurgy_ptr;
 }
 
-void App::NoteLastOpenProject() {
-    QSettings s{QSettings::UserScope};
-    s.setValue(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY, save_path);
-    MainWindow()->set_window_path(save_path);
+void App::LoadLastOpenProject() {
+    // Check if we have a last open project.
+    auto& path = *last_open_project;
+    fmt::print("LAST OPEN PROJECT: {}\n", path);
+    if (path.isEmpty()) return;
+    if (not fs::exists(path.toStdString())) return;
+    MainWindow()->HandleErrors(OpenProject(std::move(path)));
 }
 
 auto App::OpenProject(QString path) -> Result<> {
@@ -63,18 +68,20 @@ auto App::OpenProject(QString path) -> Result<> {
 
     // Update save path and remember it.
     save_path = std::move(path);
-    NoteLastOpenProject();
+    last_open_project.set(save_path);
+    fmt::print("SETTING SAVE PATH: {}\n", save_path);
     return {};
 }
 
 auto App::SaveImpl() -> Result<> {
+    fmt::print("SAVE PATH: {}\n", save_path);
     // Dew it.
     auto j = Try(global_store.save_all());
     Try(utils::WriteFile(save_path.toStdString(), j.dump(4)));
 
     // Update last save time.
     last_save_time = std::chrono::system_clock::now();
-    NoteLastOpenProject();
+    last_open_project.set(save_path);
     return {};
 }
 
@@ -88,15 +95,6 @@ auto App::apply_sound_changes(
     QString stop_before
 ) -> Result<QString> {
     return Try(GetLexurgy())->apply(inputs, std::move(sound_changes), stop_before);
-}
-
-auto App::load_last_open_project() -> Result<> {
-    // Check if we have a last open project.
-    QSettings s{QSettings::UserScope};
-    auto path = s.value(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY).toString();
-    if (path.isEmpty()) return {};
-    if (not fs::exists(path.toStdString())) return {};
-    return OpenProject(std::move(path));
 }
 
 void App::new_project() {

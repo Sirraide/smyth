@@ -2,7 +2,6 @@
 #include <QInputDialog>
 #include <QJSEngine>
 #include <QMessageBox>
-#include <QRegularExpression>
 #include <QShortcut>
 #include <Smyth/Unicode.hh>
 #include <UI/MainWindow.hh>
@@ -205,10 +204,6 @@ void smyth::ui::MainWindow::init() {
     persist();
 }
 
-auto smyth::ui::MainWindow::mono_font() const -> const QFont& {
-    return ui->changes->font();
-}
-
 void smyth::ui::MainWindow::new_project() {
     App::The().new_project();
 }
@@ -237,12 +232,10 @@ void smyth::ui::MainWindow::persist() {
     ui->output->persist(main_store, "output");
 
     PersistentStore& charmap = App::CreateStore("charmap", main_store);
-    ui->char_map_details_panel->persist(charmap, "charmap.details", false);
-    Persist<&QWidget::font, &QWidget::setFont>(charmap, "charmap.font", ui->char_map);
+    PersistSplitter(charmap, "splitter.sizes", ui->char_map_splitter);
 
     PersistentStore& sca = App::CreateStore("sca", main_store);
     PersistSplitter(sca, "splitter.sizes", ui->sca_text_edits);
-    PersistSplitter(charmap, "splitter.sizes", ui->char_map_splitter);
     PersistCBox(sca, "cbox.input.norm.choice", ui->sca_cbox_input_norm);
     PersistCBox(sca, "cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
     PersistCBox(sca, "cbox.output.norm.choice", ui->sca_cbox_output_norm);
@@ -258,8 +251,13 @@ void smyth::ui::MainWindow::persist() {
         ui->frame_stop_before->setVisible(false);
     }
 
-    // Load last open project, if any.
-    HandleErrors(App::The().load_last_open_project());
+    // Init user settings.
+    App::The().serif_font.subscribe(ui->input, &SmythPlainTextEdit::setFont);
+    App::The().serif_font.subscribe(ui->output, &SmythPlainTextEdit::setFont);
+    App::The().serif_font.subscribe(ui->char_map, &SmythCharacterMap::setFont);
+    App::The().serif_font.subscribe(ui->char_map_details_panel, &SmythRichTextEdit::setFont);
+    App::The().mono_font.subscribe(ui->changes, &SmythPlainTextEdit::setFont);
+    App::The().last_open_project.subscribe([this](const QString& s) { set_window_path(s); });
 }
 
 void smyth::ui::MainWindow::preview_changes_after_eval() {
@@ -279,31 +277,6 @@ void smyth::ui::MainWindow::prompt_quit() {
 
 void smyth::ui::MainWindow::save_project() {
     HandleErrors(App::The().save());
-}
-
-auto smyth::ui::MainWindow::serif_font() const -> const QFont& {
-    return ui->input->font();
-}
-
-void smyth::ui::MainWindow::set_mono_font(QFont f) {
-    // Set only the family and keep size etc. as is.
-    QFont font{ui->changes->font()};
-    font.setFamily(f.family());
-    ui->changes->setFont(font);
-}
-
-void smyth::ui::MainWindow::set_serif_font(QFont f) {
-    // Set only the family and keep size etc. as is.
-    QFont font{ui->input->font()};
-    font.setFamily(f.family());
-    ui->input->setFont(font);
-    ui->output->setFont(font);
-
-    // The font size of this one is larger.
-    QFont ctab_font{ui->char_map->font()};
-    ctab_font.setFamily(f.family());
-    ui->char_map->setFont(ctab_font);
-    ui->char_map->update();
 }
 
 void smyth::ui::MainWindow::set_window_path(QString path) {
