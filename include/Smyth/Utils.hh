@@ -1,7 +1,11 @@
 #ifndef FOOBAR_UTILS_HH
 #define FOOBAR_UTILS_HH
 
+#include <expected>
+#include <filesystem>
 #include <fmt/format.h>
+#include <fmt/std.h>
+#include <libassert/assert.hpp>
 #include <ranges>
 
 #define SMYTH_STR_(X) #X
@@ -16,37 +20,60 @@
     cls(cls&&) = delete;                 \
     cls& operator=(cls&&) = delete
 
-// clang-format off
-#define SMYTH_ASSERT_IMPL(kind, cond, ...) (cond ? void(0) : \
-    ::smyth::detail::AssertFail(                             \
-        ::smyth::detail::AssertKind::kind,                   \
-        #cond,                                               \
-        __FILE__,                                            \
-        __LINE__                                             \
-        __VA_OPT__(, fmt::format(__VA_ARGS__))               \
-    )                                                        \
-)
+#define LPAREN_ (
+#define RPAREN_ )
 
-#define SMYTH_ABORT_IMPL(kind, ...)             \
-    ::smyth::detail::AssertFail(                \
-        ::smyth::detail::AssertKind::kind,      \
-        "",                                     \
-        __FILE__,                               \
-        __LINE__                                \
-        __VA_OPT__(, fmt::format(__VA_ARGS__))  \
-    )                                           \
-
-#define Assert(cond, ...) SMYTH_ASSERT_IMPL(AK_Assert, cond __VA_OPT__(, __VA_ARGS__))
-#define Todo(...) SMYTH_ABORT_IMPL(AK_Todo __VA_OPT__(, __VA_ARGS__))
-#define Unreachable(...) SMYTH_ABORT_IMPL(AK_Unreachable __VA_OPT__(, __VA_ARGS__))
+/// Macro that propagates errors up the call stack.
+///
+/// The second optional argument to the macro, if present, should be an
+/// expression that evaluates to a string that will be propagated up the
+/// call stack as the error; the original error is in scope as `$`.
+///
+/// Example usage: Given
+///
+///     auto foo() -> Result<Bar> { ... }
+///
+/// we can write
+///
+///     Bar res = Try(foo());
+///     Bar res = Try(foo(), std::format("Failed to do X: {}", $));
+///
+/// to invoke `foo` and propagate the error up the call stack, if there
+/// is one; this way, we don’t have to actually write any verbose error
+/// handling code.
+///
+/// (Yes, I know this macro is an abomination, but this is what happens
+/// if you don’t have access to this as a language feature...)
+#define Try(x, ...) ({                                                        \
+    auto _res = x;                                                            \
+    if (not _res) {                                                           \
+        return std::unexpected(                                               \
+            __VA_OPT__(                                                       \
+                [&]([[maybe_unused]] std::string $) {                         \
+            return __VA_ARGS__;                                               \
+        }                                                                     \
+            ) __VA_OPT__(LPAREN_) std::move(_res.error()) __VA_OPT__(RPAREN_) \
+        );                                                                    \
+    }                                                                         \
+    using ResTy = std::remove_reference_t<decltype(*_res)>;                   \
+    static_cast<typename ::smyth::detail::TryResultType<ResTy>::type>(*_res); \
+})
 // clang-format on
 
+// My IDE doesn’t know about __builtin_expect_with_probability, for some reason.
+#if !__has_builtin(__builtin_expect_with_probability)
+#    define __builtin_expect_with_probability(x, y, z) __builtin_expect(x, y)
+#endif
+
+#define Assert(cond, ...)      LIBASSERT_ASSERT(cond __VA_OPT__(, fmt::format(__VA_ARGS__)))
+#define DebugAssert(cond, ...) LIBASSERT_DEBUG_ASSERT(AK_DebugAssert, cond __VA_OPT__(, __VA_ARGS__))
+#define Unreachable(...)       LIBASSERT_UNREACHABLE(__VA_OPT__(fmt::format(__VA_ARGS__)))
+#define Todo(...)              Unreachable("Todo" __VA_OPT__(": " __VA_ARGS__))
+
 #ifndef NDEBUG
-#    define SMYTH_DEBUG(...)       __VA_ARGS__
-#    define DebugAssert(cond, ...) SMYTH_ASSERT_IMPL(AK_DebugAssert, cond __VA_OPT__(, __VA_ARGS__))
+#    define SMYTH_DEBUG(...) __VA_ARGS__
 #else
 #    define SMYTH_DEBUG(...)
-#    define DebugAssert(cond, ...)
 #endif
 
 #define defer [[maybe_unused]] ::smyth::detail::DeferImpl _ = [&]
@@ -55,6 +82,7 @@ namespace smyth {
 using namespace std::literals;
 namespace rgs = std::ranges;
 namespace vws = std::ranges::views;
+namespace fs = std::filesystem;
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -70,30 +98,10 @@ using i64 = int64_t;
 using isz = ptrdiff_t;
 using iptr = intptr_t;
 
-enum struct ErrorMessageType {
-    Info,
-    Error,
-    Fatal,
-};
+using f32 = float;
+using f64 = double;
 
 namespace detail {
-enum struct AssertKind {
-    AK_Assert,
-    AK_DebugAssert,
-    AK_Todo,
-    AK_Unreachable,
-};
-
-[[noreturn]] void AssertFail(
-    AssertKind k,
-    std::string_view condition,
-    std::string_view file,
-    int line,
-    std::string&& message = ""
-);
-
-void MessageImpl(std::string message, ErrorMessageType type);
-
 template <typename Callable>
 class DeferImpl {
     Callable cb;
@@ -104,9 +112,84 @@ public:
     ~DeferImpl() { cb(); }
 };
 
+template <typename Ty>
+struct TryResultType {
+    using type = std::remove_reference_t<Ty>&&;
+};
+
+template <typename Ty>
+requires std::is_void_v<Ty>
+struct TryResultType<Ty> {
+    using type = void;
+};
+
+template <typename Ty>
+requires (not std::is_reference_v<Ty>)
+class ReferenceWrapper {
+    Ty* ptr;
+public:
+    ReferenceWrapper(Ty& ref) : ptr(&ref) {}
+    operator Ty&() const { return *ptr; }
+    auto operator&() const -> Ty* { return ptr; }
+    auto operator->() const -> Ty* { return ptr; }
+};
+
+template <typename Ty>
+concept Reference = std::is_reference_v<Ty>;
+
+template <typename Ty>
+concept NotReference = not Reference<Ty>;
+
+template <typename Ty>
+struct ResultImpl;
+
+template <Reference Ty>
+struct ResultImpl<Ty> {
+    using type = std::expected<ReferenceWrapper<std::remove_reference_t<Ty>>, std::string>;
+};
+
+template <NotReference Ty>
+struct ResultImpl<Ty> {
+    using type = std::expected<Ty, std::string>;
+};
+
+template <typename Ty>
+struct ResultImpl<std::reference_wrapper<Ty>> {
+    using type = typename ResultImpl<Ty&>::type;
+    static_assert(false, "Use Result<T&> instead of Result<reference_wrapper<T>>");
+};
+
+template <typename Ty>
+struct ResultImpl<ReferenceWrapper<Ty>> {
+    using type = typename ResultImpl<Ty&>::type;
+    static_assert(false, "Use Result<T&> instead of Result<ReferenceWrapper<T>>");
+};
 } // namespace detail
 
+template <typename T = void>
+struct [[nodiscard]] Result : detail::ResultImpl<T>::type {
+    using detail::ResultImpl<T>::type::type;
+};
+
+/// FIXME: Use 'std::format' everywhere now that it exists.
+template <typename... Args>
+[[nodiscard]] auto Error(fmt::format_string<Args...> fmt, Args&&... args) -> std::unexpected<std::string> {
+    return std::unexpected(fmt::format(fmt, std::forward<Args>(args)...));
+}
+
+/// Convert an enum to the underlying integer type.
+template <typename Ty>
+requires std::is_enum_v<Ty>
+[[nodiscard]] auto operator+(Ty ty) -> std::underlying_type_t<Ty> {
+    return std::to_underlying(ty);
+}
+
 namespace utils {
+using FileHandle = std::unique_ptr<std::FILE, decltype(&std::fclose)>;
+
+template <typename T, typename U>
+concept is = std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<U>>;
+
 template <typename... Funcs>
 struct Overloaded : Funcs... {
     using Funcs::operator()...;
@@ -120,9 +203,16 @@ template <typename Variant, typename Visitor>
 constexpr decltype(auto) visit(Visitor&& visitor, Variant&& variant) {
     return std::visit(std::forward<Variant>(variant), std::forward<Visitor>(visitor));
 }
-} // namespace utils
 
-using ErrorMessageHandler = void(std::string, ErrorMessageType type);
+/// Write a file to disk.
+///
+/// This checks whether the file exists, is a file, etc.
+///
+/// This does NOT prompt the user whether they want to override an existing
+/// file etc. It only writes to disk. Use 'QFileDialog::getSaveFileName()'
+/// for the former.
+auto WriteFile(const fs::path& file_path, std::string_view contents) -> Result<>;
+} // namespace utils
 
 /// Print a debug message to the terminal.
 template <typename... arguments>
@@ -131,34 +221,6 @@ void Debug(fmt::format_string<arguments...> fmt, arguments&&... args) {
     fmt::print(stderr, fmt, std::forward<arguments>(args)...);
     fmt::print(stderr, "\033[m\n");
 }
-
-/// Display an informational message to the user.
-template <typename... arguments>
-void Info(fmt::format_string<arguments...> fmt, arguments&&... args) {
-    detail::MessageImpl(fmt::format(fmt, std::forward<arguments>(args)...), ErrorMessageType::Info);
-}
-
-/// Display an error to the user.
-template <typename... arguments>
-void Error(fmt::format_string<arguments...> fmt, arguments&&... args) {
-    detail::MessageImpl(fmt::format(fmt, std::forward<arguments>(args)...), ErrorMessageType::Error);
-}
-
-/// Display an error to the user and exit.
-template <typename... arguments>
-[[noreturn]] void Fatal(fmt::format_string<arguments...> fmt, arguments&&... args) {
-    detail::MessageImpl(fmt::format(fmt, std::forward<arguments>(args)...), ErrorMessageType::Fatal);
-    std::exit(1);
-}
-
-/// Register a message handler.
-///
-/// This handler will be invoked whenever an error is encountered. This
-/// function is thread-safe.
-///
-/// \param handler The handler to register. If this is `nullptr`, the
-///                default handler will be used.
-void RegisterMessageHandler(ErrorMessageHandler handler);
 } // namespace smyth
 
 #endif // FOOBAR_UTILS_HH

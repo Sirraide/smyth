@@ -8,30 +8,10 @@
 #include <QSize>
 #include <QString>
 
-#define SMYTH_MAIN_STORE_KEY "store"
-
 namespace smyth::ui {
 class MainWindow;
 class SettingsDialog;
-
-namespace detail {
-template <typename>
-struct ExtractTypeImpl;
-
-template <typename Type, typename Object>
-struct ExtractTypeImpl<Type(Object::*)> {
-    using type = Type;
-};
-
-template <typename Type, typename Object>
-struct ExtractTypeImpl<Type (Object::*)() const> {
-    using type = Type;
-};
-
-template <typename Type>
-using ExtractType = typename ExtractTypeImpl<Type>::type;
-} // namespace detail
-} // namespace smyth::ui
+}
 
 template <>
 struct fmt::formatter<QString> : formatter<std::string> {

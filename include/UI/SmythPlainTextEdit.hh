@@ -21,13 +21,15 @@ public:
     SmythPlainTextEdit(QWidget* parent = nullptr)
         : QPlainTextEdit(parent) {}
 
-    void persist(App& app, std::string_view key) {
-        app.persist<&This::toPlainText, &This::setPlainText>(
+    void persist(PersistentStore& store, std::string_view key) {
+        Persist<&This::toPlainText, &This::setPlainText>(
+            store,
             std::format("{}.text", key),
             this
         );
 
-        app.persist<&This::font, &This::setFont>(
+        Persist<&This::font, &This::setFont>(
+            store,
             std::format("{}.font", key),
             this
         );

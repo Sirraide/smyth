@@ -21,13 +21,15 @@ public:
     SmythRichTextEdit(QWidget* parent = nullptr)
         : QTextEdit(parent) {}
 
-    void persist(App& app, std::string_view key, bool include_text = true) {
-        if (include_text) app.persist<&This::toHtml, &This::setHtml>(
+    void persist(PersistentStore& store, std::string_view key, bool include_text = true) {
+        if (include_text) Persist<&This::toHtml, &This::setHtml>(
+            store,
             std::format("{}.text", key),
             this
         );
 
-        app.persist<&This::font, &This::setFont>(
+        Persist<&This::font, &This::setFont>(
+            store,
             std::format("{}.font", key),
             this
         );

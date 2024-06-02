@@ -125,7 +125,7 @@ auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -
         if (end == -1) break;
         auto expr = changes.mid(next + 2, end - next - 2);
         auto result = js.evaluate(expr);
-        if (result.isError()) return Err(
+        if (result.isError()) return Error(
             "Exception in JS Evaluation: {}\nWhile evaluating:\n{}",
             result.toString(),
             expr
@@ -145,7 +145,7 @@ auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -
 }
 
 void smyth::ui::MainWindow::HandleErrors(Result<> r) {
-    if (r.is_err()) Error("{}", r.err().message);
+    if (not r) App::ShowError(QString::fromStdString(r.error()));
 }
 
 void smyth::ui::MainWindow::apply_sound_changes() {
@@ -222,29 +222,33 @@ void smyth::ui::MainWindow::open_settings() {
 }
 
 void smyth::ui::MainWindow::persist() {
-    auto& app = App::The();
+    PersistentStore& main_store = App::CreateStore("main");
 
     // Window needs to be updated before everything else to ensure that
     // the rest of the objects are working with the correct size.
-    app.persist<&QWidget::size, [](QWidget* w, QSize s) {
+    Persist<&QWidget::size, [](QWidget* w, QSize s) {
         w->resize(s);
         QApplication::processEvents();
-    }>("main.window.size", this, 1);
+    }>(main_store, "window.size", this, 1);
 
     // Initialise persistent settings.
-    ui->input->persist(app, "main.input");
-    ui->changes->persist(app, "main.changes");
-    ui->output->persist(app, "main.output");
-    ui->char_map_details_panel->persist(app, "charmap.details", false);
-    app.persist<&QWidget::font, &QWidget::setFont>("charmap.font", ui->char_map);
-    PersistSplitter("main.sca.splitter.sizes", ui->sca_text_edits);
-    PersistSplitter("charmap.splitter.sizes", ui->char_map_splitter);
-    PersistCBox("main.sca.cbox.input.norm.choice", ui->sca_cbox_input_norm);
-    PersistCBox("main.sca.cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
-    PersistCBox("main.sca.cbox.output.norm.choice", ui->sca_cbox_output_norm);
-    PersistDynCBox("main.sca.cbox.stop.before", ui->sca_cbox_stop_before);
-    PersistChBox("main.sca.chbox.details", ui->sca_chbox_details);
-    PersistChBox("main.sca.chbox.enable.js", ui->sca_chbox_enable_javascript);
+    ui->input->persist(main_store, "input");
+    ui->changes->persist(main_store, "changes");
+    ui->output->persist(main_store, "output");
+
+    PersistentStore& charmap = App::CreateStore("charmap", main_store);
+    ui->char_map_details_panel->persist(charmap, "charmap.details", false);
+    Persist<&QWidget::font, &QWidget::setFont>(charmap, "charmap.font", ui->char_map);
+
+    PersistentStore& sca = App::CreateStore("sca", main_store);
+    PersistSplitter(sca, "splitter.sizes", ui->sca_text_edits);
+    PersistSplitter(charmap, "splitter.sizes", ui->char_map_splitter);
+    PersistCBox(sca, "cbox.input.norm.choice", ui->sca_cbox_input_norm);
+    PersistCBox(sca, "cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
+    PersistCBox(sca, "cbox.output.norm.choice", ui->sca_cbox_output_norm);
+    PersistDynCBox(sca, "cbox.stop.before", ui->sca_cbox_stop_before);
+    PersistChBox(sca, "chbox.details", ui->sca_chbox_details);
+    PersistChBox(sca, "chbox.enable.js", ui->sca_chbox_enable_javascript);
 
     // Hide the details panels if the checkbox is unchecked.
     if (not ui->sca_chbox_details->isChecked()) {
@@ -255,13 +259,13 @@ void smyth::ui::MainWindow::persist() {
     }
 
     // Load last open project, if any.
-    HandleErrors(app.load_last_open_project());
+    HandleErrors(App::The().load_last_open_project());
 }
 
 void smyth::ui::MainWindow::preview_changes_after_eval() {
     auto changes = ui->changes->toPlainText();
-    if (auto res = EvaluateAndInterpolateJavaScript(changes); res.is_err()) {
-        Error("{}", res.err().message);
+    if (auto res = EvaluateAndInterpolateJavaScript(changes); not res) {
+        HandleErrors(std::move(res));
         return;
     }
 

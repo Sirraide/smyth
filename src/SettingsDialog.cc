@@ -11,7 +11,7 @@ smyth::ui::SettingsDialog::SettingsDialog()
 
 void smyth::ui::SettingsDialog::init() {
 #ifdef SMYTH_DEBUG
-    PersistChBox("debug:settings_dump_json_requests", ui->debug_show_json);
+    PersistChBox(App::The().debug_store, "settings_dump_json_requests", ui->debug_show_json);
 #endif
 }
 

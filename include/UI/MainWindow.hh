@@ -23,7 +23,6 @@ class MainWindow final : public QMainWindow {
     /// App is the main controller of the program and needs to call protected
     /// functions sometimes.
     friend App;
-
 public:
     SMYTH_IMMOVABLE(MainWindow);
     MainWindow();

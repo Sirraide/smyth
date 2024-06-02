@@ -1,29 +1,22 @@
 #include <filesystem>
-#include <mutex>
 #include <QCoreApplication>
 #include <QFileDialog>
-#include <QLayout>
 #include <QMessageBox>
 #include <QSettings>
 #include <UI/App.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
 
-namespace fs = std::filesystem;
-
 #define SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY "last_open_project"
+
+using namespace smyth::ui;
 
 /// ====================================================================
 ///  App
 /// ====================================================================
-smyth::ui::App* smyth::ui::App::the_app = nullptr;
-smyth::ui::App::~App() noexcept = default;
-smyth::ui::App::App(ErrorMessageHandler handler) {
-    the_app = this;
-
-    // Register error handler.
-    RegisterMessageHandler(handler);
-
+App* App::the_app = nullptr;
+App::~App() noexcept = default;
+App::App() : _init_{[&] { the_app = this; return _init{}; }()} {
     // Do not use a member init list for these as they have to be
     // constructed *after* everything else. Also, only persist objects
     // *after* showing the window so saving the default settings works
@@ -34,16 +27,38 @@ smyth::ui::App::App(ErrorMessageHandler handler) {
     settings->init();
 }
 
-void smyth::ui::App::NoteLastOpenProject() {
+auto App::CreateStore(std::string name, PersistentStore& parent) -> PersistentStore& {
+    auto store = new PersistentStore;
+    parent.register_entry(
+        std::move(name),
+        {std::unique_ptr<smyth::detail::PersistentBase>{store}, smyth::detail::DefaultPriority}
+    );
+    return *store;
+}
+
+auto App::GetLexurgy() -> Result<Lexurgy&> {
+    if (not lexurgy_ptr) lexurgy_ptr = Try(Lexurgy::Start());
+    return *lexurgy_ptr;
+}
+
+void App::NoteLastOpenProject() {
     QSettings s{QSettings::UserScope};
     s.setValue(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY, save_path);
     MainWindow()->set_window_path(save_path);
 }
 
-auto smyth::ui::App::OpenProject(QString path) -> Result<> {
-    // Load it.
-    db = Try(Database::Load(path.toStdString()));
-    Try(store.reload_all(db));
+auto App::OpenProject(QString path) -> Result<> {
+    // Open the file.
+    QFile f{path};
+    if (not f.exists()) return Error("File '{}' does not exist", path.toStdString());
+    if (not f.open(QIODevice::ReadOnly | QIODevice::Text)) return Error(
+        "Could not open file '{}'",
+        path.toStdString()
+    );
+
+    // Parse it.
+    auto tt = Try(json_utils::Parse(f.readAll().toStdString()));
+    Try(global_store.reload_all(tt));
     settings->reset_dialog();
 
     // Update save path and remember it.
@@ -52,21 +67,73 @@ auto smyth::ui::App::OpenProject(QString path) -> Result<> {
     return {};
 }
 
-bool smyth::ui::App::prompt_close_project() {
+auto App::SaveImpl() -> Result<> {
+    // Dew it.
+    auto j = Try(global_store.save_all());
+    Try(utils::WriteFile(save_path.toStdString(), j.dump(4)));
+
+    // Update last save time.
+    last_save_time = std::chrono::system_clock::now();
+    NoteLastOpenProject();
+    return {};
+}
+
+void App::ShowError(const QString& error, const QString& title) {
+    QMessageBox::critical(MainWindow(), title, error);
+}
+
+auto App::apply_sound_changes(
+    QString inputs,
+    QString sound_changes,
+    QString stop_before
+) -> Result<QString> {
+    return Try(GetLexurgy())->apply(inputs, std::move(sound_changes), stop_before);
+}
+
+auto App::load_last_open_project() -> Result<> {
+    // Check if we have a last open project.
+    QSettings s{QSettings::UserScope};
+    auto path = s.value(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY).toString();
+    if (path.isEmpty()) return {};
+    if (not fs::exists(path.toStdString())) return {};
+    return OpenProject(std::move(path));
+}
+
+void App::new_project() {
+    if (not prompt_close_project()) return;
+    save_path = "";
+    last_save_time = std::nullopt;
+    lexurgy_ptr.reset();
+    global_store.reset_all();
+    settings->reset_dialog();
+    MainWindow()->set_window_path("");
+}
+
+auto App::open() -> Result<> {
+    auto path = QFileDialog::getOpenFileName(
+        nullptr,
+        "Open Project",
+        "",
+        "Smyth Projects (*.smyth)"
+    );
+
+    if (path.isEmpty()) return {};
+    return OpenProject(std::move(path));
+}
+
+bool App::prompt_close_project() {
     enum struct State {
-        Start,
         UnsavedChanges,
         Cancel,
         Close,
         Save,
-    } state = State::Start;
+    } state = State::UnsavedChanges;
     using enum State;
 
     // Something went wrong. Ask the user if we should try again.
-    auto RetryOnError = [&](Err err) {
+    auto RetryOnError = [&](std::string&& err) {
         // Include the 'Save' button only if checking for unsaved changes errored.
         auto buttons = QMessageBox::Yes | QMessageBox::Retry | QMessageBox::Cancel;
-        if (state == Start) buttons |= QMessageBox::Save;
         auto str = fmt::format(
             "{} caused an error: {}.\n\nClose anyway?",
             state == Save ? "Saving" : "Checking for unsaved changes",
@@ -89,21 +156,8 @@ bool smyth::ui::App::prompt_close_project() {
         }
     };
 
-    std::unique_lock _{global_lock};
     for (;;) {
         switch (state) {
-            // Saving is necessary if any persistent property has changed. Note
-            // that this only updates the in-memory DB, not the on-disk one.
-            case Start: {
-                auto modified = store.modified(db);
-                if (modified.is_err()) {
-                    RetryOnError(std::move(modified.err()));
-                    break;
-                }
-
-                state = modified.value() ? State::UnsavedChanges : State::Close;
-            } break;
-
             // Prompt if the user wants to save.
             case UnsavedChanges: {
                 std::string text;
@@ -152,66 +206,14 @@ bool smyth::ui::App::prompt_close_project() {
             // Save and then quit.
             case Save: {
                 auto res = SaveImpl();
-                if (res.is_err()) RetryOnError(std::move(res.err()));
+                if (not res) RetryOnError(std::move(res).error());
                 else state = Close;
             } break;
         }
     }
 }
 
-auto smyth::ui::App::SaveImpl() -> Result<> {
-    // Don’t save twice.
-    std::unique_lock _{global_lock};
-    Try(store.save_all(db));
-    Try(db->backup(save_path.toStdString()));
-
-    // Update last save time.
-    last_save_time = std::chrono::system_clock::now();
-    NoteLastOpenProject();
-    return {};
-}
-
-auto smyth::ui::App::apply_sound_changes(
-    QString inputs,
-    QString sound_changes,
-    QString stop_before
-) -> Result<QString> {
-    return lexurgy->apply(inputs, std::move(sound_changes), stop_before);
-}
-
-auto smyth::ui::App::load_last_open_project() -> Result<> {
-    // Check if we have a last open project.
-    QSettings s{QSettings::UserScope};
-    auto path = s.value(SMYTH_QSETTINGS_LAST_OPEN_PROJECT_KEY).toString();
-    if (path.isEmpty()) return {};
-    if (not fs::exists(path.toStdString())) return {};
-    return OpenProject(std::move(path));
-}
-
-void smyth::ui::App::new_project() {
-    if (not prompt_close_project()) return;
-    db = Database::CreateInMemory();
-    save_path = "";
-    last_save_time = std::nullopt;
-    lexurgy = std::make_unique<Lexurgy>();
-    store.reset_all();
-    settings->reset_dialog();
-    MainWindow()->set_window_path("");
-}
-
-auto smyth::ui::App::open() -> Result<> {
-    auto path = QFileDialog::getOpenFileName(
-        nullptr,
-        "Open Project",
-        "",
-        "Smyth Projects (*.smyth)"
-    );
-
-    if (path.isEmpty()) return {};
-    return OpenProject(std::move(path));
-}
-
-auto smyth::ui::App::save() -> Result<> {
+auto App::save() -> Result<> {
     if (not save_path.isEmpty()) return SaveImpl();
 
     // Determine save path.

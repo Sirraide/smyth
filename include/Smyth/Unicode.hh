@@ -1,7 +1,7 @@
 #ifndef SMYTH_UNICODE_HH
 #define SMYTH_UNICODE_HH
 
-#include <Smyth/Result.hh>
+#include <Smyth/Utils.hh>
 #include <unicode/uchar.h>
 #include <unicode/unistr.h>
 

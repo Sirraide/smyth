@@ -2,7 +2,6 @@
 #define SMYTH_UI_LEXURGY_HH
 
 #include <QProcess>
-#include <Smyth/Result.hh>
 #include <Smyth/Utils.hh>
 
 namespace smyth::ui {
@@ -21,12 +20,10 @@ public:
     Lexurgy(Lexurgy&&) = delete;
     auto operator=(const Lexurgy&) -> Lexurgy& = delete;
     auto operator=(Lexurgy&&) -> Lexurgy& = delete;
-
-    /// Create a new lexurgy connexion.
-    Lexurgy();
-
-    /// Tear down the connexion.
     ~Lexurgy();
+
+    /// Try to create a new process and wait until it has started.
+    static auto Start() -> Result<std::unique_ptr<Lexurgy>>;
 
     /// Apply sound changes.
     auto apply(
@@ -36,9 +33,7 @@ public:
     ) -> Result<QString>;
 
 private:
-    /// Make a request to lexurgy.
-    template <typename Res, typename Req>
-    auto SendRequest(Req&& r) -> Result<Res>;
+    Lexurgy();
 
     /// Update sound changes.
     auto UpdateSoundChanges(QString changes) -> Result<>;

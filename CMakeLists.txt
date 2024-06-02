@@ -40,9 +40,6 @@ add_library(options INTERFACE)
 ## Flags for Clang and GCC.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(options INTERFACE
-        ## Everything is too interconnected for this to be sane.
-        -fno-exceptions
-
         ## Warnings.
         -Wall -Wextra     # Enable ‘all’ warnings.
         -Wundef           # Invalid #undef or undefined macro in #if.
@@ -97,6 +94,7 @@ endif()
 ## Additional flags for Clang.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(options INTERFACE
+        -fno-assumptions # Currently horribly broken in Clang.
         -Werror=dangling
         -Werror=return-stack-address
     )
@@ -162,23 +160,35 @@ if (NOT ICU_FOUND)
     message(FATAL_ERROR "ICU not found. Required components are: uc, i18n, data.")
 endif ()
 
-## Add dependencies.
-message(STATUS "Downloading fmtlib ...")
+## Add fmtlib.
 FetchContent_Declare(fmtlib
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     GIT_TAG 10.0.0
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/fmt"
 )
-FetchContent_MakeAvailable(fmtlib)
 
-## Add glaze.
-message(STATUS "Downloading glaze ...")
-FetchContent_Declare(glaze
-    GIT_REPOSITORY git@github.com:stephenberry/glaze.git
-    GIT_TAG v2.0.6
-    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/glaze"
+## Add nlohmann/json.
+FetchContent_Declare(
+    json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/json"
 )
-FetchContent_MakeAvailable(glaze)
+
+## Add libassert.
+FetchContent_Declare(
+  libassert
+  GIT_REPOSITORY https://github.com/jeremy-rifkin/libassert.git
+  GIT_TAG        v2.0.2
+  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/libassert"
+)
+
+## Download them.
+message(STATUS "Downloading dependencies ...")
+FetchContent_MakeAvailable(
+    fmtlib
+    json
+    libassert
+)
 
 ## ‘src’ should be an include directory.
 target_include_directories(options INTERFACE src include)
@@ -192,7 +202,7 @@ if (EXISTS ${PROJECT_SOURCE_DIR}/libs)
     foreach(lib ${libs})
         if (IS_DIRECTORY ${lib}/include)
             target_include_directories(options INTERFACE ${lib}/include)
-        else()
+        elseif(IS_DIRECTORY ${lib})
             target_include_directories(options INTERFACE ${lib})
         endif()
     endforeach()
@@ -206,20 +216,20 @@ if (EXISTS ${PROJECT_SOURCE_DIR}/libs)
 endif()
 
 ## Link against libraries.
-target_link_libraries(options INTERFACE fmt glaze::glaze)
+target_link_libraries(options INTERFACE
+    fmt
+    libassert::assert
+    nlohmann_json::nlohmann_json
+)
 
 ## ============================================================================
 ##  Executables and libraries.
 ## ============================================================================
-add_library(sqlite3 STATIC "${PROJECT_SOURCE_DIR}/thirdparty/sqlite/sqlite3.c")
-target_compile_options(sqlite3 PRIVATE -O3)
-
 file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/Smyth/*.hh)
 add_library(smyth-lib STATIC ${smyth-lib-sources} )
 target_include_directories(smyth-lib PUBLIC "${PROJECT_SOURCE_DIR}/thirdparty/sqlite/")
 set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
-target_link_libraries(smyth-lib PRIVATE options sqlite3 ICU::i18n ICU::uc ICU::data)
-
+target_link_libraries(smyth-lib PRIVATE options ICU::i18n ICU::uc ICU::data)
 add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
 
 ## ============================================================================

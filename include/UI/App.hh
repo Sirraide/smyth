@@ -4,8 +4,6 @@
 #include <chrono>
 #include <mutex>
 #include <QCloseEvent>
-#include <Smyth/Database.hh>
-#include <Smyth/Result.hh>
 #include <Smyth/Utils.hh>
 #include <UI/Lexurgy.hh>
 #include <UI/PersistObjects.hh>
@@ -16,16 +14,15 @@ namespace chr = std::chrono;
 class App;
 } // namespace smyth::ui
 
+/// FIXME: WHY is this a singleton? Move any functions into a namespace,
+///     'Utils', or the main window, and move class members into their
+///     constituent classes, and add a 'RunApplication' function.
 class smyth::ui::App final {
-    /// Lexurgy background process.
-    std::unique_ptr<Lexurgy> lexurgy = std::make_unique<Lexurgy>();
+    /// Hack to make sure 'the_app' is initialised before everything else.
+    struct _init {} _init_;
 
-    /// In-memory database; this holds a copy of the database stored on
-    /// disk that is the actual project file and is used for saving and
-    /// checking if we need to save.
-    ///
-    /// TODO: Make this the actual DB and add an auto-save feature.
-    DBRef db = Database::CreateInMemory();
+    /// Lexurgy background process.
+    std::unique_ptr<Lexurgy> lexurgy_ptr;
 
     /// The path to the project that is currently open.
     QString save_path;
@@ -37,39 +34,20 @@ class smyth::ui::App final {
     std::unique_ptr<MainWindow> main;
     std::unique_ptr<SettingsDialog> settings;
 
-    /// Used for operations like saving and closing that may contend with one
-    /// another or cause data corruption if executed at the same time, though
-    /// not for everything.
-    ///
-    /// Save on quit is part of why this is recursive.
-    std::recursive_mutex global_lock;
-
     /// Global app.
     static App* the_app;
 
 public:
-    /// Store that holds persistent data.
-    PersistentStore store{SMYTH_MAIN_STORE_KEY};
+    /// Used for global settings.
+    PersistentStore global_store;
+
+#ifdef SMYTH_DEBUG
+    PersistentStore& debug_store = CreateStore("__debug__", global_store);
+#endif
 
     SMYTH_IMMOVABLE(App);
-    App(ErrorMessageHandler handler);
+    App();
     ~App() noexcept;
-
-    /// Persist a QString property in the store.
-    template <auto Get, auto Set, typename Object>
-    auto persist(
-        std::string key,
-        Object* obj,
-        usz priority = smyth::detail::DefaultPriority
-    ) -> smyth::detail::PersistentBase* {
-        using namespace smyth::detail;
-        using namespace detail;
-        using Property = PersistProperty<ExtractType<decltype(Get)>, Object, Get, Set>;
-        std::unique_ptr<PersistentBase> e{new Property(obj)};
-        auto ptr = e.get();
-        store.register_entry(std::move(key), {std::move(e), priority});
-        return ptr;
-    }
 
     /// Apply sound changes to the input string.
     auto apply_sound_changes(
@@ -98,13 +76,25 @@ public:
     /// Get the settings dialog.
     auto settings_dialog() -> SettingsDialog* { return settings.get(); }
 
+    /// Create a table in a store.
+    static auto CreateStore(
+        std::string name,
+        PersistentStore& parent = The().global_store
+    ) -> PersistentStore&;
+
     /// Get the main window.
     static auto MainWindow() -> MainWindow* { return the_app->main.get(); }
+
+    /// Show an error to the user.
+    static void ShowError(const QString& error, const QString& title = "Error");
 
     /// Get the global app.
     static auto The() -> App& { return *the_app; }
 
 private:
+    /// Create or get the current lexurgy instance.
+    auto GetLexurgy() -> Result<Lexurgy&>;
+
     /// Remember the last project we had open.
     void NoteLastOpenProject();
 
