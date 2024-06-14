@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="movable">
        <bool>false</bool>
@@ -555,6 +555,82 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="dictionary_tab">
+       <attribute name="title">
+        <string>Dictionary</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <widget class="QFrame" name="frame_6">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_8">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="smyth::ui::SmythDictionary" name="dictionary_table">
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QFrame" name="frame_7">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <item>
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="dictionary_add_row">
+                <property name="text">
+                 <string>Add Row</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="char_map_tab">
        <attribute name="title">
         <string>Character Map</string>
@@ -812,6 +888,14 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
    <extends>QTextEdit</extends>
    <header>UI/SmythRichTextEdit.hh</header>
   </customwidget>
+  <customwidget>
+   <class>smyth::ui::SmythDictionary</class>
+   <extends>QTableWidget</extends>
+   <header>UI/SmythDictionary.hh</header>
+   <slots>
+    <slot>add_row()</slot>
+   </slots>
+  </customwidget>
  </customwidgets>
  <resources/>
  <connections>
@@ -1020,6 +1104,22 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>dictionary_add_row</sender>
+   <signal>clicked()</signal>
+   <receiver>dictionary_table</receiver>
+   <slot>add_row()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>729</x>
+     <y>533</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>290</y>
     </hint>
    </hints>
   </connection>

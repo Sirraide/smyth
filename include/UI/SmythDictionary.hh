@@ -1,17 +1,11 @@
 #ifndef SMYTH_UI_DICTIONARY_HH
 #define SMYTH_UI_DICTIONARY_HH
 
+#include <QHeaderView>
+#include <QTableWidget>
+#include <UI/Mixins.hh>
+
 // General concept:
-//
-// PREREQUISITES:
-// User settings: global per-user settings that are *not* stored in the project
-// file, e.g. the default font to use (so multiple people can use the same project
-// file with different settings). Add an option to the settings to override the
-// settings with the per-user settings.
-//
-// USE JSON INSTEAD.
-//
-// FEATURES:
 //
 // List view that presents entries.
 //
@@ -39,8 +33,43 @@
 //     a select menu for that); search uses NFKD on the search input; the
 //     search also applies NFKD to the field being searched.
 //
+// Allow hiding row numbers.
+//
 // Sort entries by NFKD of the headword.
 //
 // Export to LaTeX.
+
+namespace smyth::ui {
+class SmythDictionary;
+}
+
+class smyth::ui::SmythDictionary final  : public QTableWidget, mixins::Zoom {
+    Q_OBJECT
+
+    friend Zoom;
+
+    using This = SmythDictionary;
+
+public:
+    SmythDictionary(QWidget* parent = nullptr);
+
+    void keyPressEvent(QKeyEvent* event) override {
+        if (HandleZoomEvent(event)) return;
+        QTableWidget::keyPressEvent(event);
+    }
+
+    void setFont(const QFont& font) {
+        QTableWidget::setFont(font);
+        verticalHeader()->setDefaultSectionSize(fontMetrics().height());
+    }
+
+    void wheelEvent(QWheelEvent* event) override {
+        if (HandleZoomEvent(event)) return;
+        QTableWidget::wheelEvent(event);
+    }
+
+public slots:
+    void add_row();
+};
 
 #endif // SMYTH_UI_DICTIONARY_HH

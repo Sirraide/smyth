@@ -202,6 +202,15 @@ void smyth::ui::MainWindow::init() {
     // Switch to first tab and initialise persistent state.
     ui->main_tabs->setCurrentIndex(0);
     persist();
+
+    ui->dictionary_table->setColumnCount(3);
+    ui->dictionary_table->setRowCount(2);
+    ui->dictionary_table->setItem(0, 0, new QTableWidgetItem("a"));
+    ui->dictionary_table->setItem(0, 1, new QTableWidgetItem("b"));
+    ui->dictionary_table->setItem(0, 2, new QTableWidgetItem("c"));
+    ui->dictionary_table->setItem(1, 0, new QTableWidgetItem("d"));
+    ui->dictionary_table->setItem(1, 1, new QTableWidgetItem("e"));
+    ui->dictionary_table->setItem(1, 2, new QTableWidgetItem("f"));
 }
 
 void smyth::ui::MainWindow::new_project() {
