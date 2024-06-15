@@ -12,9 +12,18 @@ using namespace smyth::ui;
 using smyth::detail::Serialiser;
 
 namespace {
-struct PersistDictionaryContents : smyth::detail::PersistentBase {
+struct PersistColumns : smyth::detail::PersistentBase {
     SmythDictionary* dict;
-    PersistDictionaryContents(SmythDictionary* dict) : dict{dict} {}
+    PersistColumns(SmythDictionary* dict) : dict{dict} {}
+
+    auto load(const json& j) -> Result<> override;
+    void restore() override;
+    auto save() const -> Result<json> override;
+};
+
+struct PersistContents : smyth::detail::PersistentBase {
+    SmythDictionary* dict;
+    PersistContents(SmythDictionary* dict) : dict{dict} {}
 
     auto load(const json& j) -> Result<> override;
     void restore() override;
@@ -63,15 +72,7 @@ void SmythDictionary::add_row() {
         return;
     }
 
-    // Do not insert a new row if the last row is completely empty.
-    auto last = rowCount() - 1;
-    for (int col = 0; col < columnCount(); ++col) {
-        auto it = item(last, col);
-        if (it and not it->text().isEmpty()) {
-            insertRow(last + 1);
-            return;
-        }
-    }
+    insertRow(rowCount() - 1 + 1);
 }
 
 void SmythDictionary::keyPressEvent(QKeyEvent* event) {
@@ -81,14 +82,13 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
     if (
         state() == NoState and
         (event->key() == Qt::Key_Delete or event->key() == Qt::Key_Backspace) and
-        not selectedItems().empty()
+        not selectedRanges().empty()
     ) {
         // Figure out what rows we’re supposed to delete.
         std::vector<int> rows;
-        for (auto it : selectedItems()) {
-            if (rgs::contains(rows, it->row())) continue;
-            rows.push_back(it->row());
-        }
+        for (auto rng : selectedRanges())
+            for (int row = rng.topRow(); row <= rng.bottomRow(); ++row)
+                rows.push_back(row);
 
         // Prompt the user to delete the rows.
         auto res = QMessageBox::question(
@@ -116,7 +116,8 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
 
 void SmythDictionary::persist(PersistentStore& root_store, std::string_view key) {
     PersistentStore& store = App::CreateStore(std::string{key}, root_store);
-    store.register_entry("contents", std::make_unique<PersistDictionaryContents>(this));
+    store.register_entry("columns", std::make_unique<PersistColumns>(this));
+    store.register_entry("contents", std::make_unique<PersistContents>(this));
 }
 
 void SmythDictionary::reset_dictionary() {
@@ -159,7 +160,27 @@ void smyth::ui::detail::ColumnHeaders::mouseDoubleClickEvent(QMouseEvent* event)
 /// ====================================================================
 ///  Persistence
 /// ====================================================================
-auto PersistDictionaryContents::load(const json& j) -> Result<> {
+auto PersistColumns::load(const json& j) -> Result<> {
+    const json::array_t& arr = Try(Get<json::array_t>(j));
+
+    // No entries; set to defaults.
+    if (arr.empty()) {
+        dict->setColumnCount(2);
+        return {};
+    }
+
+    // Set the column count and the name of each column.
+    for (auto [index, e] : arr | vws::enumerate) {
+        auto text = Try(Serialiser<QString>::Deserialise(e));
+        if (text.isEmpty()) continue;
+        dict->setHorizontalHeaderItem(int(index), new QTableWidgetItem{text});
+    }
+
+    dict->setColumnCount(int(arr.size()));
+    return {};
+}
+
+auto PersistContents::load(const json& j) -> Result<> {
     const json::array_t& arr = Try(Get<json::array_t>(j));
 
     // No entries; set to defaults.
@@ -188,17 +209,32 @@ auto PersistDictionaryContents::load(const json& j) -> Result<> {
     return {};
 }
 
-void PersistDictionaryContents::restore() {
+void PersistColumns::restore() {
+    dict->setColumnCount(2);
+}
+
+void PersistContents::restore() {
     dict->reset_dictionary();
 }
 
-auto PersistDictionaryContents::save() const -> Result<json> {
+auto PersistColumns::save() const -> Result<json> {
+    json::array_t cols;
+    for (int col = 0; col < dict->columnCount(); ++col) {
+        auto it = dict->horizontalHeaderItem(col);
+        if (it) cols.push_back(Serialiser<QString>::Serialise(it->text()));
+        else cols.push_back("");
+    }
+    return std::move(cols);
+}
+
+auto PersistContents::save() const -> Result<json> {
     json::array_t rows;
     for (int row = 0; row < dict->rowCount(); ++row) {
         json::array_t cols;
         for (int col = 0; col < dict->columnCount(); ++col) {
             auto it = dict->item(row, col);
             if (it) cols.push_back(Serialiser<QString>::Serialise(it->text()));
+            else cols.push_back("");
         }
         rows.push_back(std::move(cols));
     }
