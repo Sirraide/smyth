@@ -114,12 +114,6 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
     QTableWidget::keyPressEvent(event);
 }
 
-void SmythDictionary::persist(PersistentStore& root_store, std::string_view key) {
-    PersistentStore& store = App::CreateStore(std::string{key}, root_store);
-    store.register_entry("columns", std::make_unique<PersistColumns>(this));
-    store.register_entry("contents", std::make_unique<PersistContents>(this));
-}
-
 void SmythDictionary::reset_dictionary() {
     clear();
     add_row();
@@ -160,6 +154,12 @@ void smyth::ui::detail::ColumnHeaders::mouseDoubleClickEvent(QMouseEvent* event)
 /// ====================================================================
 ///  Persistence
 /// ====================================================================
+void SmythDictionary::persist(PersistentStore& root_store, std::string_view key) {
+    PersistentStore& store = App::CreateStore(std::string{key}, root_store);
+    store.register_entry("columns", std::make_unique<PersistColumns>(this));
+    store.register_entry("contents", std::make_unique<PersistContents>(this));
+}
+
 auto PersistColumns::load(const json& j) -> Result<> {
     const json::array_t& arr = Try(Get<json::array_t>(j));
 

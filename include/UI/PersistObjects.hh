@@ -38,9 +38,10 @@ struct smyth::detail::Serialiser<QList<Int>> {
     }
 };
 
+SMYTH_DECLARE_SERIALISER(const QByteArray&, QByteArray);
+SMYTH_DECLARE_SERIALISER(const QFont&, QFont);
 SMYTH_DECLARE_SERIALISER(QSize, QSize);
 SMYTH_DECLARE_SERIALISER(const QString&, QString);
-SMYTH_DECLARE_SERIALISER(const QFont&, QFont);
 
 namespace smyth::ui {
 void PersistCBox(PersistentStore& store, std::string key, QComboBox* cbox);
@@ -49,8 +50,11 @@ void PersistChBox(PersistentStore& store, std::string key, QCheckBox* cbox);
 /// Like PersistCBox, but the entries are generated dynamically.
 void PersistDynCBox(PersistentStore& store, std::string key, QComboBox* cbox);
 
-/// Splitters may crash if we supply a value that is larger than the total width.
-void PersistSplitter(PersistentStore& store, std::string key, QSplitter* splitter);
+/// Persist an object’s state as base64.
+template <typename Object>
+void PersistState(PersistentStore& store, std::string key, Object* obj) {
+    Persist<&Object::saveState, &Object::restoreState>(store, std::move(key), obj);
+}
 } // namespace smyth::ui
 
 #endif // SMYTH_UI_PERSISTOBJECTS_HH

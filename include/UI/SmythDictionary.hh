@@ -53,12 +53,16 @@ class smyth::ui::detail::ColumnHeaders : public QHeaderView {
 
 public:
     ColumnHeaders(QWidget* parent = nullptr)
-        : QHeaderView(Qt::Horizontal, parent) {}
+        : QHeaderView(Qt::Horizontal, parent) {
+        setSectionsClickable(true);
+        setSortIndicatorClearable(true);
+    }
 
     void mouseDoubleClickEvent(QMouseEvent* event) override;
 };
 
-class smyth::ui::SmythDictionary final  : public QTableWidget, mixins::Zoom {
+class smyth::ui::SmythDictionary final : public QTableWidget
+    , mixins::Zoom {
     Q_OBJECT
 
     friend Zoom;

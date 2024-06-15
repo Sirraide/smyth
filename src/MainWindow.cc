@@ -217,6 +217,7 @@ void MainWindow::open_settings() {
 void MainWindow::persist() {
     PersistentStore& main_store = App::CreateStore("main");
 
+
     // Window needs to be updated before everything else to ensure that
     // the rest of the objects are working with the correct size.
     Persist<&QWidget::size, [](QWidget* w, QSize s) {
@@ -231,10 +232,10 @@ void MainWindow::persist() {
     ui->dictionary_table->persist(main_store, "dictionary");
 
     PersistentStore& charmap = App::CreateStore("charmap", main_store);
-    PersistSplitter(charmap, "splitter.sizes", ui->char_map_splitter);
+    PersistState(charmap, "splitter.sizes", ui->char_map_splitter);
 
     PersistentStore& sca = App::CreateStore("sca", main_store);
-    PersistSplitter(sca, "splitter.sizes", ui->sca_text_edits);
+    PersistState(sca, "splitter.sizes", ui->sca_text_edits);
     PersistCBox(sca, "cbox.input.norm.choice", ui->sca_cbox_input_norm);
     PersistCBox(sca, "cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
     PersistCBox(sca, "cbox.output.norm.choice", ui->sca_cbox_output_norm);

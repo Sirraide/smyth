@@ -27,9 +27,12 @@ void PersistentStore::register_entry(std::string key, Entry entry) {
 
 auto PersistentStore::reload_all(const json& j) -> Result<> {
     const json::object_t& obj = Try(Get<json::object_t>(j));
-    for (auto& [key, entry] : Entries())
-        if (obj.contains(key))
-            Try(entry->entry->load(j[key]));
+    for (auto& [key, entry] : Entries()) {
+        if (obj.contains(key)) {
+            auto res = entry->entry->load(j[key]);
+            if (not res) std::println(stderr, "Failed to load '{}': {}", key, res.error());
+        }
+    }
     return {};
 }
 
