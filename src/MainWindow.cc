@@ -202,15 +202,6 @@ void smyth::ui::MainWindow::init() {
     // Switch to first tab and initialise persistent state.
     ui->main_tabs->setCurrentIndex(0);
     persist();
-
-    ui->dictionary_table->setColumnCount(3);
-    ui->dictionary_table->setRowCount(2);
-    ui->dictionary_table->setItem(0, 0, new QTableWidgetItem("a"));
-    ui->dictionary_table->setItem(0, 1, new QTableWidgetItem("b"));
-    ui->dictionary_table->setItem(0, 2, new QTableWidgetItem("c"));
-    ui->dictionary_table->setItem(1, 0, new QTableWidgetItem("d"));
-    ui->dictionary_table->setItem(1, 1, new QTableWidgetItem("e"));
-    ui->dictionary_table->setItem(1, 2, new QTableWidgetItem("f"));
 }
 
 void smyth::ui::MainWindow::new_project() {
@@ -239,6 +230,7 @@ void smyth::ui::MainWindow::persist() {
     ui->input->persist(main_store, "input");
     ui->changes->persist(main_store, "changes");
     ui->output->persist(main_store, "output");
+    ui->dictionary_table->persist(main_store, "dictionary");
 
     PersistentStore& charmap = App::CreateStore("charmap", main_store);
     PersistSplitter(charmap, "splitter.sizes", ui->char_map_splitter);
@@ -267,6 +259,11 @@ void smyth::ui::MainWindow::persist() {
     App::The().serif_font.subscribe(ui->char_map_details_panel, &SmythRichTextEdit::setFont);
     App::The().mono_font.subscribe(ui->changes, &SmythPlainTextEdit::setFont);
     App::The().last_open_project.subscribe([this](const QString& s) { set_window_path(s); });
+}
+
+void smyth::ui::MainWindow::reset_window() {
+    ui->dictionary_table->reset_dictionary();
+    set_window_path("");
 }
 
 void smyth::ui::MainWindow::preview_changes_after_eval() {

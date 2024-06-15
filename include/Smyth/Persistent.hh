@@ -126,7 +126,7 @@ public:
         /// deserialisation process has access to the data.
         usz priority;
 
-        Entry(std::unique_ptr<PersistentBase> entry, usz priority)
+        Entry(std::unique_ptr<PersistentBase> entry, usz priority = detail::DefaultPriority)
             : entry(std::move(entry)), priority(priority) {}
 
         struct Eqv {
@@ -156,6 +156,12 @@ public:
     ///     to the database, the save() function of this entry will
     ///     be called.
     void register_entry(std::string key, Entry entry);
+
+    /// \brief Register an entry with default priority.
+    /// \see register_entry().
+    void register_entry(std::string key, std::unique_ptr<PersistentBase> entry) {
+        register_entry(std::move(key), {std::move(entry), detail::DefaultPriority});
+    }
 
     /// \brief Register several entries at once.
     ///

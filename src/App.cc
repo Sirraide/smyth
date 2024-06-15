@@ -104,7 +104,7 @@ void App::new_project() {
     lexurgy_ptr.reset();
     global_store.reset_all();
     settings->reset_dialog();
-    MainWindow()->set_window_path("");
+    MainWindow()->reset_window();
 }
 
 auto App::open() -> Result<> {

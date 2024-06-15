@@ -42,6 +42,9 @@ public:
     /// Initialise persistent objects.
     void persist();
 
+    /// Reset the window to its default settings.
+    void reset_window();
+
     /// Set the path to be shown in the window title.
     void set_window_path(QString path);
 

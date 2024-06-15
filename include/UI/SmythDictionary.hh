@@ -58,6 +58,9 @@ public:
         QTableWidget::keyPressEvent(event);
     }
 
+    void persist(PersistentStore& root_store, std::string_view key);
+    void reset_dictionary();
+
     void setFont(const QFont& font) {
         QTableWidget::setFont(font);
         verticalHeader()->setDefaultSectionSize(fontMetrics().height());
@@ -69,6 +72,7 @@ public:
     }
 
 public slots:
+    void add_column();
     void add_row();
 };
 
