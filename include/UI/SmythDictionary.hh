@@ -41,7 +41,22 @@
 
 namespace smyth::ui {
 class SmythDictionary;
+
 }
+
+namespace smyth::ui::detail {
+class ColumnHeaders;
+}
+
+class smyth::ui::detail::ColumnHeaders : public QHeaderView {
+    Q_OBJECT
+
+public:
+    ColumnHeaders(QWidget* parent = nullptr)
+        : QHeaderView(Qt::Horizontal, parent) {}
+
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
+};
 
 class smyth::ui::SmythDictionary final  : public QTableWidget, mixins::Zoom {
     Q_OBJECT
@@ -56,6 +71,8 @@ public:
     void keyPressEvent(QKeyEvent* event) override;
     void persist(PersistentStore& root_store, std::string_view key);
     void reset_dictionary();
+
+    void debug();
 
     void setFont(const QFont& font) {
         QTableWidget::setFont(font);

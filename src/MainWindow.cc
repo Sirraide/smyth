@@ -181,7 +181,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void MainWindow::debug() {
-    std::print("SIZE: {}\n", ui->char_map_splitter->sizes());
+    ui->dictionary_table->debug();
 }
 
 void MainWindow::init() {

@@ -1,4 +1,6 @@
 #include <QHeaderView>
+#include <QInputDialog>
+#include <QMenu>
 #include <QMessageBox>
 #include <Smyth/JSON.hh>
 #include <UI/App.hh>
@@ -20,21 +22,34 @@ struct PersistDictionaryContents : smyth::detail::PersistentBase {
 };
 } // namespace
 
+void SmythDictionary::debug() {
+}
+
+/// ====================================================================
+///  Dictionary
+/// ====================================================================
 SmythDictionary::SmythDictionary(QWidget* parent) : QTableWidget(parent) {
     setAlternatingRowColors(true);
 
+    // Update font when it changes.
     App::The().serif_font.subscribe(this, &SmythDictionary::setFont);
 
+    // Make horizontal header non-movable and ensure that the last column
+    // stretches to fill the remaining space. Also make it editable.
+    setHorizontalHeader(new detail::ColumnHeaders{this});
     auto hhdr = horizontalHeader();
     hhdr->setSectionsMovable(false);
     hhdr->setStretchLastSection(true);
     hhdr->setCascadingSectionResizes(true);
 
+    // Make vertical header non-movable and ensure that each line has the
+    // same height, based on the font metrics.
     auto vhdr = verticalHeader();
     vhdr->setSectionsMovable(false);
     vhdr->setDefaultSectionSize(fontMetrics().height());
     vhdr->setSectionResizeMode(QHeaderView::Fixed);
 
+    // Create an empty dictionary.
     reset_dictionary();
 }
 
@@ -111,6 +126,39 @@ void SmythDictionary::reset_dictionary() {
     setColumnCount(2);
 }
 
+/// ====================================================================
+///  Column Headers
+/// ====================================================================
+void smyth::ui::detail::ColumnHeaders::mouseDoubleClickEvent(QMouseEvent* event) {
+    if (event->button() != Qt::LeftButton) {
+        QHeaderView::mouseDoubleClickEvent(event);
+        return;
+    }
+
+    // Map position to index.
+    auto index = logicalIndexAt(event->pos());
+    if (index == -1) return;
+
+    // Edit this cell.
+    auto text = QInputDialog::getText(
+        this,
+        "Edit",
+        "New column name:",
+        QLineEdit::Normal,
+        model()->headerData(index, orientation()).toString()
+    );
+
+    // Update the header.
+    if (text.isEmpty()) return;
+    static_cast<SmythDictionary*>(parent())->setHorizontalHeaderItem(
+        index,
+        new QTableWidgetItem{text}
+    );
+}
+
+/// ====================================================================
+///  Persistence
+/// ====================================================================
 auto PersistDictionaryContents::load(const json& j) -> Result<> {
     const json::array_t& arr = Try(Get<json::array_t>(j));
 
