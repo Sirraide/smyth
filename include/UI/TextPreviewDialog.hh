@@ -20,7 +20,7 @@ class smyth::ui::TextPreviewDialog final : public QDialog {
     std::unique_ptr<Ui::TextPreviewDialog> ui;
 
 public:
-    SMYTH_IMMOVABLE(TextPreviewDialog);
+    LIBBASE_IMMOVABLE(TextPreviewDialog);
     TextPreviewDialog(QWidget* parent);
     ~TextPreviewDialog() noexcept;
 

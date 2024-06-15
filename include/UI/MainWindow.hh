@@ -25,7 +25,7 @@ class MainWindow final : public QMainWindow {
     friend App;
 
 public:
-    SMYTH_IMMOVABLE(MainWindow);
+    LIBBASE_IMMOVABLE(MainWindow);
     MainWindow();
     ~MainWindow() noexcept;
 

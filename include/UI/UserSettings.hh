@@ -15,7 +15,7 @@ class UserSetting;
 namespace detail::user_settings {
 void Init();
 class SettingsBase {
-    SMYTH_IMMOVABLE(SettingsBase);
+    LIBBASE_IMMOVABLE(SettingsBase);
     friend void Init();
 
 protected:

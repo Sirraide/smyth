@@ -1,9 +1,9 @@
 #ifndef SMYTH_UI_SMYTHCHARACTERMAP_HH
 #define SMYTH_UI_SMYTHCHARACTERMAP_HH
 
+#include <base/Text.hh>
 #include <QListView>
 #include <QStringListModel>
-#include <Smyth/Unicode.hh>
 #include <Smyth/Utils.hh>
 #include <UI/App.hh>
 #include <UI/Mixins.hh>
@@ -59,7 +59,7 @@ class smyth::ui::SmythCharacterMap final : public QWidget
     using Query = std::variant<Range, Codepoint, Name, Literal, std::monostate>;
 
 public:
-    SMYTH_IMMOVABLE(SmythCharacterMap);
+    LIBBASE_IMMOVABLE(SmythCharacterMap);
     SmythCharacterMap(QWidget* parent) : QWidget(parent) {}
 
     /// Zooming.

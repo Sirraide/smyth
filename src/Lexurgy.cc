@@ -10,8 +10,8 @@ using json = json_utils::json;
 
 static auto SendRequest(QProcess& lexurgy_process, const json& request) -> Result<json> {
     auto req = request.dump();
-#ifdef SMYTH_DEBUG
-    if (*App::The().dump_json_requests) Debug(" -> Lexurgy: {}", req);
+#ifdef LIBBASE_DEBUG
+    if (*App::The().dump_json_requests) std::println(stderr, " -> Lexurgy: {}", req);
 #endif
     lexurgy_process.write(req.data(), qint64(req.size()));
     lexurgy_process.write("\n");

@@ -2,6 +2,7 @@
 #include <algorithm>
 
 using namespace smyth;
+using namespace smyth::detail;
 using namespace smyth::json_utils;
 
 // FIXME: Window size should be saved in user settings instead here. Then, remove this and priorities.
@@ -54,37 +55,37 @@ auto PersistentStore::save_all() const -> Result<json> {
 /// ====================================================================
 ///  Deserialisers
 /// ====================================================================
-auto detail::Serialiser<i64>::Deserialise(const json& tn) -> Result<i64> {
+auto Serialiser<i64>::Deserialise(const json& tn) -> Result<i64> {
     return Get<i64>(tn);
 }
 
-auto detail::Serialiser<u64>::Deserialise(const json& tn) -> Result<u64> {
+auto Serialiser<u64>::Deserialise(const json& tn) -> Result<u64> {
     return Get<u64>(tn);
 }
 
-auto detail::Serialiser<bool>::Deserialise(const json& tn) -> Result<bool> {
+auto Serialiser<bool>::Deserialise(const json& tn) -> Result<bool> {
     return Get<bool>(tn);
 }
 
-auto detail::Serialiser<std::string>::Deserialise(const json& tn) -> Result<std::string> {
+auto Serialiser<std::string>::Deserialise(const json& tn) -> Result<std::string> {
     return Get<std::string>(tn);
 }
 
 /// ====================================================================
 ///  Serialisers
 /// ====================================================================
-auto detail::Serialiser<i64>::Serialise(i64 i) -> json {
+auto Serialiser<i64>::Serialise(i64 i) -> json {
     return i;
 }
 
-auto detail::Serialiser<u64>::Serialise(u64 i) -> json {
+auto Serialiser<u64>::Serialise(u64 i) -> json {
     return i;
 }
 
-auto detail::Serialiser<bool>::Serialise(bool b) -> json {
+auto Serialiser<bool>::Serialise(bool b) -> json {
     return b;
 }
 
-auto detail::Serialiser<std::string>::Serialise(std::string&& val) -> json {
+auto Serialiser<std::string>::Serialise(std::string&& val) -> json {
     return std::move(val);
 }

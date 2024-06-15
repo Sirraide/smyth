@@ -48,11 +48,11 @@ public:
     UserSetting<QFont> serif_font{"serif.font", QFont{"serif"}};
     UserSetting<> last_open_project{"last_open_project", ""};
 
-#ifdef SMYTH_DEBUG
+#ifdef LIBBASE_DEBUG
     UserSetting<bool> dump_json_requests{"__debug__/dump_json_requests", false};
 #endif
 
-    SMYTH_IMMOVABLE(App);
+    LIBBASE_IMMOVABLE(App);
     App();
     ~App() noexcept;
 

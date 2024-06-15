@@ -75,12 +75,11 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
             rows.push_back(it->row());
         }
 
-
         // Prompt the user to delete the rows.
         auto res = QMessageBox::question(
             this,
             "Deleting Rows",
-            QString::fromStdString(fmt::format("Are you sure you want to delete {} row(s)?", rows.size())),
+            QString::fromStdString(std::format("Are you sure you want to delete {} row(s)?", rows.size())),
             QMessageBox::Yes | QMessageBox::No
         );
 

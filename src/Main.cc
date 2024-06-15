@@ -7,7 +7,7 @@ void FailureHandler(const libassert::assertion_info& info) {
     /// Fatal errors may be due to errors during painting etc., so yeet
     /// everything to make sure we don’t end up causing multiple fatal
     /// errors in a row.
-    fmt::print("{}\n", info.to_string());
+    std::print("{}\n", info.to_string());
     QApplication::setQuitOnLastWindowClosed(false);
     QApplication::closeAllWindows();
     QMessageBox box;

@@ -16,10 +16,7 @@ class smyth::ui::Lexurgy {
     std::optional<QString> sound_changes;
 
 public:
-    Lexurgy(const Lexurgy&) = delete;
-    Lexurgy(Lexurgy&&) = delete;
-    auto operator=(const Lexurgy&) -> Lexurgy& = delete;
-    auto operator=(Lexurgy&&) -> Lexurgy& = delete;
+    LIBBASE_IMMOVABLE(Lexurgy);
     ~Lexurgy();
 
     /// Try to create a new process and wait until it has started.

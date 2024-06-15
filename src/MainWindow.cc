@@ -1,21 +1,24 @@
+#include <base/Text.hh>
 #include <QDir>
 #include <QInputDialog>
 #include <QJSEngine>
 #include <QMessageBox>
 #include <QShortcut>
-#include <Smyth/Unicode.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
 #include <UI/TextPreviewDialog.hh>
 #include <ui_MainWindow.h>
 
+using namespace smyth;
+using namespace smyth::ui;
+
 /// Needs destructor that isn’t visible in the header.
-smyth::ui::MainWindow::~MainWindow() noexcept = default;
+MainWindow::~MainWindow() noexcept = default;
 
 /// Only minimal initialisation here; the rest is done in `persist()`;
 /// this is because some fields (e.g. `App::main_window()`) are only
 /// initialised after this returns.
-smyth::ui::MainWindow::MainWindow()
+MainWindow::MainWindow()
     : QMainWindow(nullptr),
       ui(std::make_unique<Ui::MainWindow>()) {
     ui->setupUi(this);
@@ -32,28 +35,23 @@ smyth::ui::MainWindow::MainWindow()
     connect(ui->char_map, &SmythCharacterMap::selected, this, &MainWindow::char_map_update_selection);
 
     // Call debug() when F12 is pressed.
-    SMYTH_DEBUG(
+    LIBBASE_DEBUG(
         auto debug = new QShortcut(QKeySequence(Qt::Key_F12), this);
         connect(debug, &QShortcut::activated, this, &MainWindow::debug);
     )
 }
 
-auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
+auto MainWindow::ApplySoundChanges() -> Result<> {
     auto Norm = [](QComboBox* cbox, QString plain) -> Result<QString> {
         const auto norm = [cbox] {
             switch (cbox->currentIndex()) {
-                default: return unicode::NormalisationForm::None;
-                case 1: return unicode::NormalisationForm::NFC;
-                case 2: return unicode::NormalisationForm::NFD;
+                default: return text::NormalisationForm::None;
+                case 1: return text::NormalisationForm::NFC;
+                case 2: return text::NormalisationForm::NFD;
             }
         }();
 
-        auto normed = Try(unicode::Normalise(
-            norm,
-            icu::UnicodeString(reinterpret_cast<char16_t*>(plain.data()), i32(plain.size()))
-        ));
-
-        return QString::fromUtf16(normed.getBuffer(), normed.length());
+        return QString::fromStdString(Try(Normalise(plain.toStdString(), norm)));
     };
 
     auto input = Try(Norm(ui->sca_cbox_input_norm, ui->input->toPlainText()));
@@ -114,7 +112,7 @@ auto smyth::ui::MainWindow::ApplySoundChanges() -> Result<> {
     return {};
 }
 
-auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Result<> {
+auto MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Result<> {
     QJSEngine js;
     qsizetype pos = 0;
     for (;;) {
@@ -143,17 +141,17 @@ auto smyth::ui::MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -
     return {};
 }
 
-void smyth::ui::MainWindow::HandleErrors(Result<> r) {
+void MainWindow::HandleErrors(Result<> r) {
     if (not r) App::ShowError(QString::fromStdString(r.error()));
 }
 
-void smyth::ui::MainWindow::apply_sound_changes() {
+void MainWindow::apply_sound_changes() {
     HandleErrors(ApplySoundChanges());
 }
 
-void smyth::ui::MainWindow::char_map_update_selection(char32_t codepoint) {
-    static constexpr auto LC = U_LOWERCASE_LETTER;
-    static constexpr auto UC = U_UPPERCASE_LETTER;
+void MainWindow::char_map_update_selection(char32_t codepoint) {
+    static constexpr auto LC = text::CharCategory::LowercaseLetter;
+    static constexpr auto UC = text::CharCategory::UppercaseLetter;
     static constexpr std::string_view templ = R"html(
         <h2>U+{:04X}</h2>
         <h4>{}</h4>
@@ -163,30 +161,30 @@ void smyth::ui::MainWindow::char_map_update_selection(char32_t codepoint) {
 
     auto cat = c.category();
     std::string swap_case =
-        cat == LC   ? fmt::format("Uppercase: U+{:04X}", c.to_upper())
-        : cat == UC ? fmt::format("Lowercase: U+{:04X}", c.to_lower())
+        cat == LC   ? std::format("Uppercase: U+{:04X}", c.to_upper())
+        : cat == UC ? std::format("Lowercase: U+{:04X}", c.to_lower())
                     : "";
 
-    auto html = fmt::format(
+    auto html = std::format(
         templ,
         u32(c),
         c.name().value_or("<error retrieving char name>"),
-        swap_case.empty() ? "" : fmt::format("<p><strong>{}</strong></p>", swap_case)
+        swap_case.empty() ? "" : std::format("<p><strong>{}</strong></p>", swap_case)
     );
 
     ui->char_map_details_panel->setHtml(QString::fromStdString(html));
 }
 
-void smyth::ui::MainWindow::closeEvent(QCloseEvent* event) {
+void MainWindow::closeEvent(QCloseEvent* event) {
     if (not App::The().prompt_close_project()) return event->ignore();
     QMainWindow::closeEvent(event);
 }
 
-void smyth::ui::MainWindow::debug() {
-    fmt::print("SIZE: {}\n", ui->char_map_splitter->sizes());
+void MainWindow::debug() {
+    std::print("SIZE: {}\n", ui->char_map_splitter->sizes());
 }
 
-void smyth::ui::MainWindow::init() {
+void MainWindow::init() {
     // FIXME: I think we need to set the window size before
     // doing any of this here.
 
@@ -204,19 +202,19 @@ void smyth::ui::MainWindow::init() {
     persist();
 }
 
-void smyth::ui::MainWindow::new_project() {
+void MainWindow::new_project() {
     App::The().new_project();
 }
 
-void smyth::ui::MainWindow::open_project() {
+void MainWindow::open_project() {
     HandleErrors(App::The().open());
 }
 
-void smyth::ui::MainWindow::open_settings() {
+void MainWindow::open_settings() {
     App::The().settings_dialog()->exec();
 }
 
-void smyth::ui::MainWindow::persist() {
+void MainWindow::persist() {
     PersistentStore& main_store = App::CreateStore("main");
 
     // Window needs to be updated before everything else to ensure that
@@ -261,12 +259,12 @@ void smyth::ui::MainWindow::persist() {
     App::The().last_open_project.subscribe([this](const QString& s) { set_window_path(s); });
 }
 
-void smyth::ui::MainWindow::reset_window() {
+void MainWindow::reset_window() {
     ui->dictionary_table->reset_dictionary();
     set_window_path("");
 }
 
-void smyth::ui::MainWindow::preview_changes_after_eval() {
+void MainWindow::preview_changes_after_eval() {
     auto changes = ui->changes->toPlainText();
     if (auto res = EvaluateAndInterpolateJavaScript(changes); not res) {
         HandleErrors(std::move(res));
@@ -276,16 +274,16 @@ void smyth::ui::MainWindow::preview_changes_after_eval() {
     TextPreviewDialog::Show("Sound Changes: Preview", changes, ui->changes->font(), this);
 }
 
-void smyth::ui::MainWindow::prompt_quit() {
+void MainWindow::prompt_quit() {
     if (not App::The().prompt_close_project()) return;
     close();
 }
 
-void smyth::ui::MainWindow::save_project() {
+void MainWindow::save_project() {
     HandleErrors(App::The().save());
 }
 
-void smyth::ui::MainWindow::set_window_path(QString path) {
+void MainWindow::set_window_path(QString path) {
     if (path.isEmpty()) {
         setWindowFilePath("");
         setWindowTitle("Smyth");
@@ -299,6 +297,5 @@ void smyth::ui::MainWindow::set_window_path(QString path) {
 #endif
 
     setWindowFilePath(path);
-    setWindowTitle(QString::fromStdString(fmt::format("Smyth | {}", path.toStdString())));
+    setWindowTitle(QString::fromStdString(std::format("Smyth | {}", path.toStdString())));
 }
-

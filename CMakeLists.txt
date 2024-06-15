@@ -160,11 +160,12 @@ if (NOT ICU_FOUND)
     message(FATAL_ERROR "ICU not found. Required components are: uc, i18n, data.")
 endif ()
 
-## Add fmtlib.
-FetchContent_Declare(fmtlib
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 10.0.0
-    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/fmt"
+## Add libbase.
+FetchContent_Declare(
+    libbase
+    GIT_REPOSITORY https://github.com/Sirraide/libbase
+    GIT_TAG        master
+    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/libbase"
 )
 
 ## Add nlohmann/json.
@@ -175,19 +176,19 @@ FetchContent_Declare(
 )
 
 ## Add libassert.
-FetchContent_Declare(
+#[[FetchContent_Declare(
   libassert
   GIT_REPOSITORY https://github.com/jeremy-rifkin/libassert.git
   GIT_TAG        v2.0.2
   SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/libassert"
-)
+)]]
 
 ## Download them.
 message(STATUS "Downloading dependencies ...")
 FetchContent_MakeAvailable(
-    fmtlib
+    libbase
     json
-    libassert
+    #[[libassert]]
 )
 
 ## ‘src’ should be an include directory.
@@ -217,8 +218,7 @@ endif()
 
 ## Link against libraries.
 target_link_libraries(options INTERFACE
-    fmt
-    libassert::assert
+    libbase
     nlohmann_json::nlohmann_json
 )
 

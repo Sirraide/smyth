@@ -17,7 +17,7 @@ smyth::ui::SettingsDialog::SettingsDialog()
 }
 
 void smyth::ui::SettingsDialog::init() {
-#ifdef SMYTH_DEBUG
+#ifdef LIBBASE_DEBUG
     App::The().dump_json_requests.subscribe([this](bool checked) {
         ui->debug_show_json->setChecked(checked);
     });
@@ -41,7 +41,7 @@ void smyth::ui::SettingsDialog::set_mono_font() {
 }
 
 void smyth::ui::SettingsDialog::toggle_show_json_requests() {
-#ifdef SMYTH_DEBUG
+#ifdef LIBBASE_DEBUG
     App::The().dump_json_requests.set(ui->debug_show_json->isChecked());
 #endif
 }

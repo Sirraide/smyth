@@ -1,5 +1,5 @@
+#include <base/FS.hh>
 #include <filesystem>
-#include <QCoreApplication>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <UI/App.hh>
@@ -46,9 +46,9 @@ auto App::GetLexurgy() -> Result<Lexurgy&> {
 void App::LoadLastOpenProject() {
     // Check if we have a last open project.
     auto& path = *last_open_project;
-    fmt::print("LAST OPEN PROJECT: {}\n", path);
+    std::print("LAST OPEN PROJECT: {}\n", path);
     if (path.isEmpty()) return;
-    if (not fs::exists(path.toStdString())) return;
+    if (not File::Exists(path.toStdString())) return;
     MainWindow()->HandleErrors(OpenProject(std::move(path)));
 }
 
@@ -69,15 +69,15 @@ auto App::OpenProject(QString path) -> Result<> {
     // Update save path and remember it.
     save_path = std::move(path);
     last_open_project.set(save_path);
-    fmt::print("SETTING SAVE PATH: {}\n", save_path);
+    std::print("SETTING SAVE PATH: {}\n", save_path);
     return {};
 }
 
 auto App::SaveImpl() -> Result<> {
-    fmt::print("SAVE PATH: {}\n", save_path);
+    std::print("SAVE PATH: {}\n", save_path);
     // Dew it.
     auto j = Try(global_store.save_all());
-    Try(utils::WriteFile(save_path.toStdString(), j.dump(4)));
+    Try(File::Write(save_path.toStdString(), j.dump(4)));
 
     // Update last save time.
     last_save_time = std::chrono::system_clock::now();
@@ -132,7 +132,7 @@ bool App::prompt_close_project() {
     auto RetryOnError = [&](std::string&& err) {
         // Include the 'Save' button only if checking for unsaved changes errored.
         auto buttons = QMessageBox::Yes | QMessageBox::Retry | QMessageBox::Cancel;
-        auto str = fmt::format(
+        auto str = std::format(
             "{} caused an error: {}.\n\nClose anyway?",
             state == Save ? "Saving" : "Checking for unsaved changes",
             err
@@ -171,7 +171,7 @@ bool App::prompt_close_project() {
                     auto now = chr::system_clock::now();
                     auto mins = chr::duration_cast<chr::minutes>(now - *last_save_time);
                     auto secs = chr::duration_cast<chr::seconds>(now - *last_save_time);
-                    text = fmt::format(
+                    text = std::format(
                         "Last save was {} {} ago. Save project before exiting?",
                         mins.count() == 0 ? secs.count() : mins.count(),
                         mins.count() == 0 ? "seconds" : "minutes"

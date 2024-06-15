@@ -1,7 +1,6 @@
 #ifndef SMYTH_UI_UTILS_HH
 #define SMYTH_UI_UTILS_HH
 
-#include <fmt/format.h>
 #include <QList>
 #include <QPointF>
 #include <QRect>
@@ -14,62 +13,64 @@ class SettingsDialog;
 }
 
 template <>
-struct fmt::formatter<QString> : formatter<std::string> {
+struct std::formatter<QString> : formatter<std::string> {
     template <typename FormatContext>
-    auto format(const QString& s, FormatContext& ctx) {
+    auto format(const QString& s, FormatContext& ctx) const {
         return formatter<std::string>::format(s.toStdString(), ctx);
     }
 };
 
 template <>
-struct fmt::formatter<QAnyStringView> : formatter<std::string> {
+struct std::formatter<QAnyStringView> : formatter<std::string> {
     template <typename FormatContext>
-    auto format(QAnyStringView s, FormatContext& ctx) {
+    auto format(QAnyStringView s, FormatContext& ctx) const {
         return formatter<std::string>::format(s.toString().toStdString(), ctx);
     }
 };
 
 template <>
-struct fmt::formatter<QRect> : formatter<std::string_view> {
+struct std::formatter<QRect> : formatter<std::string_view> {
     template <typename FormatContext>
-    auto format(const QRect& r, FormatContext& ctx) {
+    auto format(const QRect& r, FormatContext& ctx) const {
         return formatter<std::string_view>::format(
-            fmt::format("[x: {}, y: {}, wd: {}, ht: {}]", r.x(), r.y(), r.width(), r.height()),
+            std::format("[x: {}, y: {}, wd: {}, ht: {}]", r.x(), r.y(), r.width(), r.height()),
             ctx
         );
     }
 };
 
 template <>
-struct fmt::formatter<QSize> : formatter<std::string_view> {
+struct std::formatter<QSize> : formatter<std::string_view> {
     template <typename FormatContext>
-    auto format(QSize s, FormatContext& ctx) {
+    auto format(QSize s, FormatContext& ctx) const {
         return formatter<std::string_view>::format(
-            fmt::format("({}, {})", s.width(), s.height()),
+            std::format("({}, {})", s.width(), s.height()),
             ctx
         );
     }
 };
 
 template <>
-struct fmt::formatter<QPointF> : formatter<std::string_view> {
+struct std::formatter<QPointF> : formatter<std::string_view> {
     template <typename FormatContext>
-    auto format(QPointF s, FormatContext& ctx) {
+    auto format(QPointF s, FormatContext& ctx) const {
         return formatter<std::string_view>::format(
-            fmt::format("({}, {})", s.x(), s.y()),
+            std::format("({}, {})", s.x(), s.y()),
             ctx
         );
     }
 };
 
 template <typename T>
-struct fmt::formatter<QList<T>> : formatter<std::string_view> {
+struct std::formatter<QList<T>> : formatter<std::string_view> {
     template <typename FormatContext>
-    auto format(const QList<T> s, FormatContext& ctx) {
-        return formatter<std::string_view>::format(
-            fmt::format("[{}]", fmt::join(s, ", ")),
-            ctx
-        );
+    auto format(const QList<T>& list, FormatContext& ctx) const {
+        std::string s{"["};
+        for (const auto& item : list) s += std::format("{}, ", item);
+        if (not s.empty()) s.pop_back();
+        if (not s.empty()) s.pop_back();
+        s += "]";
+        return formatter<std::string_view>::format(s, ctx);
     }
 };
 

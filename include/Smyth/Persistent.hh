@@ -71,7 +71,7 @@ protected:
     PersistentBase() = default;
 
 public:
-    SMYTH_IMMOVABLE(PersistentBase);
+    LIBBASE_IMMOVABLE(PersistentBase);
     virtual ~PersistentBase() = default;
 
 private:
@@ -137,7 +137,7 @@ public:
     };
 
 private:
-    SMYTH_IMMOVABLE(PersistentStore);
+    LIBBASE_IMMOVABLE(PersistentStore);
     friend ui::App;
 
     std::unordered_map<std::string, Entry, std::hash<std::string>, Entry::Eqv> entries;
@@ -194,7 +194,7 @@ auto smyth::detail::Persist(
     PersistentStore& store,
     std::string key,
     Object* obj,
-    usz priority
+    base::usz priority
 ) -> PersistentBase* {
     using Property = PersistProperty<ExtractType<decltype(Get)>, Object, Get, Set>;
     std::unique_ptr<PersistentBase> e{new Property(obj)};

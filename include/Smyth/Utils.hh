@@ -1,14 +1,16 @@
 #ifndef FOOBAR_UTILS_HH
 #define FOOBAR_UTILS_HH
 
-#include <expected>
-#include <filesystem>
-#include <fmt/format.h>
-#include <fmt/std.h>
-#include <libassert/assert.hpp>
+#include <algorithm>
+#include <base/Base.hh>
+#include <base/Macros.hh>
 #include <ranges>
 
-#define SMYTH_STR_(X) #X
+namespace smyth {
+using namespace base;
+}
+
+/*#define SMYTH_STR_(X) #X
 #define SMYTH_STR(X)  SMYTH_STR_(X)
 
 #define SMYTH_CAT_(X, Y) X##Y
@@ -79,110 +81,8 @@
 #define defer [[maybe_unused]] ::smyth::detail::DeferImpl _ = [&]
 
 namespace smyth {
-using namespace std::literals;
-namespace rgs = std::ranges;
-namespace vws = std::ranges::views;
-namespace fs = std::filesystem;
-
-using u8 = uint8_t;
-using u16 = uint16_t;
-using u32 = uint32_t;
-using u64 = uint64_t;
-using usz = size_t;
-using uptr = uintptr_t;
-
-using i8 = int8_t;
-using i16 = int16_t;
-using i32 = int32_t;
-using i64 = int64_t;
-using isz = ptrdiff_t;
-using iptr = intptr_t;
-
-using f32 = float;
-using f64 = double;
 
 namespace detail {
-template <typename Callable>
-class DeferImpl {
-    Callable cb;
-    SMYTH_IMMOVABLE(DeferImpl);
-
-public:
-    DeferImpl(Callable cb) : cb(cb) {}
-    ~DeferImpl() { cb(); }
-};
-
-template <typename Ty>
-struct TryResultType {
-    using type = std::remove_reference_t<Ty>&&;
-};
-
-template <typename Ty>
-requires std::is_void_v<Ty>
-struct TryResultType<Ty> {
-    using type = void;
-};
-
-template <typename Ty>
-requires (not std::is_reference_v<Ty>)
-class ReferenceWrapper {
-    Ty* ptr;
-public:
-    ReferenceWrapper(Ty& ref) : ptr(&ref) {}
-    operator Ty&() const { return *ptr; }
-    auto operator&() const -> Ty* { return ptr; }
-    auto operator->() const -> Ty* { return ptr; }
-};
-
-template <typename Ty>
-concept Reference = std::is_reference_v<Ty>;
-
-template <typename Ty>
-concept NotReference = not Reference<Ty>;
-
-template <typename Ty>
-struct ResultImpl;
-
-template <Reference Ty>
-struct ResultImpl<Ty> {
-    using type = std::expected<ReferenceWrapper<std::remove_reference_t<Ty>>, std::string>;
-};
-
-template <NotReference Ty>
-struct ResultImpl<Ty> {
-    using type = std::expected<Ty, std::string>;
-};
-
-template <typename Ty>
-struct ResultImpl<std::reference_wrapper<Ty>> {
-    using type = typename ResultImpl<Ty&>::type;
-    static_assert(false, "Use Result<T&> instead of Result<reference_wrapper<T>>");
-};
-
-template <typename Ty>
-struct ResultImpl<ReferenceWrapper<Ty>> {
-    using type = typename ResultImpl<Ty&>::type;
-    static_assert(false, "Use Result<T&> instead of Result<ReferenceWrapper<T>>");
-};
-} // namespace detail
-
-template <typename T = void>
-struct [[nodiscard]] Result : detail::ResultImpl<T>::type {
-    using detail::ResultImpl<T>::type::type;
-};
-
-/// FIXME: Use 'std::format' everywhere now that it exists.
-template <typename... Args>
-[[nodiscard]] auto Error(fmt::format_string<Args...> fmt, Args&&... args) -> std::unexpected<std::string> {
-    return std::unexpected(fmt::format(fmt, std::forward<Args>(args)...));
-}
-
-/// Convert an enum to the underlying integer type.
-template <typename Ty>
-requires std::is_enum_v<Ty>
-[[nodiscard]] auto operator+(Ty ty) -> std::underlying_type_t<Ty> {
-    return std::to_underlying(ty);
-}
 
 namespace utils {
 using FileHandle = std::unique_ptr<std::FILE, decltype(&std::fclose)>;
@@ -221,6 +121,6 @@ void Debug(fmt::format_string<arguments...> fmt, arguments&&... args) {
     fmt::print(stderr, fmt, std::forward<arguments>(args)...);
     fmt::print(stderr, "\033[m\n");
 }
-} // namespace smyth
+} // namespace smyth*/
 
 #endif // FOOBAR_UTILS_HH

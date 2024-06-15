@@ -117,7 +117,7 @@ auto smyth::ui::SmythCharacterMap::ParseQuery(QStringView query) -> Query {
             // If we have a delimiter, then this is a range.
             if (not res.captured(2).isNull()) return Range{
                 first == 0 ? FirstPrintChar : std::max(FirstPrintChar, first),
-                second == 0 ? unicode::LastCodepoint : std::min<c32>(unicode::LastCodepoint, second)
+                second == 0 ? c32::max() : std::min<c32>(c32::max(), second)
             };
             Assert(first != 0, "Invalid codepoint");
             return Codepoint{first};
@@ -158,7 +158,7 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
         }
     };
 
-    visit(ParseQuery(query), Overloaded{
+    Visit(ParseQuery(query), Overloaded{
         [](std::monostate) {},
 
         // If this codepoint exists in the current font, display only it.
@@ -190,7 +190,7 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
             for (auto c : all_codepoints) {
                 auto name = c.name();
                 if (not name) continue;
-                if (rgs::all_of(view, [&](auto&& r) { return name->contains(std::string_view{r}); })) {
+                if (rgs::all_of(view, [&](auto&& r) { return name.value().contains(std::string_view{r}); })) {
                     matched_codepoints.push_back(c);
                     matched_chars.push_back(QString::fromUcs4(&c.value, 1));
                 }
@@ -219,7 +219,7 @@ void smyth::ui::SmythCharacterMap::ProcessQuery(QStringView query) { // clang-fo
 
 void smyth::ui::SmythCharacterMap::UpdateChars() {
     QFontMetrics m{font()};
-    CollectChars(m, FirstPrintChar, unicode::LastCodepoint, all_chars, all_codepoints);
+    CollectChars(m, FirstPrintChar, c32::max(), all_chars, all_codepoints);
 
     // Determine the size of each square relative to the font size.
     square_height = std::max(m.height(), m.maxWidth()) + 10;

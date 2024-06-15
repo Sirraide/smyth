@@ -20,7 +20,7 @@ class smyth::ui::SettingsDialog final : public QDialog {
     std::unique_ptr<Ui::SettingsDialog> ui;
 
 public:
-    SMYTH_IMMOVABLE(SettingsDialog);
+    LIBBASE_IMMOVABLE(SettingsDialog);
     SettingsDialog();
     ~SettingsDialog() noexcept;
 

@@ -82,7 +82,7 @@ void ui::PersistSplitter(PersistentStore& store, std::string key, QSplitter* spl
     Persist<&QSplitter::sizes, [](QSplitter* w, QList<int> sz) {
         // If the sum is greater than the width, ignore.
         if (std::accumulate(sz.begin(), sz.end(), 0) > w->width()) {
-            Debug("Ignoring invalid saved splitter sizes: {} vs total width {}", sz, w->width());
+            std::println(stderr, "Ignoring invalid saved splitter sizes: {} vs total width {}", sz, w->width());
             return;
         }
 
