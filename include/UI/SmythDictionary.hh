@@ -53,11 +53,7 @@ class smyth::ui::SmythDictionary final  : public QTableWidget, mixins::Zoom {
 public:
     SmythDictionary(QWidget* parent = nullptr);
 
-    void keyPressEvent(QKeyEvent* event) override {
-        if (HandleZoomEvent(event)) return;
-        QTableWidget::keyPressEvent(event);
-    }
-
+    void keyPressEvent(QKeyEvent* event) override;
     void persist(PersistentStore& root_store, std::string_view key);
     void reset_dictionary();
 

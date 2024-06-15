@@ -1,7 +1,8 @@
 #include <QHeaderView>
+#include <QMessageBox>
+#include <Smyth/JSON.hh>
 #include <UI/App.hh>
 #include <UI/SmythDictionary.hh>
-#include <Smyth/JSON.hh>
 
 using namespace smyth;
 using namespace smyth::json_utils;
@@ -56,6 +57,47 @@ void SmythDictionary::add_row() {
             return;
         }
     }
+}
+
+void SmythDictionary::keyPressEvent(QKeyEvent* event) {
+    if (HandleZoomEvent(event)) return;
+
+    // Prompt user to delete selected row.
+    if (
+        state() == NoState and
+        (event->key() == Qt::Key_Delete or event->key() == Qt::Key_Backspace) and
+        not selectedItems().empty()
+    ) {
+        // Figure out what rows we’re supposed to delete.
+        std::vector<int> rows;
+        for (auto it : selectedItems()) {
+            if (rgs::contains(rows, it->row())) continue;
+            rows.push_back(it->row());
+        }
+
+
+        // Prompt the user to delete the rows.
+        auto res = QMessageBox::question(
+            this,
+            "Deleting Rows",
+            QString::fromStdString(fmt::format("Are you sure you want to delete {} row(s)?", rows.size())),
+            QMessageBox::Yes | QMessageBox::No
+        );
+
+        // Dew it.
+        if (res == QMessageBox::Yes) {
+            rgs::sort(rows, std::greater<int>{});
+            for (auto row : rows) removeRow(row);
+        }
+
+        // If we end up with no rows as a result, insert a new one.
+        if (rowCount() == 0) add_row();
+
+        // In any case, don’t process this key press any further.
+        return;
+    }
+
+    QTableWidget::keyPressEvent(event);
 }
 
 void SmythDictionary::persist(PersistentStore& root_store, std::string_view key) {
