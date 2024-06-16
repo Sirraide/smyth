@@ -54,9 +54,14 @@ SmythDictionary::SmythDictionary(QWidget* parent)
     context_menu = new QMenu(this);
     auto add_row = context_menu->addAction("Add Row");
     auto add_column = context_menu->addAction("Add Column");
+    context_menu->addSeparator();
     auto delete_rows = context_menu->addAction("Delete Rows");
     auto delete_columns = context_menu->addAction("Delete Columns");
+    context_menu->addSeparator();
     auto duplicate_entry = context_menu->addAction("Duplicate Entry");
+    duplicate_entry->setShortcut(Qt::CTRL | Qt::Key_Return);
+    delete_rows->setShortcut(Qt::Key_Delete);
+    add_row->setShortcut(Qt::CTRL | Qt::Key_N);
     connect(add_row, &QAction::triggered, this, &SmythDictionary::add_row);
     connect(add_column, &QAction::triggered, this, &SmythDictionary::add_column);
     connect(delete_rows, &QAction::triggered, this, &SmythDictionary::delete_rows);
@@ -330,6 +335,11 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
 
         if (event->modifiers() & Qt::ControlModifier and event->key() == Qt::Key_Return) {
             App::MainWindow()->HandleErrors(DuplicateSelectedEntry());
+            return;
+        }
+
+        if (event->modifiers() & Qt::ControlModifier and event->key() == Qt::Key_N) {
+            add_row();
             return;
         }
     }
