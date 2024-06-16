@@ -185,6 +185,9 @@ void MainWindow::debug() {
 }
 
 void MainWindow::init() {
+    // Initialise notes tab.
+    ui->notes_file_list->init();
+
     // FIXME: I think we need to set the window size before
     // doing any of this here.
 

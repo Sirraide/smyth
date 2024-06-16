@@ -17,8 +17,7 @@ class smyth::ui::SmythNotesList final : public QListWidget
     , mixins::PromptUser {
     Q_OBJECT
 
-    using This = SmythNotesList;
-
+    class Item;
     friend Zoom;
     friend detail::PersistNotesList;
 
@@ -29,9 +28,11 @@ public:
     SmythNotesList(QWidget* parent = nullptr);
 
     void contextMenuEvent(QContextMenuEvent* event) override;
+    void currentChanged(const QModelIndex& current, const QModelIndex& previous) override;
+    auto item(int index) const -> Item*;
+    void init();
     void keyPressEvent(QKeyEvent* event) override;
     void persist(PersistentStore& notes_store);
-    void currentChanged(const QModelIndex& current, const QModelIndex& previous) override;
 
     void wheelEvent(QWheelEvent* event) override {
         if (HandleZoomEvent(event)) return;
@@ -45,6 +46,7 @@ public slots:
 
 private:
     auto TextBox() -> SmythRichTextEdit*;
+    void SetCurrentItem(Item* it);
 };
 
 #endif // SMYTH_UI_SMYTH_NOTES_LIST_HH
