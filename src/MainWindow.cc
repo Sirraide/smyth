@@ -217,7 +217,6 @@ void MainWindow::open_settings() {
 void MainWindow::persist() {
     PersistentStore& main_store = App::CreateStore("main");
 
-
     // Window needs to be updated before everything else to ensure that
     // the rest of the objects are working with the correct size.
     Persist<&QWidget::size, [](QWidget* w, QSize s) {

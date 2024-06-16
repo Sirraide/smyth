@@ -586,6 +586,12 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
            </property>
            <item>
             <widget class="smyth::ui::SmythDictionary" name="dictionary_table">
+             <property name="font">
+              <font>
+               <family>Charis SIL</family>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
              <property name="alternatingRowColors">
               <bool>true</bool>
              </property>
@@ -837,7 +843,16 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <addaction name="action_settings"/>
     <addaction name="action_quit"/>
    </widget>
+   <widget class="QMenu" name="menuDictionary">
+    <property name="title">
+     <string>Dictionary</string>
+    </property>
+    <addaction name="action_export"/>
+    <addaction name="action_import"/>
+    <addaction name="action_import_and_replace"/>
+   </widget>
    <addaction name="file_menu"/>
+   <addaction name="menuDictionary"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_open">
@@ -874,6 +889,21 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <string>New Project</string>
    </property>
   </action>
+  <action name="action_export">
+   <property name="text">
+    <string>&amp;Export CSV</string>
+   </property>
+  </action>
+  <action name="action_import">
+   <property name="text">
+    <string>&amp;Import CSV</string>
+   </property>
+  </action>
+  <action name="action_import_and_replace">
+   <property name="text">
+    <string>Import CSV and &amp;Replace</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -902,6 +932,9 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
    <slots>
     <slot>add_row()</slot>
     <slot>add_column()</slot>
+    <slot>export_dictionary()</slot>
+    <slot>import()</slot>
+    <slot>import_and_replace()</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -1140,6 +1173,54 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <hint type="sourcelabel">
      <x>639</x>
      <y>533</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>290</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_export</sender>
+   <signal>triggered()</signal>
+   <receiver>dictionary_table</receiver>
+   <slot>export_dictionary()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>290</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_import</sender>
+   <signal>triggered()</signal>
+   <receiver>dictionary_table</receiver>
+   <slot>import()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>290</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_import_and_replace</sender>
+   <signal>triggered()</signal>
+   <receiver>dictionary_table</receiver>
+   <slot>import_and_replace()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>

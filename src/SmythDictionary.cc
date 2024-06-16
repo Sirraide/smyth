@@ -1,10 +1,14 @@
+#include <base/FS.hh>
+#include <QFileDialog>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <Smyth/JSON.hh>
 #include <UI/App.hh>
+#include <UI/MainWindow.hh>
 #include <UI/SmythDictionary.hh>
+#include <ui_CSVImportExportDialog.h>
 
 using namespace smyth;
 using namespace smyth::json_utils;
@@ -37,7 +41,12 @@ void SmythDictionary::debug() {
 /// ====================================================================
 ///  Dictionary
 /// ====================================================================
-SmythDictionary::SmythDictionary(QWidget* parent) : QTableWidget(parent) {
+SmythDictionary::~SmythDictionary() = default;
+SmythDictionary::SmythDictionary(QWidget* parent)
+: QTableWidget(parent),
+import_dialog(false, App::MainWindow()),
+export_dialog(true, App::MainWindow())
+{
     setAlternatingRowColors(true);
 
     // Update font when it changes.
@@ -62,6 +71,125 @@ SmythDictionary::SmythDictionary(QWidget* parent) : QTableWidget(parent) {
     reset_dictionary();
 }
 
+auto SmythDictionary::ExportCSV() -> Result<> {
+    return {};
+    /*auto path = QFileDialog::getSaveFileName(
+        this,
+        "Export Dictionary",
+        QString{},
+        "Comma Separated Values (*.csv)"
+    );
+
+    if (path.isEmpty()) return {};
+    bool allow_multiline = export_dialog->check_multi_line->isChecked();
+
+    // Separator must not be empty.
+    auto separator = export_dialog->text_separator->text().trimmed();
+    if (separator.isEmpty()) return Error("Separator must not be empty.");
+
+    // Likewise for the delimiter if the 'Enclosed by' checkbox is checked
+    bool has_delim = export_dialog->check_enclosed_by->isChecked();
+    QString delim;
+    if (has_delim) {
+        delim = export_dialog->text_enclosed_by->text().trimmed();
+        if (delim.isEmpty()) return Error("Delimiter must not be empty.");
+    }
+
+    // Helper to append escaped text.
+    QString csv;
+
+    // Include header if requested.
+    if (export_dialog->check_header_line->isChecked()) {
+        for (int col = 0; col < columnCount(); ++col) {
+            if (col != 0) csv += ',';
+            auto it = horizontalHeaderItem(col);
+            if (it) csv += it->text();
+        }
+        csv += '\n';
+    }
+
+    // Write each row.
+    for (int row = 0; row < rowCount(); ++row) {
+        for (int col = 0; col < columnCount(); ++col) {
+            if (col != 0) csv += ',';
+
+            // Ignore empty items.
+            auto it = item(row, col);
+            if (not it) continue;
+            auto text = it->text().trimmed();
+
+            // If the field starts with an odd number of delimiters, add one.
+            if (has_delim) {
+                QStringView sv = text;
+                usz delim_count = 0;
+                while (sv.startsWith(delim)) {
+                    ++delim_count;
+                    sv = sv.mid(delim.size());
+                }
+                if (delim_count % 2 == 1) csv += delim;
+            }
+
+            // Check if it contains the separator.
+            bool contains_separator = text.contains(separator);
+            bool contains_newline = text.contains('\n');
+            if (contains_separator or contains_newline) {
+                // Can’t proceed if the user disallowed delimiters.
+                if (not has_delim) return Error(
+                    "Field '{}' in row '{}' contains {}. Specify "
+                    "an enclosing delimiter to proceed.\n\nField content:\n{}",
+                    col + 1,
+                    row + 1,
+                    contains_separator ? "the separator '" + separator + "'" : "a newline",
+                    separator,
+                    text
+                );
+
+                // If the field contains a newline, we also can’t proceed
+                // if multiline fields are disallowed.
+                if (contains_newline and not allow_multiline) return Error(
+                    "Field '{}' in row '{}' contains a newline, but "
+                    "multi-line fields are disallowed.",
+                    col + 1,
+                    row + 1,
+                    text
+                );
+
+                // Enclose the text in delimiters.
+                csv += delim;
+                csv += text;
+                csv += delim;
+
+                // If this causes the CSV to end with an even number of
+                // delimiters, we need to add one more.
+                QStringView sv = csv;
+                usz delim_count = 0;
+                while (sv.endsWith(delim)) {
+                    ++delim_count;
+                    sv = sv.left(sv.size() - delim.size());
+                }
+                if (delim_count % 2 == 0) csv += delim;
+            }
+
+            // Otherwise, write out the text as is.
+            else { csv += text; }
+        }
+
+        csv += '\n';
+    }*/
+}
+
+auto SmythDictionary::ImportCSV(bool replace) -> Result<> {
+    return {};
+    /*auto file = QFileDialog::getOpenFileName(
+        this,
+        "Import Dictionary",
+        QString{},
+        "Comma Separated Values (*.csv)"
+    );
+
+    if (file.isEmpty()) return {};*/
+}
+
 void SmythDictionary::add_column() {
     insertColumn(columnCount());
 }
@@ -73,6 +201,10 @@ void SmythDictionary::add_row() {
     }
 
     insertRow(rowCount() - 1 + 1);
+}
+
+void SmythDictionary::export_dictionary() {
+    App::The().MainWindow()->HandleErrors(ExportCSV());
 }
 
 void SmythDictionary::keyPressEvent(QKeyEvent* event) {
@@ -112,6 +244,14 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
     }
 
     QTableWidget::keyPressEvent(event);
+}
+
+void SmythDictionary::import() {
+    App::The().MainWindow()->HandleErrors(ImportCSV(false));
+}
+
+void SmythDictionary::import_and_replace() {
+    App::The().MainWindow()->HandleErrors(ImportCSV(true));
 }
 
 void SmythDictionary::reset_dictionary() {

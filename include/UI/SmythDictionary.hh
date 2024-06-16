@@ -4,18 +4,14 @@
 #include <QHeaderView>
 #include <QTableWidget>
 #include <UI/Mixins.hh>
+#include <UI/CSVExportImportDialog.hh>
 
 // General concept:
-//
-// List view that presents entries.
 //
 // Separate saving logic so only rows that have changed are saved on every
 // operation that changes a row.
 //
 // CTRL+C when an entry is selected to copy the word.
-//
-// Backspace/Delete to delete an entry. Always ask the user for confirmation
-// before an entry is deleted. (TODO: Also support undoing deletions)
 //
 // Double-click an entry to *open* it. This shows the entry in a dialog
 //     that contains a more detailed view of it (including e.g. all senses,
@@ -41,7 +37,6 @@
 
 namespace smyth::ui {
 class SmythDictionary;
-
 }
 
 namespace smyth::ui::detail {
@@ -69,8 +64,12 @@ class smyth::ui::SmythDictionary final : public QTableWidget
 
     using This = SmythDictionary;
 
+    CSVExportImportDialog import_dialog;
+    CSVExportImportDialog export_dialog;
+
 public:
     SmythDictionary(QWidget* parent = nullptr);
+    ~SmythDictionary() override;
 
     void keyPressEvent(QKeyEvent* event) override;
     void persist(PersistentStore& root_store, std::string_view key);
@@ -91,6 +90,13 @@ public:
 public slots:
     void add_column();
     void add_row();
+    void import();
+    void import_and_replace();
+    void export_dictionary();
+
+private:
+    auto ImportCSV(bool replace) -> Result<>;
+    auto ExportCSV() -> Result<>;
 };
 
 #endif // SMYTH_UI_DICTIONARY_HH

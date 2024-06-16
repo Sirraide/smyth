@@ -48,6 +48,8 @@ public:
     /// Set the path to be shown in the window title.
     void set_window_path(QString path);
 
+    void HandleErrors(Result<> r);
+
 public slots:
     void apply_sound_changes();
     void char_map_update_selection(char32_t c);
@@ -61,7 +63,6 @@ public slots:
 private:
     auto ApplySoundChanges() -> Result<>;
     auto EvaluateAndInterpolateJavaScript(QString& in_string) -> Result<>;
-    void HandleErrors(Result<> r);
 };
 } // namespace smyth::ui
 #endif // SMYTH_UI_MAINWINDOW_HH
