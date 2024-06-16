@@ -1,10 +1,12 @@
 #ifndef SMYTH_UI_DICTIONARY_HH
 #define SMYTH_UI_DICTIONARY_HH
 
+#include "Mixins.hh"
+
 #include <QHeaderView>
 #include <QTableWidget>
-#include <UI/Mixins.hh>
 #include <UI/CSVExportImportDialog.hh>
+#include <UI/Mixins.hh>
 
 // General concept:
 //
@@ -57,7 +59,8 @@ public:
 };
 
 class smyth::ui::SmythDictionary final : public QTableWidget
-    , mixins::Zoom {
+    , mixins::Zoom
+    , mixins::PromptUser {
     Q_OBJECT
 
     friend Zoom;
@@ -74,11 +77,10 @@ public:
 
     void contextMenuEvent(QContextMenuEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
-    void persist(PersistentStore& root_store, std::string_view key);
+    void persist(PersistentStore& store);
     void reset_dictionary();
 
     void debug();
-
 
     void setFont(const QFont& font) {
         QTableWidget::setFont(font);

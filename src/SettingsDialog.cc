@@ -40,6 +40,12 @@ void smyth::ui::SettingsDialog::set_mono_font() {
     App::The().mono_font.set(font);
 }
 
+void smyth::ui::SettingsDialog::set_notes_font() {
+    QFont font{*App::The().sans_font};
+    font.setFamily(ui->font_notes->currentFont().family());
+    App::The().sans_font.set(font);
+}
+
 void smyth::ui::SettingsDialog::toggle_show_json_requests() {
 #ifdef LIBBASE_DEBUG
     App::The().dump_json_requests.set(ui->debug_show_json->isChecked());

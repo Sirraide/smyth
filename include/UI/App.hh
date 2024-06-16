@@ -46,6 +46,7 @@ public:
     /// Per-user settings.
     UserSetting<QFont> mono_font{"mono.font", QFont{"monospace"}};
     UserSetting<QFont> serif_font{"serif.font", QFont{"serif"}};
+    UserSetting<QFont> sans_font{"sans.font", QFont{"sans"}};
     UserSetting<> last_open_project{"last_open_project", ""};
 
 #ifdef LIBBASE_DEBUG

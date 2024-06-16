@@ -2,11 +2,28 @@
 #define SMYTH_UI_COMMON_HH
 
 #include <QFont>
+#include <QMessageBox>
 #include <QWheelEvent>
 
 namespace smyth::ui::mixins {
+struct PromptUser;
 struct Zoom;
 } // namespace smyth::ui::mixins
+
+/// Prompt the user whether they actually want to perform an action.
+struct smyth::ui::mixins::PromptUser {
+    /// Returns whether the user accepted the prompt.
+    template <typename... Args>
+    bool Prompt(this auto&& self, QString title, std::format_string<Args...> fmt, Args&&... args) {
+        auto res = QMessageBox::question(
+            std::addressof(self),
+            title,
+            QString::fromStdString(std::format(fmt, std::forward<Args>(args)...)),
+            QMessageBox::Yes | QMessageBox::No
+        );
+        return res == QMessageBox::Yes;
+    }
+};
 
 /// Zoom mixin.
 ///

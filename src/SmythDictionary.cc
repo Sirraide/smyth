@@ -90,18 +90,9 @@ void SmythDictionary::DeleteSelectedColumns() {
             cols.push_back(col);
 
     // Prompt the user to delete the rows.
-    auto res = QMessageBox::question(
-        this,
-        "Deleting Columns",
-        QString::fromStdString(std::format("Are you sure you want to delete {} columns(s)?", cols.size())),
-        QMessageBox::Yes | QMessageBox::No
-    );
-
-    // Dew it.
-    if (res == QMessageBox::Yes) {
-        rgs::sort(cols, std::greater<int>{});
-        for (auto col : cols) removeColumn(col);
-    }
+    if (not Prompt("Deleting Columns", "Are you sure you want to delete {} columns(s)?", cols.size())) return;
+    rgs::sort(cols, std::greater<int>{});
+    for (auto col : cols) removeColumn(col);
 
     // If we end up with no rows as a result, insert a new one.
     if (columnCount() == 0) add_column();
@@ -115,18 +106,9 @@ void SmythDictionary::DeleteSelectedRows() {
             rows.push_back(row);
 
     // Prompt the user to delete the rows.
-    auto res = QMessageBox::question(
-        this,
-        "Deleting Rows",
-        QString::fromStdString(std::format("Are you sure you want to delete {} row(s)?", rows.size())),
-        QMessageBox::Yes | QMessageBox::No
-    );
-
-    // Dew it.
-    if (res == QMessageBox::Yes) {
-        rgs::sort(rows, std::greater<int>{});
-        for (auto row : rows) removeRow(row);
-    }
+    if (not Prompt("Deleting Rows", "Are you sure you want to delete {} row(s)?", rows.size())) return;
+    rgs::sort(rows, std::greater<int>{});
+    for (auto row : rows) removeRow(row);
 
     // If we end up with no rows as a result, insert a new one.
     if (rowCount() == 0) add_row();
@@ -287,7 +269,7 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
     // Prompt user to delete selected row.
     if (
         state() == NoState and
-        (event->key() == Qt::Key_Delete or event->key() == Qt::Key_Backspace) and
+        event->key() == Qt::Key_Delete and
         not selectedRanges().empty()
     ) {
         DeleteSelectedRows();
@@ -345,9 +327,7 @@ void smyth::ui::detail::ColumnHeaders::mouseDoubleClickEvent(QMouseEvent* event)
 /// ====================================================================
 ///  Persistence
 /// ====================================================================
-void SmythDictionary::persist(PersistentStore& root_store, std::string_view key) {
-    PersistentStore& store = App::CreateStore(std::string{key}, root_store);
-
+void SmythDictionary::persist(PersistentStore& store) {
     // Load columns first so we can set the column count; otherwise, any
     // out-of-bounds assignments to cells in non-existent columns will
     // silently get dropped.

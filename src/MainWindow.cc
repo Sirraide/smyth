@@ -206,6 +206,10 @@ void MainWindow::new_project() {
     App::The().new_project();
 }
 
+auto MainWindow::notes_tab_text_box() -> SmythRichTextEdit* {
+    return ui->notes_text_box;
+}
+
 void MainWindow::open_project() {
     HandleErrors(App::The().open());
 }
@@ -228,7 +232,6 @@ void MainWindow::persist() {
     ui->input->persist(main_store, "input");
     ui->changes->persist(main_store, "changes");
     ui->output->persist(main_store, "output");
-    ui->dictionary_table->persist(main_store, "dictionary");
 
     PersistentStore& charmap = App::CreateStore("charmap", main_store);
     PersistState(charmap, "splitter.sizes", ui->char_map_splitter);
@@ -241,6 +244,13 @@ void MainWindow::persist() {
     PersistDynCBox(sca, "cbox.stop.before", ui->sca_cbox_stop_before);
     PersistChBox(sca, "chbox.details", ui->sca_chbox_details);
     PersistChBox(sca, "chbox.enable.js", ui->sca_chbox_enable_javascript);
+
+    PersistentStore& notes_store = App::CreateStore("notes", main_store);
+    ui->notes_file_list->persist(notes_store);
+    PersistState(notes_store, "splitter.sizes", ui->notes_splitter);
+
+    PersistentStore& dictionary_store = App::CreateStore("dictionary", main_store);
+    ui->dictionary_table->persist(dictionary_store);
 
     // Hide the details panels if the checkbox is unchecked.
     if (not ui->sca_chbox_details->isChecked()) {
@@ -256,6 +266,7 @@ void MainWindow::persist() {
     App::The().serif_font.subscribe(ui->char_map, &SmythCharacterMap::setFont);
     App::The().serif_font.subscribe(ui->char_map_details_panel, &SmythRichTextEdit::setFont);
     App::The().mono_font.subscribe(ui->changes, &SmythPlainTextEdit::setFont);
+    App::The().sans_font.subscribe(ui->notes_text_box, &SmythRichTextEdit::setFont);
     App::The().last_open_project.subscribe([this](const QString& s) { set_window_path(s); });
 }
 

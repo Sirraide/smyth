@@ -12,6 +12,7 @@ class MainWindow;
 QT_END_NAMESPACE
 
 namespace smyth::ui {
+class SmythRichTextEdit;
 class MainWindow final : public QMainWindow {
     Q_OBJECT
 
@@ -23,6 +24,8 @@ class MainWindow final : public QMainWindow {
     /// App is the main controller of the program and needs to call protected
     /// functions sometimes.
     friend App;
+
+    QMenu* notes_tab_context_menu;
 
 public:
     LIBBASE_IMMOVABLE(MainWindow);
@@ -38,6 +41,9 @@ public:
 
     /// Show the window to the user. This is called once during startup.
     void init();
+
+    /// Text box used by the notes tab.
+    auto notes_tab_text_box() -> SmythRichTextEdit*;
 
     /// Initialise persistent objects.
     void persist();

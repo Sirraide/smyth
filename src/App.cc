@@ -63,6 +63,7 @@ auto App::OpenProject(QString path) -> Result<> {
 
     // Parse it.
     auto tt = Try(json_utils::Parse(f.readAll().toStdString()));
+    global_store.reset_all();
     Try(global_store.reload_all(tt));
     settings->reset_dialog();
 

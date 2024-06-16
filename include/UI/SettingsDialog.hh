@@ -37,6 +37,7 @@ public:
 public slots:
     void set_default_font();
     void set_mono_font();
+    void set_notes_font();
     void toggle_show_json_requests();
 };
 
