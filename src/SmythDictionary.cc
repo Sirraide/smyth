@@ -49,6 +49,17 @@ export_dialog(true, App::MainWindow())
 {
     setAlternatingRowColors(true);
 
+    // Set up the context menu.
+    context_menu = new QMenu(this);
+    auto add_row = context_menu->addAction("Add Row");
+    auto add_column = context_menu->addAction("Add Column");
+    auto delete_rows = context_menu->addAction("Delete Rows");
+    auto delete_columns = context_menu->addAction("Delete Columns");
+    connect(add_row, &QAction::triggered, this, &SmythDictionary::add_row);
+    connect(add_column, &QAction::triggered, this, &SmythDictionary::add_column);
+    connect(delete_rows, &QAction::triggered, this, &SmythDictionary::delete_rows);
+    connect(delete_columns, &QAction::triggered, this, &SmythDictionary::delete_columns);
+
     // Update font when it changes.
     App::The().serif_font.subscribe(this, &SmythDictionary::setFont);
 
@@ -70,6 +81,57 @@ export_dialog(true, App::MainWindow())
     // Create an empty dictionary.
     reset_dictionary();
 }
+
+void SmythDictionary::DeleteSelectedColumns() {
+    // Figure out what rows we’re supposed to delete.
+    std::vector<int> cols;
+    for (auto rng : selectedRanges())
+        for (int col = rng.leftColumn(); col <= rng.rightColumn(); ++col)
+            cols.push_back(col);
+
+    // Prompt the user to delete the rows.
+    auto res = QMessageBox::question(
+        this,
+        "Deleting Columns",
+        QString::fromStdString(std::format("Are you sure you want to delete {} columns(s)?", cols.size())),
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    // Dew it.
+    if (res == QMessageBox::Yes) {
+        rgs::sort(cols, std::greater<int>{});
+        for (auto col : cols) removeColumn(col);
+    }
+
+    // If we end up with no rows as a result, insert a new one.
+    if (columnCount() == 0) add_column();
+}
+
+void SmythDictionary::DeleteSelectedRows() {
+    // Figure out what rows we’re supposed to delete.
+    std::vector<int> rows;
+    for (auto rng : selectedRanges())
+        for (int row = rng.topRow(); row <= rng.bottomRow(); ++row)
+            rows.push_back(row);
+
+    // Prompt the user to delete the rows.
+    auto res = QMessageBox::question(
+        this,
+        "Deleting Rows",
+        QString::fromStdString(std::format("Are you sure you want to delete {} row(s)?", rows.size())),
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    // Dew it.
+    if (res == QMessageBox::Yes) {
+        rgs::sort(rows, std::greater<int>{});
+        for (auto row : rows) removeRow(row);
+    }
+
+    // If we end up with no rows as a result, insert a new one.
+    if (rowCount() == 0) add_row();
+}
+
 
 auto SmythDictionary::ExportCSV() -> Result<> {
     return {};
@@ -203,6 +265,18 @@ void SmythDictionary::add_row() {
     insertRow(rowCount() - 1 + 1);
 }
 
+void SmythDictionary::delete_columns(bool) {
+    DeleteSelectedColumns();
+}
+
+void SmythDictionary::delete_rows(bool) {
+    DeleteSelectedRows();
+}
+
+void SmythDictionary::contextMenuEvent(QContextMenuEvent* event) {
+    context_menu->popup(mapToGlobal(event->pos()));
+}
+
 void SmythDictionary::export_dictionary() {
     App::The().MainWindow()->HandleErrors(ExportCSV());
 }
@@ -216,30 +290,7 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
         (event->key() == Qt::Key_Delete or event->key() == Qt::Key_Backspace) and
         not selectedRanges().empty()
     ) {
-        // Figure out what rows we’re supposed to delete.
-        std::vector<int> rows;
-        for (auto rng : selectedRanges())
-            for (int row = rng.topRow(); row <= rng.bottomRow(); ++row)
-                rows.push_back(row);
-
-        // Prompt the user to delete the rows.
-        auto res = QMessageBox::question(
-            this,
-            "Deleting Rows",
-            QString::fromStdString(std::format("Are you sure you want to delete {} row(s)?", rows.size())),
-            QMessageBox::Yes | QMessageBox::No
-        );
-
-        // Dew it.
-        if (res == QMessageBox::Yes) {
-            rgs::sort(rows, std::greater<int>{});
-            for (auto row : rows) removeRow(row);
-        }
-
-        // If we end up with no rows as a result, insert a new one.
-        if (rowCount() == 0) add_row();
-
-        // In any case, don’t process this key press any further.
+        DeleteSelectedRows();
         return;
     }
 

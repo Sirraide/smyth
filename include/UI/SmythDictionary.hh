@@ -66,16 +66,19 @@ class smyth::ui::SmythDictionary final : public QTableWidget
 
     CSVExportImportDialog import_dialog;
     CSVExportImportDialog export_dialog;
+    QMenu* context_menu;
 
 public:
     SmythDictionary(QWidget* parent = nullptr);
     ~SmythDictionary() override;
 
+    void contextMenuEvent(QContextMenuEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void persist(PersistentStore& root_store, std::string_view key);
     void reset_dictionary();
 
     void debug();
+
 
     void setFont(const QFont& font) {
         QTableWidget::setFont(font);
@@ -90,11 +93,15 @@ public:
 public slots:
     void add_column();
     void add_row();
+    void delete_columns(bool);
+    void delete_rows(bool);
     void import();
     void import_and_replace();
     void export_dictionary();
 
 private:
+    void DeleteSelectedColumns();
+    void DeleteSelectedRows();
     auto ImportCSV(bool replace) -> Result<>;
     auto ExportCSV() -> Result<>;
 };

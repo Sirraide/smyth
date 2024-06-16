@@ -610,13 +610,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_9">
               <item>
-               <widget class="QPushButton" name="dictionary_add_column">
-                <property name="text">
-                 <string>Add Column</string>
-                </property>
-               </widget>
-              </item>
-              <item>
                <spacer name="horizontalSpacer_5">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -628,13 +621,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
                  </size>
                 </property>
                </spacer>
-              </item>
-              <item>
-               <widget class="QPushButton" name="dictionary_add_row">
-                <property name="text">
-                 <string>Add Row</string>
-                </property>
-               </widget>
               </item>
              </layout>
             </widget>
@@ -1145,38 +1131,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>dictionary_add_row</sender>
-   <signal>clicked()</signal>
-   <receiver>dictionary_table</receiver>
-   <slot>add_row()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>729</x>
-     <y>533</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>290</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>dictionary_add_column</sender>
-   <signal>clicked()</signal>
-   <receiver>dictionary_table</receiver>
-   <slot>add_column()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>639</x>
-     <y>533</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>290</y>
     </hint>
    </hints>
   </connection>
