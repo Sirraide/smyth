@@ -296,7 +296,11 @@ void smyth::ui::detail::ColumnHeaders::mouseDoubleClickEvent(QMouseEvent* event)
 /// ====================================================================
 void SmythDictionary::persist(PersistentStore& root_store, std::string_view key) {
     PersistentStore& store = App::CreateStore(std::string{key}, root_store);
-    store.register_entry("columns", std::make_unique<PersistColumns>(this));
+
+    // Load columns first so we can set the column count; otherwise, any
+    // out-of-bounds assignments to cells in non-existent columns will
+    // silently get dropped.
+    store.register_entry("columns", {std::make_unique<PersistColumns>(this), 1});
     store.register_entry("contents", std::make_unique<PersistContents>(this));
 }
 
@@ -343,9 +347,6 @@ auto PersistContents::load(const json& j) -> Result<> {
             dict->setItem(int(row_index), int(col_index), new QTableWidgetItem{text});
         }
     }
-
-    // Set the column count.
-    dict->setColumnCount(int(col_count));
     return {};
 }
 

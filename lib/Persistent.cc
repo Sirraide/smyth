@@ -10,7 +10,7 @@ auto PersistentStore::Entries() {
     std::vector<std::pair<std::string_view, Entry*>> sorted;
     sorted.reserve(entries.size());
     for (auto& [key, entry] : entries) sorted.emplace_back(key, &entry);
-    rgs::sort(sorted, [](const auto& a, const auto& b) {
+    rgs::stable_sort(sorted, [](const auto& a, const auto& b) {
         return a.second->priority < b.second->priority;
     });
     return sorted;
