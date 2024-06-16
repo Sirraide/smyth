@@ -1,3 +1,4 @@
+#include <base/Defer.hh>
 #include <base/FS.hh>
 #include <QFileDialog>
 #include <QHeaderView>
@@ -7,6 +8,7 @@
 #include <Smyth/JSON.hh>
 #include <UI/App.hh>
 #include <UI/MainWindow.hh>
+#include <UI/SettingsDialog.hh>
 #include <UI/SmythDictionary.hh>
 #include <ui_CSVImportExportDialog.h>
 
@@ -43,10 +45,9 @@ void SmythDictionary::debug() {
 /// ====================================================================
 SmythDictionary::~SmythDictionary() = default;
 SmythDictionary::SmythDictionary(QWidget* parent)
-: QTableWidget(parent),
-import_dialog(false, App::MainWindow()),
-export_dialog(true, App::MainWindow())
-{
+    : QTableWidget(parent),
+      import_dialog(false, App::MainWindow()),
+      export_dialog(true, App::MainWindow()) {
     setAlternatingRowColors(true);
 
     // Set up the context menu.
@@ -55,21 +56,26 @@ export_dialog(true, App::MainWindow())
     auto add_column = context_menu->addAction("Add Column");
     auto delete_rows = context_menu->addAction("Delete Rows");
     auto delete_columns = context_menu->addAction("Delete Columns");
+    auto duplicate_entry = context_menu->addAction("Duplicate Entry");
     connect(add_row, &QAction::triggered, this, &SmythDictionary::add_row);
     connect(add_column, &QAction::triggered, this, &SmythDictionary::add_column);
     connect(delete_rows, &QAction::triggered, this, &SmythDictionary::delete_rows);
     connect(delete_columns, &QAction::triggered, this, &SmythDictionary::delete_columns);
+    connect(duplicate_entry, &QAction::triggered, this, &SmythDictionary::duplicate_entry);
 
     // Update font when it changes.
     App::The().serif_font.subscribe(this, &SmythDictionary::setFont);
 
-    // Make horizontal header non-movable and ensure that the last column
+    // Make horizontal header movable and ensure that the last column
     // stretches to fill the remaining space. Also make it editable.
     setHorizontalHeader(new detail::ColumnHeaders{this});
     auto hhdr = horizontalHeader();
-    hhdr->setSectionsMovable(false);
+    hhdr->setSectionsMovable(true);
     hhdr->setStretchLastSection(true);
     hhdr->setCascadingSectionResizes(true);
+
+    // Set up signals.
+    connect(hhdr, &detail::ColumnHeaders::sectionMoved, this, &SmythDictionary::ActuallyMoveTheDamnableSection);
 
     // Make vertical header non-movable and ensure that each line has the
     // same height, based on the font metrics.
@@ -80,6 +86,38 @@ export_dialog(true, App::MainWindow())
 
     // Create an empty dictionary.
     reset_dictionary();
+}
+
+// Because of SOME UNGODLY REASON, Qt has a concept of ‘logical’
+// and ‘visual’ sections. When a section is moved, it doesn’t
+// *actually* move the section. Rather, the section is internally
+// marked as ‘displayed somewhere different from where it actually
+// is’, which wreaks HAVOC on any code trying to map indices to
+// sections. Fix that by ACTUALLY MOVING THE GOD DAMN SECTION FFS.
+void SmythDictionary::ActuallyMoveTheDamnableSection(int, int old_vis, int new_vis) {
+    if (section_move_fixup_running) return;
+    tempset section_move_fixup_running = true;
+
+    // First, undo the move.
+    horizontalHeader()->moveSection(new_vis, old_vis);
+
+    // Check someone else hasn’t screwed us over.
+    for (int col = 0; col < columnCount(); col++)
+        Assert(col == visualColumn(col), "Bad column index: {}", col);
+
+    // Then, exchange the cell contents.
+    for (auto row = 0; row < rowCount(); row++) {
+        auto cell1 = takeItem(row, old_vis);
+        auto cell2 = takeItem(row, new_vis);
+        setItem(row, old_vis, cell2);
+        setItem(row, new_vis, cell1);
+    }
+
+    // And the cell headers.
+    auto header1 = takeHorizontalHeaderItem(old_vis);
+    auto header2 = takeHorizontalHeaderItem(new_vis);
+    setHorizontalHeaderItem(old_vis, header2);
+    setHorizontalHeaderItem(new_vis, header1);
 }
 
 void SmythDictionary::DeleteSelectedColumns() {
@@ -98,6 +136,25 @@ void SmythDictionary::DeleteSelectedColumns() {
     if (columnCount() == 0) add_column();
 }
 
+auto SmythDictionary::DuplicateSelectedEntry() -> Result<> {
+    if (selectedRanges().empty()) return {};
+
+    // Duplicate the first selected row.
+    auto first_row = selectedRanges().front().topRow();
+    insertRow(first_row + 1);
+
+    // Copy all cells that we were told to select.
+    auto cols = Try(App::The().settings_dialog()->get_rows_to_duplicate());
+    for (int col = 0; col < columnCount(); ++col) {
+        auto it = item(first_row, col);
+        if (not it) continue;
+        if (not cols.empty() and not cols.contains(col + 1)) continue;
+        setItem(first_row + 1, col, new QTableWidgetItem(it->text()));
+    }
+
+    return {};
+}
+
 void SmythDictionary::DeleteSelectedRows() {
     // Figure out what rows we’re supposed to delete.
     std::vector<int> rows;
@@ -113,7 +170,6 @@ void SmythDictionary::DeleteSelectedRows() {
     // If we end up with no rows as a result, insert a new one.
     if (rowCount() == 0) add_row();
 }
-
 
 auto SmythDictionary::ExportCSV() -> Result<> {
     return {};
@@ -239,12 +295,7 @@ void SmythDictionary::add_column() {
 }
 
 void SmythDictionary::add_row() {
-    if (rowCount() == 0) {
-        insertRow(0);
-        return;
-    }
-
-    insertRow(rowCount() - 1 + 1);
+    insertRow(rowCount());
 }
 
 void SmythDictionary::delete_columns(bool) {
@@ -253,6 +304,10 @@ void SmythDictionary::delete_columns(bool) {
 
 void SmythDictionary::delete_rows(bool) {
     DeleteSelectedRows();
+}
+
+void SmythDictionary::duplicate_entry(bool) {
+    App::MainWindow()->HandleErrors(DuplicateSelectedEntry());
 }
 
 void SmythDictionary::contextMenuEvent(QContextMenuEvent* event) {
@@ -267,13 +322,16 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
     if (HandleZoomEvent(event)) return;
 
     // Prompt user to delete selected row.
-    if (
-        state() == NoState and
-        event->key() == Qt::Key_Delete and
-        not selectedRanges().empty()
-    ) {
-        DeleteSelectedRows();
-        return;
+    if (state() == NoState) {
+        if (event->key() == Qt::Key_Delete and not selectedRanges().empty()) {
+            DeleteSelectedRows();
+            return;
+        }
+
+        if (event->modifiers() & Qt::ControlModifier and event->key() == Qt::Key_Return) {
+            App::MainWindow()->HandleErrors(DuplicateSelectedEntry());
+            return;
+        }
     }
 
     QTableWidget::keyPressEvent(event);
@@ -345,13 +403,12 @@ auto PersistColumns::load(const json& j) -> Result<> {
     }
 
     // Set the column count and the name of each column.
+    dict->setColumnCount(int(arr.size()));
     for (auto [index, e] : arr | vws::enumerate) {
         auto text = Try(Serialiser<QString>::Deserialise(e));
         if (text.isEmpty()) continue;
         dict->setHorizontalHeaderItem(int(index), new QTableWidgetItem{text});
     }
-
-    dict->setColumnCount(int(arr.size()));
     return {};
 }
 

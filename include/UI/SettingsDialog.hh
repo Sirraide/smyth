@@ -24,8 +24,14 @@ public:
     SettingsDialog();
     ~SettingsDialog() noexcept;
 
+    /// Get the rows in the dictionary we should duplicate.
+    auto get_rows_to_duplicate() const -> Result<QList<int>>;
+
     /// Initialise the dialog.
     void init();
+
+    /// Persist settings.
+    void persist(PersistentStore& store);
 
     /// Reset the settings dialog as appropriate for a new project. This
     /// must be called after the main window has been initialised.

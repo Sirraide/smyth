@@ -70,6 +70,7 @@ class smyth::ui::SmythDictionary final : public QTableWidget
     CSVExportImportDialog import_dialog;
     CSVExportImportDialog export_dialog;
     QMenu* context_menu;
+    bool section_move_fixup_running = false;
 
 public:
     SmythDictionary(QWidget* parent = nullptr);
@@ -97,12 +98,15 @@ public slots:
     void add_row();
     void delete_columns(bool);
     void delete_rows(bool);
+    void duplicate_entry(bool);
     void import();
     void import_and_replace();
     void export_dictionary();
 
 private:
+    void ActuallyMoveTheDamnableSection(int logical, int old_vis, int new_vis);
     void DeleteSelectedColumns();
+    auto DuplicateSelectedEntry() -> Result<>;
     void DeleteSelectedRows();
     auto ImportCSV(bool replace) -> Result<>;
     auto ExportCSV() -> Result<>;

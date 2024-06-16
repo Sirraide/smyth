@@ -1,5 +1,8 @@
+#include <base/Numeric.hh>
+#include <base/Stream.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
+#include <UI/SmythDictionary.hh>
 #include <ui_SettingsDialog.h>
 
 smyth::ui::SettingsDialog::~SettingsDialog() noexcept = default;
@@ -16,12 +19,38 @@ smyth::ui::SettingsDialog::SettingsDialog()
     );
 }
 
+auto smyth::ui::SettingsDialog::get_rows_to_duplicate() const -> Result<QList<int>> {
+    QList<int> indices;
+    auto text = ui->text_duplicate_rows->text().trimmed().toStdString();
+    stream s{text};
+    for (;;) {
+        s.trim_front();
+        if (s.empty()) break;
+        auto number = stream{s.take_until(',')}.trim().text();
+        auto val = Try(Parse<int>(number));
+        if (not indices.contains(val)) indices.push_back(val);
+        s.drop(1);
+    }
+    return indices;
+}
+
 void smyth::ui::SettingsDialog::init() {
 #ifdef LIBBASE_DEBUG
     App::The().dump_json_requests.subscribe([this](bool checked) {
         ui->debug_show_json->setChecked(checked);
     });
 #endif
+
+    auto& store = App::CreateStore("settings");
+    persist(store);
+}
+
+void smyth::ui::SettingsDialog::persist(PersistentStore& store) {
+    Persist<&QLineEdit::text, &QLineEdit::setText>(
+        store,
+        "duplicate_rows",
+        ui->text_duplicate_rows
+    );
 }
 
 void smyth::ui::SettingsDialog::reset_dialog() {
