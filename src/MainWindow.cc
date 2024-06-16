@@ -114,6 +114,7 @@ auto MainWindow::ApplySoundChanges() -> Result<> {
 
 auto MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Result<> {
     QJSEngine js;
+    js.installExtensions(QJSEngine::ConsoleExtension);
     qsizetype pos = 0;
     for (;;) {
         auto next = changes.indexOf("§{", pos);
