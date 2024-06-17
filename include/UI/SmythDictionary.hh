@@ -118,8 +118,10 @@ public slots:
     void import_and_replace();
     void export_dictionary();
 
-private:
+private slots:
     void ActuallyMoveTheDamnableSection(int logical, int old_vis, int new_vis);
+
+private:
     auto ColumnHeaderCell(int index) -> Result<HeaderItem*>;
     void DeleteSelectedColumns();
     auto DuplicateSelectedEntry() -> Result<>;
