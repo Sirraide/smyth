@@ -4,12 +4,14 @@ needed functionality into a single easily accessible application. Features curre
 include
 - An improved Lexurgy frontend that supports changing the font (size), as well as Unicode
   normalisation and simple JS scripting.
+- A spreadsheet-based dictionary
 - A character map for finding and copying Unicode characters.
+- A notes tab for taking notes
 
 Currently, this application is only tested on Linux.
 
 DISCLAIMER: This application is still in development and may not work as expected. 
-However, the project file format is expected to remain stable.
+The project file format is currently NOT stable and may change at any time. 
 
 ## Building
 Building this application requires:
