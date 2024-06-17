@@ -37,6 +37,55 @@ struct PersistContents : smyth::detail::PersistentBase {
 };
 } // namespace
 
+class ui::detail::ColumnHeaders::Item : public QTableWidgetItem {
+    // We could have stored this data in a side-table in the headers,
+    // but that would require updating that table if we e.g. delete a
+    // column so another column doesn’t become multiline on accident,
+    // etc. This is a bit more robust since the information is tied to
+    // the actual column.
+    bool multiline = false;
+
+    // For SOME UNGODLY REASON, QTableWidgetItem doesn’t support EditRole
+    // data, so we store the name here instead.
+    QString internal_name;
+
+public:
+    Item(QString text, bool multiline = false)
+        : QTableWidgetItem(""), multiline(multiline) {
+        rename(std::move(text));
+    }
+
+    // Check if this cell is multiline.
+    bool is_multiline() const { return multiline; }
+
+    // Get the name of this cell.
+    auto name() const -> const QString& { return internal_name; }
+
+    // Assign a new name to this cell.
+    void rename(QString new_name) {
+        internal_name = new_name;
+        UpdateDisplayName();
+    }
+
+    // Make the cell (not) multiline.
+    void set_multiline(bool is_multiline) {
+        multiline = is_multiline;
+        UpdateDisplayName();
+    }
+
+    // This is meaningless for a cell.
+    auto text() const -> QString = delete;
+
+private:
+    using QTableWidgetItem::data;
+    using QTableWidgetItem::setData;
+    using QTableWidgetItem::setText;
+
+    void UpdateDisplayName() {
+        setText(internal_name + (multiline ? "*" : ""));
+    }
+};
+
 void SmythDictionary::debug() {
 }
 
@@ -125,6 +174,29 @@ void SmythDictionary::ActuallyMoveTheDamnableSection(int, int old_vis, int new_v
     setHorizontalHeaderItem(new_vis, header1);
 }
 
+auto SmythDictionary::ColumnHeaderCell(int index) -> Result<HeaderItem*> {
+    if (index >= columnCount()) return Error("Invalid cell index");
+
+    // Reuse existing cell if it exists.
+    auto cell_ptr = horizontalHeaderItem(index);
+    if (auto cell = dynamic_cast<HeaderItem*>(cell_ptr)) return cell;
+
+    // Otherwise, make a new one; if there was an item with text,
+    // transfer the text to the new cell.
+    if (cell_ptr) {
+        // Accessing 'text' is correct here because this is the builtin item.
+        auto text = cell_ptr->text();
+        auto item = new HeaderItem{text};
+        setHorizontalHeaderItem(index, item);
+        return item;
+    }
+
+    // If not, make a new one with the column number as its value.
+    auto item = new HeaderItem{QString::number(index + 1)};
+    setHorizontalHeaderItem(index, item);
+    return item;
+}
+
 void SmythDictionary::DeleteSelectedColumns() {
     // Figure out what rows we’re supposed to delete.
     std::vector<int> cols;
@@ -154,7 +226,7 @@ auto SmythDictionary::DuplicateSelectedEntry() -> Result<> {
         auto it = item(first_row, col);
         if (not it) continue;
         if (not cols.empty() and not cols.contains(col + 1)) continue;
-        setItem(first_row + 1, col, new QTableWidgetItem(it->text()));
+        setItem(first_row + 1, col, new TableItem(it->text()));
     }
 
     return {};
@@ -365,31 +437,73 @@ void SmythDictionary::reset_dictionary() {
 /// ====================================================================
 ///  Column Headers
 /// ====================================================================
-void smyth::ui::detail::ColumnHeaders::mouseDoubleClickEvent(QMouseEvent* event) {
-    if (event->button() != Qt::LeftButton) {
-        QHeaderView::mouseDoubleClickEvent(event);
-        return;
-    }
+ui::detail::ColumnHeaders::ColumnHeaders(QWidget* parent)
+    : QHeaderView(Qt::Horizontal, parent) {
+    setSectionsClickable(true);
+    setSortIndicatorClearable(true);
 
-    // Map position to index.
-    auto index = logicalIndexAt(event->pos());
-    if (index == -1) return;
+    // IMPORTANT: Make sure to update MultilineActionIndex when
+    // you add or remove actions here.
+    context_menu = new QMenu(this);
+    auto edit = context_menu->addAction("Rename Column");
+    auto multiline = context_menu->addAction("Multiline Column");
+    multiline->setCheckable(true);
 
-    // Edit this cell.
+    connect(edit, &QAction::triggered, this, &ColumnHeaders::context_menu_edit_header_cell);
+    connect(multiline, &QAction::triggered, this, &ColumnHeaders::context_menu_toggle_multiline_column);
+}
+
+void ui::detail::ColumnHeaders::EditHeaderCell(int index) {
+    // We simply unwrap the `ColumnHeaderCell()` result here because
+    // editing a non-existent cell is nonsense and should not be
+    // possible.
+    auto cell = Parent()->ColumnHeaderCell(index).value();
     auto text = QInputDialog::getText(
         this,
         "Edit",
         "New column name:",
         QLineEdit::Normal,
-        model()->headerData(index, orientation()).toString()
+        cell->name()
     );
 
     // Update the header.
     if (text.isEmpty()) return;
-    static_cast<SmythDictionary*>(parent())->setHorizontalHeaderItem(
-        index,
-        new QTableWidgetItem{text}
-    );
+    cell->rename(text);
+}
+
+auto ui::detail::ColumnHeaders::Parent() const -> SmythDictionary* {
+    return static_cast<SmythDictionary*>(parent());
+}
+
+auto ui::detail::ColumnHeaders::ToggleMultilineColumn(int index, bool multiline) -> Result<> {
+    auto cell = Try(Parent()->ColumnHeaderCell(index));
+    cell->set_multiline(multiline);
+    return {};
+}
+
+void ui::detail::ColumnHeaders::context_menu_edit_header_cell(bool) {
+    if (context_menu_column_index == -1) return;
+    EditHeaderCell(context_menu_column_index);
+}
+
+void ui::detail::ColumnHeaders::context_menu_toggle_multiline_column(bool checked) {
+    if (context_menu_column_index == -1) return;
+    App::MainWindow()->HandleErrors(ToggleMultilineColumn(context_menu_column_index, checked));
+}
+
+void ui::detail::ColumnHeaders::contextMenuEvent(QContextMenuEvent* event) {
+    // Make sure we actually clicked on a column header.
+    auto idx = logicalIndexAt(event->pos());
+    if (idx == -1) return;
+    context_menu_column_index = idx;
+    context_menu->actions()[MultilineActionIndex]->setChecked(is_cell_multiline(idx));
+    context_menu->popup(mapToGlobal(event->pos()));
+}
+
+bool ui::detail::ColumnHeaders::is_cell_multiline(int index) const {
+    auto cell = dynamic_cast<Item*>(Parent()->horizontalHeaderItem(index));
+    if (not cell) return false;
+    return cell->is_multiline();
 }
 
 /// ====================================================================
@@ -415,9 +529,13 @@ auto PersistColumns::load(const json& j) -> Result<> {
     // Set the column count and the name of each column.
     dict->setColumnCount(int(arr.size()));
     for (auto [index, e] : arr | vws::enumerate) {
-        auto text = Try(Serialiser<QString>::Deserialise(e));
-        if (text.isEmpty()) continue;
-        dict->setHorizontalHeaderItem(int(index), new QTableWidgetItem{text});
+        using HeaderItem = SmythDictionary::HeaderItem;
+        if (not e.contains("name")) return Error("Column entry must contain a string 'name'");
+        if (not e.contains("multiline")) return Error("Column entry must contain a bool 'multiline'");
+        auto name = Try(Serialiser<QString>::Deserialise(e["name"]));
+        auto multiline = Try(Serialiser<bool>::Deserialise(e["multiline"]));
+        if (name.isEmpty()) continue;
+        dict->setHorizontalHeaderItem(int(index), new HeaderItem{std::move(name), multiline});
     }
     return {};
 }
@@ -442,7 +560,7 @@ auto PersistContents::load(const json& j) -> Result<> {
         for (auto [col_index, col] : row | vws::enumerate) {
             auto text = Try(Serialiser<QString>::Deserialise(col));
             if (text.isEmpty()) continue;
-            dict->setItem(int(row_index), int(col_index), new QTableWidgetItem{text});
+            dict->setItem(int(row_index), int(col_index), new SmythDictionary::TableItem{text});
         }
     }
     return {};
@@ -459,9 +577,15 @@ void PersistContents::restore() {
 auto PersistColumns::save() const -> Result<json> {
     json::array_t cols;
     for (int col = 0; col < dict->columnCount(); ++col) {
-        auto it = dict->horizontalHeaderItem(col);
-        if (it) cols.push_back(Serialiser<QString>::Serialise(it->text()));
-        else cols.push_back("");
+        json entry;
+        if (auto it = dynamic_cast<SmythDictionary::HeaderItem*>(dict->horizontalHeaderItem(col))) {
+            entry["name"] = Serialiser<QString>::Serialise(it->name());
+            entry["multiline"] = it->is_multiline();
+        } else {
+            entry["name"] = "";
+            entry["multiline"] = false;
+        }
+        cols.push_back(std::move(entry));
     }
     return std::move(cols);
 }

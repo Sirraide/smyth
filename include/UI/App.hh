@@ -10,6 +10,8 @@
 #include <UI/UserSettings.hh>
 #include <UI/Utils.hh>
 
+#define SMYTH_CURRENT_CONFIG_FILE_VERSION 1
+
 namespace smyth::ui {
 namespace chr = std::chrono;
 class App;
@@ -38,6 +40,10 @@ class smyth::ui::App final {
 
     /// Global app.
     static App* the_app;
+
+    /// To prevent infinite recursion when an error is encountered
+    /// during project opening.
+    bool opening_last_open_project = false;
 
 public:
     /// Used for global settings.

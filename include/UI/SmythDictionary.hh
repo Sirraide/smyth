@@ -48,14 +48,25 @@ class ColumnHeaders;
 class smyth::ui::detail::ColumnHeaders : public QHeaderView {
     Q_OBJECT
 
-public:
-    ColumnHeaders(QWidget* parent = nullptr)
-        : QHeaderView(Qt::Horizontal, parent) {
-        setSectionsClickable(true);
-        setSortIndicatorClearable(true);
-    }
+    class Item;
+    friend SmythDictionary;
+    QMenu* context_menu;
+    int context_menu_column_index = -1;
+    static constexpr int MultilineActionIndex = 1;
 
-    void mouseDoubleClickEvent(QMouseEvent* event) override;
+public:
+    ColumnHeaders(QWidget* parent = nullptr);
+    void contextMenuEvent(QContextMenuEvent* event) override;
+    bool is_cell_multiline(int index) const;
+
+public slots:
+    void context_menu_edit_header_cell(bool);
+    void context_menu_toggle_multiline_column(bool checked);
+
+private:
+    void EditHeaderCell(int index);
+    auto Parent() const -> SmythDictionary*;
+    auto ToggleMultilineColumn(int index, bool multiline) -> Result<>;
 };
 
 class smyth::ui::SmythDictionary final : public QTableWidget
@@ -64,9 +75,13 @@ class smyth::ui::SmythDictionary final : public QTableWidget
     Q_OBJECT
 
     friend Zoom;
+    friend detail::ColumnHeaders;
 
-    using This = SmythDictionary;
+public:
+    using TableItem = QTableWidgetItem;
+    using HeaderItem = detail::ColumnHeaders::Item;
 
+private:
     CSVExportImportDialog import_dialog;
     CSVExportImportDialog export_dialog;
     QMenu* context_menu;
@@ -105,6 +120,7 @@ public slots:
 
 private:
     void ActuallyMoveTheDamnableSection(int logical, int old_vis, int new_vis);
+    auto ColumnHeaderCell(int index) -> Result<HeaderItem*>;
     void DeleteSelectedColumns();
     auto DuplicateSelectedEntry() -> Result<>;
     void DeleteSelectedRows();

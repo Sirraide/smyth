@@ -1,3 +1,4 @@
+#include <base/Defer.hh>
 #include <base/FS.hh>
 #include <filesystem>
 #include <QFileDialog>
@@ -45,6 +46,7 @@ auto App::GetLexurgy() -> Result<Lexurgy&> {
 
 void App::LoadLastOpenProject() {
     // Check if we have a last open project.
+    tempset opening_last_open_project = true;
     auto& path = *last_open_project;
     std::print("LAST OPEN PROJECT: {}\n", path);
     if (path.isEmpty()) return;
@@ -63,21 +65,48 @@ auto App::OpenProject(QString path) -> Result<> {
 
     // Parse it.
     auto tt = Try(json_utils::Parse(f.readAll().toStdString()));
+
+    // Check that the version number is correct.
+    auto v = tt.contains("version") and tt["version"].is_number_unsigned() ? tt["version"].get<u64>() : 0;
+    if (v != SMYTH_CURRENT_CONFIG_FILE_VERSION) return Error(
+        "Sorry, your project file was created with a different version of Smyth "
+        "({} vs expected {}); we currently don’t support automatic migration, so "
+        "please migrate it manually or ask for help.",
+        v,
+        SMYTH_CURRENT_CONFIG_FILE_VERSION
+    );
+
+    // Reload all settings. If there is an error, abort and load the previous project.
     global_store.reset_all();
-    Try(global_store.reload_all(tt));
-    settings->reset_dialog();
+    auto res = global_store.reload_all(tt);
+    if (not res) {
+        // Reset settings again.
+        global_store.reset_all();
+
+        // Prevent infinite loops in case the last open project is broken.
+        if (opening_last_open_project) {
+            new_project();
+            last_open_project.set("");
+            return res;
+        }
+
+        // Try to open the last project.
+        LoadLastOpenProject();
+        return res;
+    }
 
     // Update save path and remember it.
+    settings->reset_dialog();
     save_path = std::move(path);
     last_open_project.set(save_path);
-    std::print("SETTING SAVE PATH: {}\n", save_path);
     return {};
 }
 
 auto App::SaveImpl() -> Result<> {
-    std::print("SAVE PATH: {}\n", save_path);
     // Dew it.
     auto j = Try(global_store.save_all());
+    Assert(not j.contains("version"), "Top-level 'version' key already set?");
+    j["version"] = SMYTH_CURRENT_CONFIG_FILE_VERSION;
     Try(File::Write(save_path.toStdString(), j.dump(4)));
 
     // Update last save time.
