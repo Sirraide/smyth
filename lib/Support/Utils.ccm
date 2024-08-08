@@ -1,0 +1,10 @@
+module;
+
+#include <base/Base.hh>
+
+export module smyth.utils;
+//export import base;
+
+export namespace smyth {
+using namespace base;
+}

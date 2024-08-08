@@ -9,6 +9,9 @@
 #include <UI/SmythCharacterMap.hh>
 #include <UI/SmythPlainTextEdit.hh>
 
+import smyth.utils;
+import smyth.lexurgy;
+
 using namespace smyth::ui;
 
 /// ====================================================================
@@ -37,11 +40,6 @@ auto App::CreateStore(std::string name, PersistentStore& parent) -> PersistentSt
         {std::unique_ptr<smyth::detail::PersistentBase>{store}, smyth::detail::DefaultPriority}
     );
     return *store;
-}
-
-auto App::GetLexurgy() -> Result<Lexurgy&> {
-    if (not lexurgy_ptr) lexurgy_ptr = Try(Lexurgy::Start());
-    return *lexurgy_ptr;
 }
 
 void App::LoadLastOpenProject() {
@@ -124,14 +122,14 @@ auto App::apply_sound_changes(
     QString sound_changes,
     QString stop_before
 ) -> Result<QString> {
-    return Try(GetLexurgy())->apply(inputs, std::move(sound_changes), stop_before);
+    return Try(Lexurgy::Apply(inputs, std::move(sound_changes), stop_before));
 }
 
 void App::new_project() {
     if (not prompt_close_project()) return;
     save_path = "";
     last_save_time = std::nullopt;
-    lexurgy_ptr.reset();
+    Lexurgy::Reset();
     global_store.reset_all();
     settings->reset_dialog();
     MainWindow()->reset_window();

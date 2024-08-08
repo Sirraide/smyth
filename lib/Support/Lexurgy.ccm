@@ -1,0 +1,26 @@
+module;
+
+#include <base/Macros.hh>
+#include <base/Base.hh>
+#include <QString>
+
+export module smyth.lexurgy;
+//import smyth.json;
+import smyth.utils;
+
+export namespace smyth::Lexurgy {
+#ifdef LIBBASE_DEBUG
+/// Dump JSON requests to console.
+bool DumpJsonRequests = false;
+#endif
+
+/// Apply sound changes.
+auto Apply(
+    QStringView words,
+    QString changes,
+    const QString& stop_before
+) -> Result<QString>;
+
+/// Reset the lexurgy state.
+void Reset();
+}

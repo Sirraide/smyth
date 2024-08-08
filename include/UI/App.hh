@@ -5,7 +5,6 @@
 #include <mutex>
 #include <QCloseEvent>
 #include <Smyth/Utils.hh>
-#include <UI/Lexurgy.hh>
 #include <UI/PersistObjects.hh>
 #include <UI/UserSettings.hh>
 #include <UI/Utils.hh>
@@ -24,9 +23,6 @@ class smyth::ui::App final {
     /// Hack to make sure 'the_app' is initialised before everything else.
     struct _init {
     } _init_;
-
-    /// Lexurgy background process.
-    std::unique_ptr<Lexurgy> lexurgy_ptr;
 
     /// The path to the project that is currently open.
     QString save_path;
@@ -103,9 +99,6 @@ public:
     static auto The() -> App& { return *the_app; }
 
 private:
-    /// Create or get the current lexurgy instance.
-    auto GetLexurgy() -> Result<Lexurgy&>;
-
     /// Load the last project we had open.
     void LoadLastOpenProject();
 

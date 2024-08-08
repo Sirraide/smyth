@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.28)
 project(Smyth VERSION 0.1 LANGUAGES CXX C)
 
 ## ============================================================================
@@ -164,7 +164,7 @@ endif ()
 FetchContent_Declare(
     libbase
     GIT_REPOSITORY https://github.com/Sirraide/libbase
-    GIT_TAG        master
+    GIT_TAG        0fb774c
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/libbase"
 )
 
@@ -223,16 +223,6 @@ target_link_libraries(options INTERFACE
 )
 
 ## ============================================================================
-##  Executables and libraries.
-## ============================================================================
-file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/Smyth/*.hh)
-add_library(smyth-lib STATIC ${smyth-lib-sources} )
-target_include_directories(smyth-lib PUBLIC "${PROJECT_SOURCE_DIR}/thirdparty/sqlite/")
-set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
-target_link_libraries(smyth-lib PRIVATE options ICU::i18n ICU::uc ICU::data)
-add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
-
-## ============================================================================
 ##  Qt Stuff
 ## ============================================================================
 set(CMAKE_AUTOUIC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
@@ -256,15 +246,32 @@ if (${QT_VERSION_MAJOR} LESS 6)
     message(FATAL_ERROR "Qt6 or later is required, but Qt${QT_VERSION_MAJOR} was found.")
 endif()
 
-file(GLOB_RECURSE smyth-sources src/*.cc include/UI/*.hh ui/*.ui)
-qt_add_executable(smyth MANUAL_FINALIZATION ${smyth-sources})
+file(GLOB_RECURSE smyth-headers include/*.hh)
+file(GLOB_RECURSE smyth-modules lib/*.ccm)
+file(GLOB_RECURSE smyth-sources src/*.cc ui/*.ui)
+
+add_executable(smyth ${smyth-sources})
+target_sources(smyth PUBLIC
+    FILE_SET CXX_MODULES FILES ${smyth-modules}
+    FILE_SET HEADERS     FILES ${smyth-headers}
+)
+
+target_compile_definitions(smyth PRIVATE
+    LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy"
+)
 
 target_link_libraries(smyth PRIVATE
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Gui
-    Qt${QT_VERSION_MAJOR}::Qml
-    smyth-lib
     options
+    libbase
+
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Gui
+    Qt6::Qml
+
+    ICU::i18n
+    ICU::uc
+    ICU::data
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
