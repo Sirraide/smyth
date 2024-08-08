@@ -164,7 +164,7 @@ endif ()
 FetchContent_Declare(
     libbase
     GIT_REPOSITORY https://github.com/Sirraide/libbase
-    GIT_TAG        master
+    GIT_TAG        0fb774c  ## Last version before modules refactor.
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/libbase"
 )
 
@@ -227,7 +227,6 @@ target_link_libraries(options INTERFACE
 ## ============================================================================
 file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/Smyth/*.hh)
 add_library(smyth-lib STATIC ${smyth-lib-sources} )
-target_include_directories(smyth-lib PUBLIC "${PROJECT_SOURCE_DIR}/thirdparty/sqlite/")
 set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
 target_link_libraries(smyth-lib PRIVATE options ICU::i18n ICU::uc ICU::data)
 add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
