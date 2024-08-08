@@ -5,12 +5,14 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
-#include <Smyth/JSON.hh>
 #include <UI/App.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
 #include <UI/SmythDictionary.hh>
 #include <ui_CSVImportExportDialog.h>
+
+import smyth.json;
+import smyth.persistent;
 
 using namespace smyth;
 using namespace smyth::json_utils;
@@ -509,10 +511,11 @@ bool ui::detail::ColumnHeaders::is_cell_multiline(int index) const {
 /// ====================================================================
 ///  Persistence
 /// ====================================================================
-void SmythDictionary::persist(PersistentStore& store) {
+void SmythDictionary::persist(void* _store) {
     // Load columns first so we can set the column count; otherwise, any
     // out-of-bounds assignments to cells in non-existent columns will
     // silently get dropped.
+    auto& store = *static_cast<PersistentStore*>(_store);
     store.register_entry("columns", {std::make_unique<PersistColumns>(this), 1});
     store.register_entry("contents", std::make_unique<PersistContents>(this));
 }

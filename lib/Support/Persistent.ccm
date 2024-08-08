@@ -1,10 +1,23 @@
-#ifndef SMYTH_PERSISTENT_HH
-#define SMYTH_PERSISTENT_HH
+module;
 
-#include <Smyth/JSON.hh>
-#include <Smyth/Utils.hh>
+#include <base/Macros.hh>
+#include <base/Base.hh>
+#include <functional>
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <QByteArray>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QFont>
+#include <QList>
+#include <QSize>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+
+export module smyth.persistent;
+import smyth.json;
+import smyth.utils;
 
 #define SMYTH_DECLARE_SERIALISER(in, out)                                  \
     namespace smyth::detail {                                              \
@@ -15,17 +28,13 @@
     };                                                                     \
     }
 
-namespace smyth {
+export namespace smyth {
 class PersistentStore;
 }
 
-namespace smyth::ui {
-class App;
-}
-
 namespace smyth::detail {
-inline constexpr usz DefaultPriority = ~0zu;
-class PersistentBase;
+export inline constexpr usz DefaultPriority = ~0zu;
+export class PersistentBase;
 
 template <typename>
 struct ExtractTypeImpl;
@@ -43,7 +52,7 @@ struct ExtractTypeImpl<Type (Object::*)() const> {
 template <typename Type>
 using ExtractType = typename ExtractTypeImpl<Type>::type;
 
-template <typename Ty>
+export template <typename>
 struct Serialiser {
     static_assert(false, "No implementation of Serialiser<> for this type");
 };
@@ -53,7 +62,7 @@ template <typename RawType, typename Object, auto Get, auto Set>
 class PersistProperty;
 
 /// Persist a property using a getter and setter in the store.
-template <auto Get, auto Set, typename Object>
+export template <auto Get, auto Set, typename Object>
 auto Persist(
     PersistentStore& store,
     std::string key,
@@ -65,6 +74,15 @@ template <typename I>
 requires std::integral<I> or std::is_enum_v<I>
 struct Serialiser<I>;
 } // namespace smyth::detail
+
+SMYTH_DECLARE_SERIALISER(bool, bool)
+SMYTH_DECLARE_SERIALISER(i64, i64)
+SMYTH_DECLARE_SERIALISER(u64, u64)
+SMYTH_DECLARE_SERIALISER(std::string&&, std::string)
+SMYTH_DECLARE_SERIALISER(const QByteArray&, QByteArray);
+SMYTH_DECLARE_SERIALISER(const QFont&, QFont);
+SMYTH_DECLARE_SERIALISER(QSize, QSize);
+SMYTH_DECLARE_SERIALISER(const QString&, QString);
 
 class smyth::detail::PersistentBase {
 protected:
@@ -116,7 +134,7 @@ private:
 };
 
 /// Persistent data store.
-class smyth::PersistentStore final : detail::PersistentBase {
+class smyth::PersistentStore final : public detail::PersistentBase {
 public:
     struct Entry {
         std::unique_ptr<PersistentBase> entry;
@@ -138,13 +156,22 @@ public:
 
 private:
     LIBBASE_IMMOVABLE(PersistentStore);
-    friend ui::App;
 
     std::unordered_map<std::string, Entry, std::hash<std::string>, Entry::Eqv> entries;
 
-    /// Only used by 'App'! Use App::CreateStore() instead.
+    /// Use Create() instead.
     explicit PersistentStore() = default;
+
 public:
+    /// The global root store.
+    static PersistentStore Global;
+
+    /// Create a table in a store.
+    static auto Create(
+        std::string name,
+        PersistentStore& parent = Global
+    ) -> PersistentStore&;
+
     /// \brief Register an entry to this store.
     ///
     /// \param key The key to use for this entry. If the key already
@@ -188,6 +215,8 @@ private:
     auto Entries();
 };
 
+smyth::PersistentStore smyth::PersistentStore::Global;
+
 /// Persist a property using a getter and setter in the store.
 template <auto Get, auto Set, typename Object>
 auto smyth::detail::Persist(
@@ -202,11 +231,6 @@ auto smyth::detail::Persist(
     store.register_entry(std::move(key), {std::move(e), priority});
     return ptr;
 }
-
-SMYTH_DECLARE_SERIALISER(std::string&&, std::string)
-SMYTH_DECLARE_SERIALISER(i64, i64)
-SMYTH_DECLARE_SERIALISER(u64, u64)
-SMYTH_DECLARE_SERIALISER(bool, bool)
 
 template <typename I>
 requires std::integral<I> or std::is_enum_v<I>
@@ -227,5 +251,41 @@ struct smyth::detail::Serialiser<I> {
     }
 };
 
-#endif // SMYTH_PERSISTENT_HH
+/// Lists of integers.
+///
+/// Note that we don’t just allow storing arbitrary lists as the
+/// objects contained within them may change size, which would cause
+/// deserialisation to fail; integers and enums are always encoded
+/// as 64-bit numbers, so they’re safe from that.
+template <typename Int>
+requires std::integral<Int> or std::is_enum_v<Int>
+struct smyth::detail::Serialiser<QList<Int>> {
+    static_assert(sizeof(Int) <= sizeof(i64), "Integer or enum too large");
+    static auto Deserialise(const json_utils::json& j) -> Result<QList<Int>> {
+        const json_utils::json::array_t& arr = Try(json_utils::Get<json_utils::json::array_t>(j));
+        QList<Int> result;
+        for (const auto& item : arr)
+            result.push_back(Try(Serialiser<Int>::Deserialise(item)));
+        return std::move(result);
+    }
 
+    static auto Serialise(const QList<Int>& list) -> json_utils::json {
+        json_utils::json::array_t arr;
+        for (auto item : list) arr.push_back(item);
+        return std::move(arr);
+    }
+};
+
+export namespace smyth {
+void PersistCBox(PersistentStore& store, std::string key, QComboBox* cbox);
+void PersistChBox(PersistentStore& store, std::string key, QCheckBox* cbox);
+
+/// Like PersistCBox, but the entries are generated dynamically.
+void PersistDynCBox(PersistentStore& store, std::string key, QComboBox* cbox);
+
+/// Persist an object’s state as base64.
+template <typename Object>
+void PersistState(PersistentStore& store, std::string key, Object* obj) {
+    Persist<&Object::saveState, &Object::restoreState>(store, std::move(key), obj);
+}
+} // namespace smyth

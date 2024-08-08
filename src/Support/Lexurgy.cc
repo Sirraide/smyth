@@ -1,14 +1,16 @@
 module;
 
+#include <algorithm>
+#include <base/Base.hh>
 #include <base/Macros.hh>
-#include <base/Result.hh>
 #include <print>
 #include <QProcess>
+#include <QString>
+#include <QStringView>
 #include <ranges>
-#include <Smyth/JSON.hh>
 
 module smyth.lexurgy;
-// import smyth.json;
+import smyth.json;
 
 using namespace smyth;
 using namespace smyth::Lexurgy;
@@ -25,9 +27,6 @@ struct Connexion {
 
     Connexion() { lexurgy_process.start(LEXURGY_ROOT "/bin/lexurgy", QStringList() << "server"); }
     ~Connexion() { lexurgy_process.close(); }
-
-    /// Try to create a new process and wait until it has started.
-    static auto Start() -> Result<std::unique_ptr<Connexion>>;
 
     /// Apply sound changes.
     auto apply(
@@ -108,7 +107,7 @@ auto Connexion::apply(
     Try(UpdateSoundChanges(std::move(changes)));
 
     std::vector<std::string> words;
-    for (auto w : input | vws::split('\n') | vws::filter([](auto&& w) { return not w.empty(); })) {
+    for (auto w : vws::filter(vws::split(input, '\n'), [](auto&& w) { return not w.empty(); })) {
         auto sv = QStringView{w.begin(), w.end() - w.begin()};
         words.push_back(sv.toString().toStdString());
     }

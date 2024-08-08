@@ -93,7 +93,7 @@ public:
 
     void contextMenuEvent(QContextMenuEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
-    void persist(PersistentStore& store);
+    void persist(void* store);  // FIXME(Modularise)
     void reset_dictionary();
 
     void debug();

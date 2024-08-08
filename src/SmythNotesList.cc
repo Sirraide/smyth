@@ -1,11 +1,12 @@
-#include "base/Defer.hh"
-
+#include <base/Defer.hh>
 #include <QMenu>
 #include <UI/App.hh>
 #include <UI/MainWindow.hh>
-#include <UI/PersistObjects.hh>
 #include <UI/SmythNotesList.hh>
 #include <UI/SmythRichTextEdit.hh>
+
+import smyth.json;
+import smyth.persistent;
 
 using namespace smyth;
 using namespace smyth::ui;
@@ -124,7 +125,8 @@ void SmythNotesList::rename_file() {
 /// ====================================================================
 ///  Persistence
 /// ====================================================================
-void SmythNotesList::persist(PersistentStore& notes_store) {
+void SmythNotesList::persist(void* _notes_store) {
+    auto& notes_store = *static_cast<PersistentStore*>(_notes_store);
     notes_store.register_entry("files", std::make_unique<detail::PersistNotesList>(this));
 }
 

@@ -9,8 +9,10 @@
 #include <UI/SmythCharacterMap.hh>
 #include <UI/SmythPlainTextEdit.hh>
 
+import smyth.json;
 import smyth.utils;
 import smyth.lexurgy;
+import smyth.persistent;
 
 using namespace smyth::ui;
 
@@ -31,15 +33,6 @@ App::App() : _init_{[&] { the_app = this; return _init{}; }()} {
     detail::user_settings::Init();
     MainWindow()->setWindowTitle("Smyth");
     LoadLastOpenProject();
-}
-
-auto App::CreateStore(std::string name, PersistentStore& parent) -> PersistentStore& {
-    auto store = new PersistentStore;
-    parent.register_entry(
-        std::move(name),
-        {std::unique_ptr<smyth::detail::PersistentBase>{store}, smyth::detail::DefaultPriority}
-    );
-    return *store;
 }
 
 void App::LoadLastOpenProject() {
@@ -75,11 +68,11 @@ auto App::OpenProject(QString path) -> Result<> {
     );
 
     // Reload all settings. If there is an error, abort and load the previous project.
-    global_store.reset_all();
-    auto res = global_store.reload_all(tt);
+    PersistentStore::Global.reset_all();
+    auto res = PersistentStore::Global.reload_all(tt);
     if (not res) {
         // Reset settings again.
-        global_store.reset_all();
+        PersistentStore::Global.reset_all();
 
         // Prevent infinite loops in case the last open project is broken.
         if (opening_last_open_project) {
@@ -102,7 +95,7 @@ auto App::OpenProject(QString path) -> Result<> {
 
 auto App::SaveImpl() -> Result<> {
     // Dew it.
-    auto j = Try(global_store.save_all());
+    auto j = Try(PersistentStore::Global.save_all());
     Assert(not j.contains("version"), "Top-level 'version' key already set?");
     j["version"] = SMYTH_CURRENT_CONFIG_FILE_VERSION;
     Try(File::Write(save_path.toStdString(), j.dump(4)));
@@ -130,7 +123,7 @@ void App::new_project() {
     save_path = "";
     last_save_time = std::nullopt;
     Lexurgy::Reset();
-    global_store.reset_all();
+    PersistentStore::Global.reset_all();
     settings->reset_dialog();
     MainWindow()->reset_window();
 }

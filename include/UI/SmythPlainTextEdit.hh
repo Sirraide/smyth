@@ -21,13 +21,7 @@ public:
     SmythPlainTextEdit(QWidget* parent = nullptr)
         : QPlainTextEdit(parent) {}
 
-    void persist(PersistentStore& store, std::string_view key) {
-        Persist<&This::toPlainText, &This::setPlainText>(
-            store,
-            std::format("{}.text", key),
-            this
-        );
-    }
+    void persist(void* store, std::string_view key);  // FIXME(Modularise)
 
     void wheelEvent(QWheelEvent* event) override {
         if (HandleZoomEvent(event)) return;

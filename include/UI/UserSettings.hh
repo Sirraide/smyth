@@ -44,7 +44,7 @@ public:
     explicit UserSetting(QString k, Type default_value)
         : key{std::move(k)},
           cached_value{std::move(default_value)} {
-        Assert(not detail::user_settings::All.contains(key), "Duplicate settings key '{}'", key);
+        Assert(not detail::user_settings::All.contains(key), "Duplicate settings key '{}'", key.toStdString()); // FIXME(Modularise)
         detail::user_settings::All.emplace(std::move(key), this);
     }
 

@@ -21,13 +21,7 @@ public:
     SmythRichTextEdit(QWidget* parent = nullptr)
         : QTextEdit(parent) {}
 
-    void persist(PersistentStore& store, std::string_view key, bool include_text = true) {
-        if (include_text) Persist<&This::toHtml, &This::setHtml>(
-            store,
-            std::format("{}.text", key),
-            this
-        );
-    }
+    void persist(void* store, std::string_view key, bool include_text = true);  // FIXME(Modularise)
 
     void wheelEvent(QWheelEvent* event) override {
         if (HandleZoomEvent(event)) return;

@@ -31,7 +31,7 @@ public:
     void init();
 
     /// Persist settings.
-    void persist(PersistentStore& store);
+    void persist(void* store); // FIXME(Modularise)
 
     /// Reset the settings dialog as appropriate for a new project. This
     /// must be called after the main window has been initialised.

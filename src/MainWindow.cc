@@ -9,6 +9,8 @@
 #include <UI/TextPreviewDialog.hh>
 #include <ui_MainWindow.h>
 
+import smyth.persistent;
+
 using namespace smyth;
 using namespace smyth::ui;
 
@@ -223,7 +225,7 @@ void MainWindow::open_settings() {
 }
 
 void MainWindow::persist() {
-    PersistentStore& main_store = App::CreateStore("main");
+    auto& main_store = PersistentStore::Create("main");
 
     // Window needs to be updated before everything else to ensure that
     // the rest of the objects are working with the correct size.
@@ -233,14 +235,14 @@ void MainWindow::persist() {
     }>(main_store, "window.size", this, 1);
 
     // Initialise persistent settings.
-    ui->input->persist(main_store, "input");
-    ui->changes->persist(main_store, "changes");
-    ui->output->persist(main_store, "output");
+    ui->input->persist(&main_store, "input");
+    ui->changes->persist(&main_store, "changes");
+    ui->output->persist(&main_store, "output");
 
-    PersistentStore& charmap = App::CreateStore("charmap", main_store);
+    auto& charmap = PersistentStore::Create("charmap", main_store);
     PersistState(charmap, "splitter.sizes", ui->char_map_splitter);
 
-    PersistentStore& sca = App::CreateStore("sca", main_store);
+    auto& sca = PersistentStore::Create("sca", main_store);
     PersistState(sca, "splitter.sizes", ui->sca_text_edits);
     PersistCBox(sca, "cbox.input.norm.choice", ui->sca_cbox_input_norm);
     PersistCBox(sca, "cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
@@ -249,12 +251,12 @@ void MainWindow::persist() {
     PersistChBox(sca, "chbox.details", ui->sca_chbox_details);
     PersistChBox(sca, "chbox.enable.js", ui->sca_chbox_enable_javascript);
 
-    PersistentStore& notes_store = App::CreateStore("notes", main_store);
-    ui->notes_file_list->persist(notes_store);
+    auto& notes_store = PersistentStore::Create("notes", main_store);
+    ui->notes_file_list->persist(&notes_store);
     PersistState(notes_store, "splitter.sizes", ui->notes_splitter);
 
-    PersistentStore& dictionary_store = App::CreateStore("dictionary", main_store);
-    ui->dictionary_table->persist(dictionary_store);
+    auto& dictionary_store = PersistentStore::Create("dictionary", main_store);
+    ui->dictionary_table->persist(&dictionary_store);
 
     // Hide the details panels if the checkbox is unchecked.
     if (not ui->sca_chbox_details->isChecked()) {

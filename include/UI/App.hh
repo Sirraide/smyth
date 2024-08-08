@@ -5,7 +5,6 @@
 #include <mutex>
 #include <QCloseEvent>
 #include <Smyth/Utils.hh>
-#include <UI/PersistObjects.hh>
 #include <UI/UserSettings.hh>
 #include <UI/Utils.hh>
 
@@ -42,9 +41,6 @@ class smyth::ui::App final {
     bool opening_last_open_project = false;
 
 public:
-    /// Used for global settings.
-    PersistentStore global_store;
-
     /// Per-user settings.
     UserSetting<QFont> mono_font{"mono.font", QFont{"monospace"}};
     UserSetting<QFont> serif_font{"serif.font", QFont{"serif"}};
@@ -82,12 +78,6 @@ public:
 
     /// Get the settings dialog.
     auto settings_dialog() -> SettingsDialog* { return settings.get(); }
-
-    /// Create a table in a store.
-    static auto CreateStore(
-        std::string name,
-        PersistentStore& parent = The().global_store
-    ) -> PersistentStore&;
 
     /// Get the main window.
     static auto MainWindow() -> MainWindow* { return the_app->main.get(); }

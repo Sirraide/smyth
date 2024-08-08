@@ -1,4 +1,8 @@
-#include <Smyth/JSON.hh>
+module;
+
+#include <base/Result.hh>
+
+module smyth.json;
 
 using namespace base;
 using namespace smyth;
@@ -28,9 +32,8 @@ auto json_utils::Get<bool>(const json& j) -> Result<bool> {
     return Error("Expected boolean, got '{}'", j.dump());
 }
 
-auto json_utils::Parse(std::string_view text) -> Result<nlohmann::json> try {
-    return nlohmann::json::parse(text);
-} catch (const nlohmann::json::parse_error& e) {
-    std::print("Invalid JSON:\n{}\n", text);
+auto json_utils::Parse(std::string_view text) -> Result<json> try {
+    return json::parse(text);
+} catch (const json::parse_error& e) {
     return Error("Error parsing JSON: {}", e.what());
 }

@@ -5,6 +5,8 @@
 #include <UI/MainWindow.hh>
 #include <UI/SmythCharacterMap.hh>
 
+import smyth.utils;
+
 auto smyth::ui::SmythCharacterMap::ClickToIndex(QMouseEvent* event) -> std::optional<int> {
     auto pos = mapFromGlobal(event->globalPosition());
     auto idx = int(pos.y() / square_height) * cols + int(pos.x() / square_width);

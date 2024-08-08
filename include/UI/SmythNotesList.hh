@@ -32,7 +32,7 @@ public:
     auto item(int index) const -> Item*;
     void init();
     void keyPressEvent(QKeyEvent* event) override;
-    void persist(PersistentStore& notes_store);
+    void persist(void* notes_store);  // FIXME(Modularise)
 
     void wheelEvent(QWheelEvent* event) override {
         if (HandleZoomEvent(event)) return;

@@ -1,11 +1,16 @@
-#ifndef SMYTH_JSON_HH
-#define SMYTH_JSON_HH
+module;
 
+#include <base/Result.hh>
 #include <nlohmann/json.hpp>
-#include <Smyth/Utils.hh>
+#include <cmath>
+#include <concepts>
+#include <type_traits>
 
-namespace smyth::json_utils {
-using json = nlohmann::json;
+export module smyth.json;
+import smyth.utils;
+
+export namespace smyth::json_utils {
+using nlohmann::json;
 
 template <typename Ty>
 auto Get(const json& j) -> Result<const Ty&>;
@@ -48,7 +53,5 @@ template <> auto Get<std::string>(const json& j) -> Result<const std::string&>;
 template <> auto Get<json::array_t>(const json& j) -> Result<const json::array_t&>;
 template <> auto Get<json::object_t>(const json& j) -> Result<const json::object_t&>;
 
-auto Parse(std::string_view text) -> Result<nlohmann::json>;
+auto Parse(std::string_view text) -> Result<json>;
 } // namespace smyth::json_utils
-
-#endif // SMYTH_JSON_HH
