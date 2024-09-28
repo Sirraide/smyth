@@ -3,9 +3,6 @@
 
 #include <base/Text.hh>
 #include <QListView>
-#include <QStringListModel>
-#include <Smyth/Utils.hh>
-#include <UI/App.hh>
 #include <UI/Mixins.hh>
 
 namespace smyth::ui {

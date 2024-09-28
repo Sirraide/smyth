@@ -2,7 +2,7 @@
 #define SMYTH_UI_SMYTHPLAINTEXTEDIT_HH
 
 #include <QPlainTextEdit>
-#include <UI/App.hh>
+#include <UI/Smyth.hh>
 #include <UI/Mixins.hh>
 
 namespace smyth::ui {

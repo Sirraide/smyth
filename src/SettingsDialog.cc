@@ -5,12 +5,17 @@
 #include <UI/SmythDictionary.hh>
 #include <ui_SettingsDialog.h>
 
-smyth::ui::SettingsDialog::~SettingsDialog() noexcept = default;
+using namespace smyth;
+using namespace smyth::ui;
 
-smyth::ui::SettingsDialog::SettingsDialog()
-    : QDialog(App::MainWindow()), ui(std::make_unique<Ui::SettingsDialog>()) {
+SettingsDialog* SettingsDialog::Instance;
+
+// ====================================================================
+//  Initialisation
+// ====================================================================
+SettingsDialog::SettingsDialog(MainWindow* main)
+    : QDialog(main), ui(std::make_unique<Ui::SettingsDialog>()) {
     ui->setupUi(this);
-
     connect(
         ui->debug_show_json,
         &QCheckBox::toggled,
@@ -19,9 +24,37 @@ smyth::ui::SettingsDialog::SettingsDialog()
     );
 }
 
-auto smyth::ui::SettingsDialog::get_rows_to_duplicate() const -> Result<QList<int>> {
+void SettingsDialog::Init() {
+#ifdef LIBBASE_DEBUG
+    settings::DumpJsonRequests.subscribe([this](bool checked) {
+        ui->debug_show_json->setChecked(checked);
+    });
+#endif
+
+    Persist();
+}
+
+void SettingsDialog::Persist() {
+    auto& store = PersistentStore::Create("settings");
+    Persist<&QLineEdit::text, &QLineEdit::setText>(
+        store,
+        "duplicate_rows",
+        ui->text_duplicate_rows
+    );
+}
+
+// ====================================================================
+//  API
+// ====================================================================
+SettingsDialog::~SettingsDialog() noexcept = default;
+
+void SettingsDialog::Exec() {
+    Instance->exec();
+}
+
+auto SettingsDialog::GetRowsToDuplicate() -> Result<QList<int>> {
     QList<int> indices;
-    auto text = ui->text_duplicate_rows->text().trimmed().toStdString();
+    auto text = Instance->ui->text_duplicate_rows->text().trimmed().toStdString();
     stream s{text};
     for (;;) {
         s.trim_front();
@@ -34,49 +67,33 @@ auto smyth::ui::SettingsDialog::get_rows_to_duplicate() const -> Result<QList<in
     return indices;
 }
 
-void smyth::ui::SettingsDialog::init() {
-#ifdef LIBBASE_DEBUG
-    App::The().dump_json_requests.subscribe([this](bool checked) {
-        ui->debug_show_json->setChecked(checked);
-    });
-#endif
-
-    auto& store = App::CreateStore("settings");
-    persist(store);
-}
-
-void smyth::ui::SettingsDialog::persist(PersistentStore& store) {
-    Persist<&QLineEdit::text, &QLineEdit::setText>(
-        store,
-        "duplicate_rows",
-        ui->text_duplicate_rows
-    );
-}
-
-void smyth::ui::SettingsDialog::reset_dialog() {
+void SettingsDialog::Reset() {
     // No-op. Add project-specific settings here if need be.
 }
 
-void smyth::ui::SettingsDialog::set_default_font() {
-    QFont font{*App::The().serif_font};
+// ====================================================================
+//  Slots
+// ====================================================================
+void SettingsDialog::set_default_font() {
+    QFont font{*settings::SerifFont};
     font.setFamily(ui->font_default->currentFont().family());
-    App::The().serif_font.set(font);
+    settings::SerifFont.set(font);
 }
 
-void smyth::ui::SettingsDialog::set_mono_font() {
-    QFont font{*App::The().mono_font};
+void SettingsDialog::set_mono_font() {
+    QFont font{*settings::MonoFont};
     font.setFamily(ui->font_mono->currentFont().family());
-    App::The().mono_font.set(font);
+    settings::MonoFont.set(font);
 }
 
-void smyth::ui::SettingsDialog::set_notes_font() {
-    QFont font{*App::The().sans_font};
+void SettingsDialog::set_notes_font() {
+    QFont font{*settings::SansFont};
     font.setFamily(ui->font_notes->currentFont().family());
-    App::The().sans_font.set(font);
+    settings::SansFont.set(font);
 }
 
-void smyth::ui::SettingsDialog::toggle_show_json_requests() {
+void SettingsDialog::toggle_show_json_requests() {
 #ifdef LIBBASE_DEBUG
-    App::The().dump_json_requests.set(ui->debug_show_json->isChecked());
+    settings::DumpJsonRequests.set(ui->debug_show_json->isChecked());
 #endif
 }

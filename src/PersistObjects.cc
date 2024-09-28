@@ -1,5 +1,4 @@
 #include <Smyth/JSON.hh>
-#include <UI/App.hh>
 #include <UI/PersistObjects.hh>
 #include <UI/Utils.hh>
 

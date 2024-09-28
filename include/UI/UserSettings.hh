@@ -88,4 +88,16 @@ private:
     }
 };
 
+/// Per-user settings.
+namespace smyth::ui::settings {
+extern UserSetting<QFont> MonoFont;
+extern UserSetting<QFont> SerifFont;
+extern UserSetting<QFont> SansFont;
+extern UserSetting<> LastOpenProject;
+
+#ifdef LIBBASE_DEBUG
+extern UserSetting<bool> DumpJsonRequests;
+#endif
+} // namespace settings
+
 #endif // SMYTH_UI_USER_SETTINGS_HH

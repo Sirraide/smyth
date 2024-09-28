@@ -5,6 +5,17 @@ using namespace smyth;
 using namespace smyth::detail;
 using namespace smyth::json_utils;
 
+PersistentStore PersistentStore::Global;
+
+auto PersistentStore::Create(std::string name, PersistentStore& parent) -> PersistentStore& {
+    auto store = new PersistentStore;
+    parent.register_entry(
+        std::move(name),
+        {std::unique_ptr<PersistentBase>{store}, DefaultPriority}
+    );
+    return *store;
+}
+
 // FIXME: Window size should be saved in user settings instead here. Then, remove this and priorities.
 auto PersistentStore::Entries() {
     std::vector<std::pair<std::string_view, Entry*>> sorted;

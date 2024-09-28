@@ -2,7 +2,7 @@
 #define SMYTH_UI_TEXTPREVIEWDIALOG_HH
 
 #include <QDialog>
-#include <UI/App.hh>
+#include <UI/Smyth.hh>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

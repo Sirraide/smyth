@@ -145,6 +145,15 @@ private:
     /// Only used by 'App'! Use App::CreateStore() instead.
     explicit PersistentStore() = default;
 public:
+    /// The global store.
+    static PersistentStore Global;
+
+    /// Create a new store.
+    static auto Create(
+        std::string name,
+        PersistentStore& parent = Global
+    ) -> PersistentStore&;
+
     /// \brief Register an entry to this store.
     ///
     /// \param key The key to use for this entry. If the key already

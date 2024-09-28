@@ -1,11 +1,13 @@
 #ifndef SMYTH_UI_UTILS_HH
 #define SMYTH_UI_UTILS_HH
 
+#include <QFont>
 #include <QList>
 #include <QPointF>
 #include <QRect>
 #include <QSize>
 #include <QString>
+#include <QVariant>
 
 namespace smyth::ui {
 class MainWindow;
@@ -71,6 +73,26 @@ struct std::formatter<QList<T>> : formatter<std::string_view> {
         if (not s.empty()) s.pop_back();
         s += "]";
         return formatter<std::string_view>::format(s, ctx);
+    }
+};
+
+template <>
+struct std::formatter<QVariant> : formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(const QVariant& v, FormatContext& ctx) const {
+        std::string s{v.toString().toStdString()};
+        return formatter<std::string_view>::format(s, ctx);
+    }
+};
+
+template <>
+struct std::formatter<QFont> : formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(const QFont& f, FormatContext& ctx) const {
+        return formatter<std::string_view>::format(
+            std::format("{}:{}", f.family().toStdString(), f.pointSize()),
+            ctx
+        );
     }
 };
 

@@ -1,11 +1,10 @@
-#include "base/Defer.hh"
-#include "base/FS.hh"
-
+#include <base/Defer.hh>
+#include <base/FS.hh>
 #include <QFileDialog>
 #include <QMenu>
-#include <UI/App.hh>
 #include <UI/MainWindow.hh>
 #include <UI/PersistObjects.hh>
+#include <UI/Smyth.hh>
 #include <UI/SmythNotesList.hh>
 #include <UI/SmythRichTextEdit.hh>
 
@@ -65,7 +64,7 @@ auto SmythNotesList::ExportFile() -> Result<> {
 }
 
 auto SmythNotesList::TextBox() -> SmythPlainTextEdit* {
-    return App::MainWindow()->notes_tab_text_box();
+    return MainWindow::GetNotesTabTextBox();
 }
 
 void SmythNotesList::SetCurrentItem(Item* it) {
@@ -109,7 +108,7 @@ void SmythNotesList::delete_file() {
 }
 
 void SmythNotesList::export_file() {
-    App::MainWindow()->HandleErrors(ExportFile());
+    HandleErrors(ExportFile());
 }
 
 void SmythNotesList::init() {

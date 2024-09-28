@@ -1,9 +1,8 @@
 #include <base/Text.hh>
-#include <QDir>
-#include <QInputDialog>
+#include <QFileDialog>
 #include <QJSEngine>
-#include <QMessageBox>
 #include <QShortcut>
+#include <UI/Lexurgy.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
 #include <UI/TextPreviewDialog.hh>
@@ -12,9 +11,11 @@
 using namespace smyth;
 using namespace smyth::ui;
 
-/// Needs destructor that isn’t visible in the header.
-MainWindow::~MainWindow() noexcept = default;
+MainWindow* MainWindow::Instance;
 
+// ====================================================================
+//  Initialisation
+// ====================================================================
 /// Only minimal initialisation here; the rest is done in `persist()`;
 /// this is because some fields (e.g. `App::main_window()`) are only
 /// initialised after this returns.
@@ -22,6 +23,7 @@ MainWindow::MainWindow()
     : QMainWindow(nullptr),
       ui(std::make_unique<Ui::MainWindow>()) {
     ui->setupUi(this);
+    setWindowTitle("Smyth");
 
     // Initialise shortcuts.
     auto save = new QShortcut(QKeySequence::Save, this);
@@ -33,14 +35,132 @@ MainWindow::MainWindow()
 
     // Initialise other signals.
     connect(ui->char_map, &SmythCharacterMap::selected, this, &MainWindow::char_map_update_selection);
-
-    // Call debug() when F12 is pressed.
-    LIBBASE_DEBUG(
-        auto debug = new QShortcut(QKeySequence(Qt::Key_F12), this);
-        connect(debug, &QShortcut::activated, this, &MainWindow::debug);
-    )
 }
 
+void MainWindow::Init() {
+    // Initialise notes tab.
+    ui->notes_file_list->init();
+
+    // FIXME: I think we need to set the window size before
+    // doing any of this here.
+
+    // Show the window to force widgets to render.
+    show();
+
+    // Focus all tabs to initialise everything.
+    for (int i = 0; i < ui->main_tabs->count(); i++) {
+        ui->main_tabs->setCurrentIndex(i);
+        layout()->invalidate();
+    }
+
+    // Switch to first tab and initialise persistent state.
+    ui->main_tabs->setCurrentIndex(0);
+    Persist();
+}
+
+void MainWindow::Persist() {
+    PersistentStore& main_store = PersistentStore::Create("main");
+
+    // Window needs to be updated before everything else to ensure that
+    // the rest of the objects are working with the correct size.
+    Persist<&QWidget::size, [](QWidget* w, QSize s) {
+        w->resize(s);
+        QApplication::processEvents();
+    }>(main_store, "window.size", this, 1);
+
+    // Initialise persistent settings.
+    ui->input->persist(main_store, "input");
+    ui->changes->persist(main_store, "changes");
+    ui->output->persist(main_store, "output");
+
+    PersistentStore& charmap = PersistentStore::Create("charmap", main_store);
+    PersistState(charmap, "splitter.sizes", ui->char_map_splitter);
+
+    PersistentStore& sca = PersistentStore::Create("sca", main_store);
+    PersistState(sca, "splitter.sizes", ui->sca_text_edits);
+    PersistCBox(sca, "cbox.input.norm.choice", ui->sca_cbox_input_norm);
+    PersistCBox(sca, "cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
+    PersistCBox(sca, "cbox.output.norm.choice", ui->sca_cbox_output_norm);
+    PersistDynCBox(sca, "cbox.stop.before", ui->sca_cbox_stop_before);
+    PersistChBox(sca, "chbox.details", ui->sca_chbox_details);
+    PersistChBox(sca, "chbox.enable.js", ui->sca_chbox_enable_javascript);
+
+    PersistentStore& notes_store = PersistentStore::Create("notes", main_store);
+    ui->notes_file_list->persist(notes_store);
+    PersistState(notes_store, "splitter.sizes", ui->notes_splitter);
+
+    PersistentStore& dictionary_store = PersistentStore::Create("dictionary", main_store);
+    ui->dictionary_table->persist(dictionary_store);
+
+    // Hide the details panels if the checkbox is unchecked.
+    if (not ui->sca_chbox_details->isChecked()) {
+        ui->sca_frame_input_bottom->setVisible(false);
+        ui->sca_frame_changes_bottom->setVisible(false);
+        ui->sca_frame_output_bottom->setVisible(false);
+        ui->frame_stop_before->setVisible(false);
+    }
+
+    // Init user settings.
+    settings::SerifFont.subscribe(ui->input, &SmythPlainTextEdit::setFont);
+    settings::SerifFont.subscribe(ui->output, &SmythPlainTextEdit::setFont);
+    settings::SerifFont.subscribe(ui->char_map, &SmythCharacterMap::setFont);
+    settings::SerifFont.subscribe(ui->char_map_details_panel, &SmythRichTextEdit::setFont);
+    settings::MonoFont.subscribe(ui->changes, &SmythPlainTextEdit::setFont);
+    settings::SansFont.subscribe(ui->notes_text_box, &SmythRichTextEdit::setFont);
+    settings::LastOpenProject.subscribe([](const QString& s) { SetWindowPath(s); });
+}
+
+// ====================================================================
+//  API
+// ====================================================================
+/// Needs destructor that isn’t visible in the header.
+MainWindow::~MainWindow() noexcept = default;
+
+auto MainWindow::GetNotesTabTextBox() -> SmythPlainTextEdit* {
+    return Instance->ui->notes_text_box;
+}
+
+auto MainWindow::Prompt(
+    const QString& title,
+    const QString& message,
+    QMessageBox::StandardButtons buttons
+) -> QMessageBox::StandardButton {
+    return QMessageBox::question(Instance, title, message, buttons);
+}
+
+void MainWindow::Reset() {
+    Instance->ui->dictionary_table->reset_dictionary();
+    SetWindowPath("");
+}
+
+void MainWindow::SetWindowPath(QString path) {
+    if (path.isEmpty()) {
+        Instance->setWindowFilePath("");
+        Instance->setWindowTitle("Smyth");
+        return;
+    }
+
+    // Strip home directory from path.
+#ifdef __linux__
+    auto home_path = QDir::homePath();
+    if (path.startsWith(home_path)) path = "~" + path.mid(home_path.size());
+#endif
+
+    Instance->setWindowFilePath(path);
+    Instance->setWindowTitle(QString::fromStdString(std::format("Smyth | {}", path.toStdString())));
+}
+
+auto MainWindow::ShowError(
+    const QString& error,
+    QMessageBox::StandardButtons buttons,
+    const QString& title
+) -> QMessageBox::StandardButton {
+    return QMessageBox::critical(Instance, title, error, buttons);
+}
+
+// ====================================================================
+//  Internals
+// ====================================================================
 auto MainWindow::ApplySoundChanges() -> Result<> {
     auto Norm = [](QComboBox* cbox, QString plain) -> Result<QString> {
         const auto norm = [cbox] {
@@ -107,7 +227,7 @@ auto MainWindow::ApplySoundChanges() -> Result<> {
     else stop_before = "";
 
     // Dew it.
-    auto output = Try(App::The().apply_sound_changes(std::move(input), std::move(changes), std::move(stop_before)));
+    auto output = Try(smyth::lexurgy::Apply(input, std::move(changes), stop_before));
     ui->output->setPlainText(Try(Norm(ui->sca_cbox_output_norm, std::move(output))));
     return {};
 }
@@ -142,10 +262,9 @@ auto MainWindow::EvaluateAndInterpolateJavaScript(QString& changes) -> Result<> 
     return {};
 }
 
-void MainWindow::HandleErrors(Result<> r) {
-    if (not r) App::ShowError(QString::fromStdString(r.error()));
-}
-
+// ====================================================================
+//  Slots
+// ====================================================================
 void MainWindow::apply_sound_changes() {
     HandleErrors(ApplySoundChanges());
 }
@@ -176,107 +295,24 @@ void MainWindow::char_map_update_selection(char32_t codepoint) {
     ui->char_map_details_panel->setHtml(QString::fromStdString(html));
 }
 
-void MainWindow::closeEvent(QCloseEvent* event) {
-    if (not App::The().prompt_close_project()) return event->ignore();
-    QMainWindow::closeEvent(event);
-}
-
-void MainWindow::debug() {
-    ui->dictionary_table->debug();
-}
-
-void MainWindow::init() {
-    // Initialise notes tab.
-    ui->notes_file_list->init();
-
-    // FIXME: I think we need to set the window size before
-    // doing any of this here.
-
-    // Show the window to force widgets to render.
-    show();
-
-    // Focus all tabs to initialise everything.
-    for (int i = 0; i < ui->main_tabs->count(); i++) {
-        ui->main_tabs->setCurrentIndex(i);
-        layout()->invalidate();
-    }
-
-    // Switch to first tab and initialise persistent state.
-    ui->main_tabs->setCurrentIndex(0);
-    persist();
-}
-
 void MainWindow::new_project() {
-    App::The().new_project();
-}
-
-auto MainWindow::notes_tab_text_box() -> SmythPlainTextEdit* {
-    return ui->notes_text_box;
+    Project::New();
 }
 
 void MainWindow::open_project() {
-    HandleErrors(App::The().open());
+    auto path = QFileDialog::getOpenFileName(
+        nullptr,
+        "Open Project",
+        "",
+        "Smyth Projects (*.smyth)"
+    );
+
+    if (path.isEmpty()) return;
+    Project::Open(std::move(path));
 }
 
 void MainWindow::open_settings() {
-    App::The().settings_dialog()->exec();
-}
-
-void MainWindow::persist() {
-    PersistentStore& main_store = App::CreateStore("main");
-
-    // Window needs to be updated before everything else to ensure that
-    // the rest of the objects are working with the correct size.
-    Persist<&QWidget::size, [](QWidget* w, QSize s) {
-        w->resize(s);
-        QApplication::processEvents();
-    }>(main_store, "window.size", this, 1);
-
-    // Initialise persistent settings.
-    ui->input->persist(main_store, "input");
-    ui->changes->persist(main_store, "changes");
-    ui->output->persist(main_store, "output");
-
-    PersistentStore& charmap = App::CreateStore("charmap", main_store);
-    PersistState(charmap, "splitter.sizes", ui->char_map_splitter);
-
-    PersistentStore& sca = App::CreateStore("sca", main_store);
-    PersistState(sca, "splitter.sizes", ui->sca_text_edits);
-    PersistCBox(sca, "cbox.input.norm.choice", ui->sca_cbox_input_norm);
-    PersistCBox(sca, "cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
-    PersistCBox(sca, "cbox.output.norm.choice", ui->sca_cbox_output_norm);
-    PersistDynCBox(sca, "cbox.stop.before", ui->sca_cbox_stop_before);
-    PersistChBox(sca, "chbox.details", ui->sca_chbox_details);
-    PersistChBox(sca, "chbox.enable.js", ui->sca_chbox_enable_javascript);
-
-    PersistentStore& notes_store = App::CreateStore("notes", main_store);
-    ui->notes_file_list->persist(notes_store);
-    PersistState(notes_store, "splitter.sizes", ui->notes_splitter);
-
-    PersistentStore& dictionary_store = App::CreateStore("dictionary", main_store);
-    ui->dictionary_table->persist(dictionary_store);
-
-    // Hide the details panels if the checkbox is unchecked.
-    if (not ui->sca_chbox_details->isChecked()) {
-        ui->sca_frame_input_bottom->setVisible(false);
-        ui->sca_frame_changes_bottom->setVisible(false);
-        ui->sca_frame_output_bottom->setVisible(false);
-        ui->frame_stop_before->setVisible(false);
-    }
-
-    // Init user settings.
-    App::The().serif_font.subscribe(ui->input, &SmythPlainTextEdit::setFont);
-    App::The().serif_font.subscribe(ui->output, &SmythPlainTextEdit::setFont);
-    App::The().serif_font.subscribe(ui->char_map, &SmythCharacterMap::setFont);
-    App::The().serif_font.subscribe(ui->char_map_details_panel, &SmythRichTextEdit::setFont);
-    App::The().mono_font.subscribe(ui->changes, &SmythPlainTextEdit::setFont);
-    App::The().sans_font.subscribe(ui->notes_text_box, &SmythRichTextEdit::setFont);
-    App::The().last_open_project.subscribe([this](const QString& s) { set_window_path(s); });
-}
-
-void MainWindow::reset_window() {
-    ui->dictionary_table->reset_dictionary();
-    set_window_path("");
+    SettingsDialog::Exec();
 }
 
 void MainWindow::preview_changes_after_eval() {
@@ -290,27 +326,18 @@ void MainWindow::preview_changes_after_eval() {
 }
 
 void MainWindow::prompt_quit() {
-    if (not App::The().prompt_close_project()) return;
+    if (not Project::PromptClose()) return;
     close();
 }
 
 void MainWindow::save_project() {
-    HandleErrors(App::The().save());
+    Project::Save();
 }
 
-void MainWindow::set_window_path(QString path) {
-    if (path.isEmpty()) {
-        setWindowFilePath("");
-        setWindowTitle("Smyth");
-        return;
-    }
-
-    // Strip home directory from path.
-#ifdef __linux__
-    auto home_path = QDir::homePath();
-    if (path.startsWith(home_path)) path = "~" + path.mid(home_path.size());
-#endif
-
-    setWindowFilePath(path);
-    setWindowTitle(QString::fromStdString(std::format("Smyth | {}", path.toStdString())));
+// ====================================================================
+//  Events
+// ====================================================================
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (not Project::PromptClose()) return event->ignore();
+    QMainWindow::closeEvent(event);
 }

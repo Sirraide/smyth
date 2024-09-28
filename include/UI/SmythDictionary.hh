@@ -82,8 +82,9 @@ public:
     using HeaderItem = detail::ColumnHeaders::Item;
 
 private:
-    CSVExportImportDialog import_dialog;
-    CSVExportImportDialog export_dialog;
+    // Move these somewhere else (main window?)
+    //CSVExportImportDialog import_dialog;
+    //CSVExportImportDialog export_dialog;
     QMenu* context_menu;
     bool section_move_fixup_running = false;
 

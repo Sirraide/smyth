@@ -2,8 +2,8 @@
 #include <ranges>
 #include <Smyth/JSON.hh>
 #include <Smyth/Utils.hh>
-#include <UI/App.hh>
 #include <UI/Lexurgy.hh>
+#include <UI/Smyth.hh>
 
 using namespace smyth;
 using namespace smyth::ui;
@@ -96,7 +96,7 @@ auto Connexion::Get() -> Result<Connexion&> {
 auto Connexion::SendRequest(const json& request) -> Result<json> {
     auto req = request.dump();
 #ifdef LIBBASE_DEBUG
-    if (*App::The().dump_json_requests) std::println(stderr, " -> Lexurgy: {}", req);
+    if (*settings::DumpJsonRequests) std::println(stderr, " -> Lexurgy: {}", req);
 #endif
     lexurgy_process.write(req.data(), qint64(req.size()));
     lexurgy_process.write("\n");

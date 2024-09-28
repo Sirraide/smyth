@@ -6,7 +6,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <Smyth/JSON.hh>
-#include <UI/App.hh>
+#include <UI/Smyth.hh>
 #include <UI/MainWindow.hh>
 #include <UI/SettingsDialog.hh>
 #include <UI/SmythDictionary.hh>
@@ -94,9 +94,7 @@ void SmythDictionary::debug() {
 /// ====================================================================
 SmythDictionary::~SmythDictionary() = default;
 SmythDictionary::SmythDictionary(QWidget* parent)
-    : QTableWidget(parent),
-      import_dialog(false, App::MainWindow()),
-      export_dialog(true, App::MainWindow()) {
+    : QTableWidget(parent) {
     setAlternatingRowColors(true);
 
     // Set up the context menu.
@@ -118,7 +116,7 @@ SmythDictionary::SmythDictionary(QWidget* parent)
     connect(duplicate_entry, &QAction::triggered, this, &SmythDictionary::duplicate_entry);
 
     // Update font when it changes.
-    App::The().serif_font.subscribe(this, &SmythDictionary::setFont);
+    settings::SerifFont.subscribe(this, &SmythDictionary::setFont);
 
     // Make horizontal header movable and ensure that the last column
     // stretches to fill the remaining space. Also make it editable.
@@ -221,7 +219,7 @@ auto SmythDictionary::DuplicateSelectedEntry() -> Result<> {
     insertRow(first_row + 1);
 
     // Copy all cells that we were told to select.
-    auto cols = Try(App::The().settings_dialog()->get_rows_to_duplicate());
+    auto cols = Try(SettingsDialog::GetRowsToDuplicate());
     for (int col = 0; col < columnCount(); ++col) {
         auto it = item(first_row, col);
         if (not it) continue;
@@ -384,7 +382,7 @@ void SmythDictionary::delete_rows(bool) {
 }
 
 void SmythDictionary::duplicate_entry(bool) {
-    App::MainWindow()->HandleErrors(DuplicateSelectedEntry());
+    HandleErrors(DuplicateSelectedEntry());
 }
 
 void SmythDictionary::contextMenuEvent(QContextMenuEvent* event) {
@@ -392,7 +390,7 @@ void SmythDictionary::contextMenuEvent(QContextMenuEvent* event) {
 }
 
 void SmythDictionary::export_dictionary() {
-    App::The().MainWindow()->HandleErrors(ExportCSV());
+    HandleErrors(ExportCSV());
 }
 
 void SmythDictionary::keyPressEvent(QKeyEvent* event) {
@@ -406,7 +404,7 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
         }
 
         if (event->modifiers() & Qt::ControlModifier and event->key() == Qt::Key_Return) {
-            App::MainWindow()->HandleErrors(DuplicateSelectedEntry());
+            HandleErrors(DuplicateSelectedEntry());
             return;
         }
 
@@ -420,11 +418,11 @@ void SmythDictionary::keyPressEvent(QKeyEvent* event) {
 }
 
 void SmythDictionary::import() {
-    App::The().MainWindow()->HandleErrors(ImportCSV(false));
+    HandleErrors(ImportCSV(false));
 }
 
 void SmythDictionary::import_and_replace() {
-    App::The().MainWindow()->HandleErrors(ImportCSV(true));
+    HandleErrors(ImportCSV(true));
 }
 
 void SmythDictionary::reset_dictionary() {
@@ -488,7 +486,7 @@ void ui::detail::ColumnHeaders::context_menu_edit_header_cell(bool) {
 
 void ui::detail::ColumnHeaders::context_menu_toggle_multiline_column(bool checked) {
     if (context_menu_column_index == -1) return;
-    App::MainWindow()->HandleErrors(ToggleMultilineColumn(context_menu_column_index, checked));
+    HandleErrors(ToggleMultilineColumn(context_menu_column_index, checked));
 }
 
 void ui::detail::ColumnHeaders::contextMenuEvent(QContextMenuEvent* event) {

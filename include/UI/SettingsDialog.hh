@@ -2,7 +2,7 @@
 #define SMYTH_UI_SETTINGSDIALOG_HH
 
 #include <QDialog>
-#include <UI/App.hh>
+#include <UI/Smyth.hh>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -16,35 +16,38 @@ class SettingsDialog;
 
 class smyth::ui::SettingsDialog final : public QDialog {
     Q_OBJECT
+    LIBBASE_IMMOVABLE(SettingsDialog);
+    friend void ui::InitialiseSmyth();
 
     std::unique_ptr<Ui::SettingsDialog> ui;
 
+    /// The settings dialog instance. There is only one.
+    static SettingsDialog* Instance;
+
+    SettingsDialog(MainWindow* main);
+
 public:
-    LIBBASE_IMMOVABLE(SettingsDialog);
-    SettingsDialog();
-    ~SettingsDialog() noexcept;
+    ~SettingsDialog() noexcept override;
+
+    /// Open the dialog.
+    static void Exec();
 
     /// Get the rows in the dictionary we should duplicate.
-    auto get_rows_to_duplicate() const -> Result<QList<int>>;
-
-    /// Initialise the dialog.
-    void init();
-
-    /// Persist settings.
-    void persist(PersistentStore& store);
+    static auto GetRowsToDuplicate() -> Result<QList<int>>;
 
     /// Reset the settings dialog as appropriate for a new project. This
     /// must be called after the main window has been initialised.
-    ///
-    /// This is not just called `reset()` because I’ve accidentally called
-    /// `std::unique_ptr::reset()` on this thing before...
-    void reset_dialog();
+    static void Reset();
 
 public slots:
     void set_default_font();
     void set_mono_font();
     void set_notes_font();
     void toggle_show_json_requests();
+
+private:
+    void Init();
+    void Persist();
 };
 
 #endif // SMYTH_UI_SETTINGSDIALOG_HH

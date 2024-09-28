@@ -1,7 +1,6 @@
 #include <QApplication>
-#include <QMessageBox>
-#include <UI/App.hh>
 #include <UI/MainWindow.hh>
+#include <UI/Smyth.hh>
 
 void FailureHandler(const libassert::assertion_info& info) {
     /// Fatal errors may be due to errors during painting etc., so yeet
@@ -24,7 +23,7 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationName("Smyth");
     QCoreApplication::setApplicationName("Smyth");
     QCoreApplication::setOrganizationDomain("nguh.org");
-    set_failure_handler(FailureHandler);
-    smyth::ui::App Smyth{};
+    libassert::set_failure_handler(FailureHandler);
+    smyth::ui::InitialiseSmyth();
     return app.exec();
 }

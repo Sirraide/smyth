@@ -5,7 +5,6 @@
 #include <QComboBox>
 #include <QFont>
 #include <QSize>
-#include <QSplitter>
 #include <QString>
 #include <Smyth/Persistent.hh>
 
