@@ -74,22 +74,22 @@ void SettingsDialog::Reset() {
 // ====================================================================
 //  Slots
 // ====================================================================
+static void SetFont(UserSetting<QFont>& setting, QFontComboBox* from_cbox) {
+    QFont font{*setting};
+    font.setFamily(from_cbox->currentFont().family());
+    setting.set(font);
+}
+
 void SettingsDialog::set_default_font() {
-    QFont font{*settings::SerifFont};
-    font.setFamily(ui->font_default->currentFont().family());
-    settings::SerifFont.set(font);
+    SetFont(settings::SerifFont, ui->font_default);
 }
 
 void SettingsDialog::set_mono_font() {
-    QFont font{*settings::MonoFont};
-    font.setFamily(ui->font_mono->currentFont().family());
-    settings::MonoFont.set(font);
+    SetFont(settings::MonoFont, ui->font_mono);
 }
 
 void SettingsDialog::set_notes_font() {
-    QFont font{*settings::SansFont};
-    font.setFamily(ui->font_notes->currentFont().family());
-    settings::SansFont.set(font);
+    SetFont(settings::SansFont, ui->font_notes);
 }
 
 void SettingsDialog::toggle_show_json_requests() {
