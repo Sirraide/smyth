@@ -45,7 +45,7 @@ public slots:
     void rename_file();
 
 private:
-    auto TextBox() -> SmythRichTextEdit*;
+    auto TextBox() -> SmythPlainTextEdit*;
     void SetCurrentItem(Item* it);
 };
 

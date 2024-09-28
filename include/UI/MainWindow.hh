@@ -1,6 +1,8 @@
 #ifndef SMYTH_UI_MAINWINDOW_HH
 #define SMYTH_UI_MAINWINDOW_HH
 
+#include "SmythPlainTextEdit.hh"
+
 #include <QMainWindow>
 #include <QStringListModel>
 #include <UI/App.hh>
@@ -43,7 +45,7 @@ public:
     void init();
 
     /// Text box used by the notes tab.
-    auto notes_tab_text_box() -> SmythRichTextEdit*;
+    auto notes_tab_text_box() -> SmythPlainTextEdit*;
 
     /// Initialise persistent objects.
     void persist();

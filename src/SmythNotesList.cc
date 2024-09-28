@@ -46,7 +46,7 @@ SmythNotesList::SmythNotesList(QWidget* parent) : QListWidget(parent) {
     }
 }
 
-auto SmythNotesList::TextBox() -> SmythRichTextEdit* {
+auto SmythNotesList::TextBox() -> SmythPlainTextEdit* {
     return App::MainWindow()->notes_tab_text_box();
 }
 

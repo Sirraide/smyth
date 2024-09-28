@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <property name="movable">
        <bool>false</bool>
@@ -845,7 +845,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
                </sizepolicy>
               </property>
              </widget>
-             <widget class="smyth::ui::SmythRichTextEdit" name="notes_text_box"/>
+             <widget class="smyth::ui::SmythPlainTextEdit" name="notes_text_box"/>
             </widget>
            </item>
           </layout>

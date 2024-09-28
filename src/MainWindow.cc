@@ -210,7 +210,7 @@ void MainWindow::new_project() {
     App::The().new_project();
 }
 
-auto MainWindow::notes_tab_text_box() -> SmythRichTextEdit* {
+auto MainWindow::notes_tab_text_box() -> SmythPlainTextEdit* {
     return ui->notes_text_box;
 }
 
