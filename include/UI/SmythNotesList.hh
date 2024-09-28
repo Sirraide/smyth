@@ -41,10 +41,12 @@ public:
 
 public slots:
     void delete_file();
+    void export_file();
     void new_file();
     void rename_file();
 
 private:
+    auto ExportFile() -> Result<>;
     auto TextBox() -> SmythPlainTextEdit*;
     void SetCurrentItem(Item* it);
 };

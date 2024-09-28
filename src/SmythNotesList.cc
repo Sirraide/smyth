@@ -1,5 +1,7 @@
 #include "base/Defer.hh"
+#include "base/FS.hh"
 
+#include <QFileDialog>
 #include <QMenu>
 #include <UI/App.hh>
 #include <UI/MainWindow.hh>
@@ -40,10 +42,26 @@ SmythNotesList::SmythNotesList(QWidget* parent) : QListWidget(parent) {
         auto new_file = context_menu->addAction("New");
         auto delete_file = context_menu->addAction("Delete");
         auto rename_file = context_menu->addAction("Rename");
+        auto export_file = context_menu->addAction("Export");
+        // TODO: Also allow importing text files.
         connect(new_file, &QAction::triggered, this, &SmythNotesList::new_file);
         connect(delete_file, &QAction::triggered, this, &SmythNotesList::delete_file);
         connect(rename_file, &QAction::triggered, this, &SmythNotesList::rename_file);
+        connect(export_file, &QAction::triggered, this, &SmythNotesList::export_file);
     }
+}
+
+auto SmythNotesList::ExportFile() -> Result<> {
+    auto selected = selectedItems();
+    if (selected.isEmpty()) return {};
+    if (selected.count() != 1) return Error("You can only export one file at a time");
+    // TODO: Make '<notename>.txt' the default file name.
+    auto file = QFileDialog::getSaveFileName(this, "Export note", "", "Text files (*.txt)");
+    if (file.isEmpty()) return {};
+    return File::Write(
+        file.toStdString(),
+        static_cast<Item*>(selected.front())->file_contents.toStdString()
+    );
 }
 
 auto SmythNotesList::TextBox() -> SmythPlainTextEdit* {
@@ -88,6 +106,10 @@ void SmythNotesList::delete_file() {
     for (auto item : selected) delete item;
     if (count() == 0) new_file();
     SetCurrentItem(item(0));
+}
+
+void SmythNotesList::export_file() {
+    App::MainWindow()->HandleErrors(ExportFile());
 }
 
 void SmythNotesList::init() {
