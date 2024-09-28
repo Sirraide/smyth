@@ -35,6 +35,7 @@ public:
 
 SmythNotesList::SmythNotesList(QWidget* parent) : QListWidget(parent) {
     setSelectionBehavior(SelectRows);
+    setDragDropMode(InternalMove);
 
     {
         context_menu = new QMenu(this);
