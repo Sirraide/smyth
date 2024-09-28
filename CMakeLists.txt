@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.28)
 project(Smyth VERSION 0.1 LANGUAGES CXX C)
 
 ## ============================================================================
@@ -223,15 +223,6 @@ target_link_libraries(options INTERFACE
 )
 
 ## ============================================================================
-##  Executables and libraries.
-## ============================================================================
-file(GLOB_RECURSE smyth-lib-sources lib/*.cc include/Smyth/*.hh)
-add_library(smyth-lib STATIC ${smyth-lib-sources} )
-set_target_properties(smyth-lib PROPERTIES OUTPUT_NAME smyth)
-target_link_libraries(smyth-lib PRIVATE options ICU::i18n ICU::uc ICU::data)
-add_compile_definitions(LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy")
-
-## ============================================================================
 ##  Qt Stuff
 ## ============================================================================
 set(CMAKE_AUTOUIC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui")
@@ -255,14 +246,24 @@ if (${QT_VERSION_MAJOR} LESS 6)
     message(FATAL_ERROR "Qt6 or later is required, but Qt${QT_VERSION_MAJOR} was found.")
 endif()
 
-file(GLOB_RECURSE smyth-sources src/*.cc include/UI/*.hh ui/*.ui)
+file(GLOB_RECURSE smyth-sources src/*.cc ui/*.ui)
+file(GLOB_RECURSE smyth-headers include/*.hh)
+
 qt_add_executable(smyth MANUAL_FINALIZATION ${smyth-sources})
+
+target_sources(smyth PUBLIC
+    FILE_SET HEADERS     FILES ${smyth-headers}
+)
+
+target_compile_definitions(smyth PRIVATE
+    LEXURGY_ROOT="${PROJECT_SOURCE_DIR}/thirdparty/lexurgy"
+)
 
 target_link_libraries(smyth PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::Qml
-    smyth-lib
+    ICU::i18n ICU::uc ICU::data
     options
 )
 

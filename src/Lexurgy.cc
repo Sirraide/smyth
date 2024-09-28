@@ -1,3 +1,4 @@
+#include <QProcess>
 #include <ranges>
 #include <Smyth/JSON.hh>
 #include <Smyth/Utils.hh>
@@ -8,7 +9,91 @@ using namespace smyth;
 using namespace smyth::ui;
 using json = json_utils::json;
 
-static auto SendRequest(QProcess& lexurgy_process, const json& request) -> Result<json> {
+namespace {
+class Connexion {
+    LIBBASE_IMMOVABLE(Connexion);
+    QProcess lexurgy_process;
+
+    /// Cache the sound changes to avoid pointless requests.
+    std::optional<QString> sound_changes;
+
+    /// Unique ptr so we can replace it.
+    static std::unique_ptr<Connexion> Instance;
+
+    Connexion() = default;
+
+public:
+    ~Connexion();
+
+    /// Close the connexion.
+    static void Close();
+
+    /// Try to create a new process and wait until it has started.
+    static auto Get() -> Result<Connexion&>;
+
+    /// Apply sound changes.
+    auto Apply(
+        QStringView input,
+        QString changes,
+        const QString& stop_before
+    ) -> Result<QString>;
+
+    /// Update sound changes.
+    auto UpdateSoundChanges(QString changes) -> Result<>;
+
+
+private:
+    auto SendRequest(const json& request) -> Result<json>;
+    static auto Start() -> Result<std::unique_ptr<Connexion>>;
+};
+
+std::unique_ptr<Connexion> Connexion::Instance;
+
+Connexion::~Connexion() { lexurgy_process.close(); }
+
+auto Connexion::Apply(
+    QStringView input,
+    QString changes,
+    const QString& stop_before
+) -> Result<QString> {
+    Try(UpdateSoundChanges(std::move(changes)));
+
+    std::vector<std::string> words;
+    for (auto w : input | vws::split('\n') | vws::filter([](auto&& w) { return not w.empty(); })) {
+        auto sv = QStringView{w.begin(), w.end() - w.begin()};
+        words.push_back(sv.toString().toStdString());
+    }
+
+    std::optional<std::string> stop_before_opt;
+    if (stop_before != "") stop_before_opt = stop_before.toStdString();
+    json req;
+    req["type"] = "apply";
+    req["words"] = words;
+    if (stop_before_opt) req["stopBefore"] = *stop_before_opt;
+    auto changed = Try(SendRequest(req));
+    if (changed["type"] != "changed") return Error(
+        "Lexurgy error: Unexpected response type '{}'",
+        changed["type"].get<std::string>()
+    );
+
+    QString joined;
+    for (const auto& w : changed["words"].get<std::vector<std::string>>()) {
+        joined += w;
+        joined += '\n';
+    }
+    return joined;
+}
+
+void Connexion::Close() {
+    Instance.reset();
+}
+
+auto Connexion::Get() -> Result<Connexion&> {
+    if (not Instance) Instance = Try(Start());
+    return *Instance;
+}
+
+auto Connexion::SendRequest(const json& request) -> Result<json> {
     auto req = request.dump();
 #ifdef LIBBASE_DEBUG
     if (*App::The().dump_json_requests) std::println(stderr, " -> Lexurgy: {}", req);
@@ -29,11 +114,9 @@ static auto SendRequest(QProcess& lexurgy_process, const json& request) -> Resul
     return res;
 }
 
-/// ====================================================================
-///  Lexurgy – Implementation
-/// ====================================================================
-auto Lexurgy::Start() -> Result<std::unique_ptr<Lexurgy>> {
-    std::unique_ptr<Lexurgy> ptr{new Lexurgy};
+auto Connexion::Start() -> Result<std::unique_ptr<Connexion>> {
+    std::unique_ptr<Connexion> ptr{new Connexion};
+    ptr->lexurgy_process.start(LEXURGY_ROOT "/bin/lexurgy", QStringList() << "server");
     if (not ptr->lexurgy_process.waitForStarted(5'000)) return Error(
         "Failed to start lexurgy process. Expected lexurgy at '{}'",
         LEXURGY_ROOT "/bin/lexurgy"
@@ -41,10 +124,10 @@ auto Lexurgy::Start() -> Result<std::unique_ptr<Lexurgy>> {
     return std::move(ptr);
 }
 
-auto Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {
+auto Connexion::UpdateSoundChanges(QString changes) -> Result<> {
     auto tr = std::move(changes).trimmed();
     if (tr == sound_changes) return {};
-    auto res = Try(SendRequest(lexurgy_process, json{{"type", "load_string"}, {"changes", tr.toStdString()}}));
+    auto res = Try(SendRequest(json{{"type", "load_string"}, {"changes", tr.toStdString()}}));
     if (res["type"] != "ok") return Error(
         "Lexurgy error: Unexpected response type for setting sound changes '{}'",
         res["type"].get<std::string>()
@@ -53,47 +136,19 @@ auto Lexurgy::UpdateSoundChanges(QString changes) -> Result<> {
     sound_changes = std::move(tr);
     return {};
 }
+} // namespace
 
-/// ====================================================================
-///  API
-/// ====================================================================
-Lexurgy::Lexurgy() {
-    lexurgy_process.start(LEXURGY_ROOT "/bin/lexurgy", QStringList() << "server");
-}
-
-Lexurgy::~Lexurgy() {
-    lexurgy_process.close();
-}
-
-auto Lexurgy::apply(
+// =====================================================================
+//  API
+// =====================================================================
+auto lexurgy::Apply(
     QStringView input,
     QString changes,
     const QString& stop_before
 ) -> Result<QString> {
-    Try(UpdateSoundChanges(std::move(changes)));
+    return Try(Connexion::Get())->Apply(input, std::move(changes), stop_before);
+}
 
-    std::vector<std::string> words;
-    for (auto w : input | vws::split('\n') | vws::filter([](auto&& w) { return not w.empty(); })) {
-        auto sv = QStringView{w.begin(), w.end() - w.begin()};
-        words.push_back(sv.toString().toStdString());
-    }
-
-    std::optional<std::string> stop_before_opt;
-    if (stop_before != "") stop_before_opt = stop_before.toStdString();
-    json req;
-    req["type"] = "apply";
-    req["words"] = words;
-    if (stop_before_opt) req["stopBefore"] = *stop_before_opt;
-    auto changed = Try(SendRequest(lexurgy_process, req));
-    if (changed["type"] != "changed") return Error(
-        "Lexurgy error: Unexpected response type '{}'",
-        changed["type"].get<std::string>()
-    );
-
-    QString joined;
-    for (const auto& w : changed["words"].get<std::vector<std::string>>()) {
-        joined += w;
-        joined += '\n';
-    }
-    return joined;
+void lexurgy::Close() {
+    Connexion::Close();
 }
