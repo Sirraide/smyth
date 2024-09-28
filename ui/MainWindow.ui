@@ -873,6 +873,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <addaction name="action_new"/>
     <addaction name="action_open"/>
     <addaction name="action_save"/>
+    <addaction name="actionShow_Project_Directory"/>
     <addaction name="action_settings"/>
     <addaction name="action_quit"/>
    </widget>
@@ -935,6 +936,11 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   <action name="action_import_and_replace">
    <property name="text">
     <string>Import CSV and &amp;Replace</string>
+   </property>
+  </action>
+  <action name="actionShow_Project_Directory">
+   <property name="text">
+    <string>Show Project Directory</string>
    </property>
   </action>
  </widget>
@@ -1234,6 +1240,22 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionShow_Project_Directory</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>show_project_directory()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>open_project()</slot>
@@ -1243,5 +1265,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   <slot>new_project()</slot>
   <slot>preview_changes_after_eval()</slot>
   <slot>show_vfs_context_menu(QPoint)</slot>
+  <slot>show_project_directory()</slot>
  </slots>
 </ui>

@@ -334,6 +334,10 @@ void MainWindow::save_project() {
     Project::Save();
 }
 
+void MainWindow::show_project_directory() {
+    Project::OpenDirInNativeShell();
+}
+
 // ====================================================================
 //  Events
 // ====================================================================

@@ -67,6 +67,7 @@ public slots:
     void preview_changes_after_eval();
     void prompt_quit();
     void save_project();
+    void show_project_directory();
 
 private:
     auto ApplySoundChanges() -> Result<>;

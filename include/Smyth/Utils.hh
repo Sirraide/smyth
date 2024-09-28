@@ -8,6 +8,7 @@
 
 namespace smyth {
 using namespace base;
+namespace fs = std::filesystem;
 }
 
 

@@ -39,6 +39,9 @@ public:
     /// Open a project.
     static void Open(QString path);
 
+    /// Open the project directory.
+    static void OpenDirInNativeShell();
+
     /// Prompt whether we should close this project.
     static bool PromptClose();
 

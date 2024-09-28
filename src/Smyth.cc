@@ -1,5 +1,6 @@
 #include <base/FS.hh>
 #include <filesystem>
+#include <QDesktopServices>
 #include <QFileDialog>
 #include <UI/Lexurgy.hh>
 #include <UI/MainWindow.hh>
@@ -7,7 +8,6 @@
 #include <UI/Smyth.hh>
 #include <UI/SmythCharacterMap.hh>
 #include <UI/SmythPlainTextEdit.hh>
-
 using namespace smyth;
 using namespace smyth::ui;
 
@@ -150,6 +150,14 @@ bool Project::PromptClose() {
 
 void Project::Open(QString path) {
     HandleErrors(OpenImpl(std::move(path), false));
+}
+
+void Project::OpenDirInNativeShell() {
+    if (CurrentProject.SavePath.isEmpty()) return;
+
+    // Remove the filename from the path.
+    auto path = fs::path(CurrentProject.SavePath.toStdString()).parent_path();
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdString(path.string())));
 }
 
 auto Project::OpenImpl(QString path, bool opening_last_open_project) -> Result<> {
