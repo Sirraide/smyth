@@ -1,4 +1,5 @@
 #include <base/Text.hh>
+#include <print>
 #include <QFileDialog>
 #include <QJSEngine>
 #include <QShortcut>
@@ -92,6 +93,12 @@ void MainWindow::Persist() {
     PersistentStore& dictionary_store = PersistentStore::Create("dictionary", main_store);
     ui->dictionary_table->persist(dictionary_store);
 
+    PersistentStore& wordgen_store = PersistentStore::Create("wordgen", main_store);
+    ui->wordgen_classes_input->persist(wordgen_store, "classes");
+    ui->wordgen_output->persist(wordgen_store, "output");
+    Persist<&QLineEdit::text, &QLineEdit::setText>(wordgen_store, "phono", ui->wordgen_input_phono);
+    PersistState(wordgen_store, "splitter", ui->wordgen_splitter);
+
     // Hide the details panels if the checkbox is unchecked.
     if (not ui->sca_chbox_details->isChecked()) {
         ui->sca_frame_input_bottom->setVisible(false);
@@ -105,6 +112,9 @@ void MainWindow::Persist() {
     settings::SerifFont.subscribe(ui->output, &SmythPlainTextEdit::setFont);
     settings::SerifFont.subscribe(ui->char_map, &SmythCharacterMap::setFont);
     settings::SerifFont.subscribe(ui->char_map_details_panel, &SmythRichTextEdit::setFont);
+    settings::SerifFont.subscribe(ui->wordgen_classes_input, &SmythPlainTextEdit::setFont);
+    settings::SerifFont.subscribe(ui->wordgen_output, &SmythPlainTextEdit::setFont);
+    settings::SerifFont.subscribe(ui->wordgen_input_phono, &QLineEdit::setFont);
     settings::MonoFont.subscribe(ui->changes, &SmythPlainTextEdit::setFont);
     settings::SansFont.subscribe(ui->notes_text_box, &SmythRichTextEdit::setFont);
     settings::LastOpenProject.subscribe([](const QString& s) { SetWindowPath(s); });
@@ -293,6 +303,11 @@ void MainWindow::char_map_update_selection(char32_t codepoint) {
     );
 
     ui->char_map_details_panel->setHtml(QString::fromStdString(html));
+}
+
+void MainWindow::generate_words() {
+    std::println("Classes: {}", ui->wordgen_classes_input->toPlainText());
+    std::println("Phono: {}", ui->wordgen_input_phono->text());
 }
 
 void MainWindow::new_project() {

@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <property name="movable">
        <bool>false</bool>
@@ -555,23 +555,20 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="dictionary_tab">
+      <widget class="QWidget" name="wordgen_tab">
        <attribute name="title">
-        <string>Dictionary</string>
+        <string>Word Generator</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_9">
+       <layout class="QVBoxLayout" name="verticalLayout_12">
         <item>
-         <widget class="QFrame" name="frame_6">
+         <widget class="QFrame" name="frame_9">
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
           <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
+           <enum>QFrame::Plain</enum>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_8">
-           <property name="spacing">
-            <number>0</number>
-           </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
            <property name="leftMargin">
             <number>0</number>
            </property>
@@ -585,44 +582,84 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
             <number>0</number>
            </property>
            <item>
-            <widget class="smyth::ui::SmythDictionary" name="dictionary_table">
+            <widget class="QSplitter" name="wordgen_splitter">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <widget class="smyth::ui::SmythPlainTextEdit" name="wordgen_classes_input">
+              <property name="font">
+               <font>
+                <pointsize>20</pointsize>
+               </font>
+              </property>
+              <property name="placeholderText">
+               <string>C = p, t, k</string>
+              </property>
+             </widget>
+             <widget class="smyth::ui::SmythPlainTextEdit" name="wordgen_output">
+              <property name="font">
+               <font>
+                <pointsize>20</pointsize>
+               </font>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="frame_10">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLineEdit" name="wordgen_input_phono">
              <property name="font">
               <font>
-               <family>Charis SIL</family>
-               <pointsize>16</pointsize>
+               <pointsize>15</pointsize>
               </font>
              </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
-             <property name="sortingEnabled">
-              <bool>true</bool>
+             <property name="placeholderText">
+              <string>VCV((C)V)</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QFrame" name="frame_7">
-             <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+            <widget class="QPushButton" name="wordgen_generate_button">
+             <property name="font">
+              <font>
+               <pointsize>15</pointsize>
+              </font>
              </property>
-             <property name="frameShadow">
-              <enum>QFrame::Raised</enum>
+             <property name="text">
+              <string>Generate</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_9">
-              <item>
-               <spacer name="horizontalSpacer_5">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
             </widget>
            </item>
           </layout>
@@ -802,6 +839,81 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
             </item>
            </layout>
           </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="dictionary_tab">
+       <attribute name="title">
+        <string>Dictionary</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <widget class="QFrame" name="frame_6">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_8">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="smyth::ui::SmythDictionary" name="dictionary_table">
+             <property name="font">
+              <font>
+               <family>Charis SIL</family>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QFrame" name="frame_7">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <item>
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
@@ -1256,6 +1368,22 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>wordgen_generate_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>generate_words()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>739</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>open_project()</slot>
@@ -1266,5 +1394,6 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
   <slot>preview_changes_after_eval()</slot>
   <slot>show_vfs_context_menu(QPoint)</slot>
   <slot>show_project_directory()</slot>
+  <slot>generate_words()</slot>
  </slots>
 </ui>
