@@ -153,18 +153,10 @@ endif()
 ## ============================================================================
 include(FetchContent)
 
-## Find ICU.
-set(ICU_FIND_COMPONENTS uc i18n data)
-include(FindICU)
-if (NOT ICU_FOUND)
-    message(FATAL_ERROR "ICU not found. Required components are: uc, i18n, data.")
-endif ()
-
 ## Add libbase.
 FetchContent_Declare(
     libbase
     GIT_REPOSITORY https://github.com/Sirraide/libbase
-    GIT_TAG        0fb774c  ## Last version before modules refactor.
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/libbase"
 )
 
@@ -175,20 +167,11 @@ FetchContent_Declare(
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/json"
 )
 
-## Add libassert.
-#[[FetchContent_Declare(
-  libassert
-  GIT_REPOSITORY https://github.com/jeremy-rifkin/libassert.git
-  GIT_TAG        v2.0.2
-  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libs/libassert"
-)]]
-
 ## Download them.
 message(STATUS "Downloading dependencies ...")
 FetchContent_MakeAvailable(
     libbase
     json
-    #[[libassert]]
 )
 
 ## ‘src’ should be an include directory.
@@ -263,7 +246,7 @@ target_link_libraries(smyth PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::Qml
-    ICU::i18n ICU::uc ICU::data
+    libbase
     options
 )
 

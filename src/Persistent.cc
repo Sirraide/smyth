@@ -1,5 +1,6 @@
-#include <Smyth/Persistent.hh>
 #include <algorithm>
+#include <print>
+#include <Smyth/Persistent.hh>
 
 using namespace smyth;
 using namespace smyth::detail;

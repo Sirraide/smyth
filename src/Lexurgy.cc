@@ -1,3 +1,4 @@
+#include <print>
 #include <QProcess>
 #include <ranges>
 #include <Smyth/JSON.hh>

@@ -1,3 +1,4 @@
+#include <print>
 #include <QApplication>
 #include <UI/MainWindow.hh>
 #include <UI/Smyth.hh>
