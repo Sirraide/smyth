@@ -9,6 +9,7 @@ namespace smyth::lexurgy {
 auto Apply(
     QStringView words,
     QString changes,
+    const QString& start_after,
     const QString& stop_before
 ) -> Result<QString>;
 

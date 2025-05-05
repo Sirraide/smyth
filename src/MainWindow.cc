@@ -82,6 +82,7 @@ void MainWindow::Persist() {
     PersistCBox(sca, "cbox.input.norm.choice", ui->sca_cbox_input_norm);
     PersistCBox(sca, "cbox.changes.norm.choice", ui->sca_cbox_changes_norm);
     PersistCBox(sca, "cbox.output.norm.choice", ui->sca_cbox_output_norm);
+    PersistDynCBox(sca, "cbox.start.after", ui->sca_cbox_start_after);
     PersistDynCBox(sca, "cbox.stop.before", ui->sca_cbox_stop_before);
     PersistChBox(sca, "chbox.details", ui->sca_chbox_details);
     PersistChBox(sca, "chbox.enable.js", ui->sca_chbox_enable_javascript);
@@ -104,6 +105,7 @@ void MainWindow::Persist() {
         ui->sca_frame_input_bottom->setVisible(false);
         ui->sca_frame_changes_bottom->setVisible(false);
         ui->sca_frame_output_bottom->setVisible(false);
+        ui->frame_start_after->setVisible(false);
         ui->frame_stop_before->setVisible(false);
     }
 
@@ -181,7 +183,7 @@ auto MainWindow::ApplySoundChanges() -> Result<> {
             }
         }();
 
-        return QString::fromStdString(Try(Normalise(plain.toStdString(), norm)));
+        return QString::fromStdString(Normalise(plain.toStdString(), norm));
     };
 
     auto input = Try(Norm(ui->sca_cbox_input_norm, ui->input->toPlainText()));
@@ -193,6 +195,7 @@ auto MainWindow::ApplySoundChanges() -> Result<> {
         Try(EvaluateAndInterpolateJavaScript(changes));
 
     // Remember the 'Stop Before' rule that is currently selected.
+    auto start_after = ui->sca_cbox_start_after->currentText();
     auto stop_before = ui->sca_cbox_stop_before->currentText();
 
     // Parse the sound changes to figure out what rules we have for the
@@ -226,18 +229,25 @@ auto MainWindow::ApplySoundChanges() -> Result<> {
                str == "Syllables";
     });
 
-    // Update the 'Stop Before' dropdown.
+    // Update the 'Start After'/'Stop Before' dropdowns.
+    ui->sca_cbox_start_after->clear();
+    ui->sca_cbox_start_after->addItem("");
     ui->sca_cbox_stop_before->clear();
     ui->sca_cbox_stop_before->addItem("");
-    for (const auto& name : rule_names) ui->sca_cbox_stop_before->addItem(name);
+    for (const auto& name : rule_names) {
+        ui->sca_cbox_start_after->addItem(name);
+        ui->sca_cbox_stop_before->addItem(name);
+    }
 
     // If the rule that was selected before still exists, select it again; if
     // not, do not stop before any rule.
+    if (rgs::contains(rule_names, start_after)) ui->sca_cbox_start_after->setCurrentText(start_after);
+    else start_after = "";
     if (rgs::contains(rule_names, stop_before)) ui->sca_cbox_stop_before->setCurrentText(stop_before);
     else stop_before = "";
 
     // Dew it.
-    auto output = Try(smyth::lexurgy::Apply(input, std::move(changes), stop_before));
+    auto output = Try(smyth::lexurgy::Apply(input, std::move(changes), start_after, stop_before));
     ui->output->setPlainText(Try(Norm(ui->sca_cbox_output_norm, std::move(output))));
     return {};
 }

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>940</width>
     <height>600</height>
    </rect>
   </property>
@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="movable">
        <bool>false</bool>
@@ -488,6 +488,47 @@
             </spacer>
            </item>
            <item>
+            <widget class="QFrame" name="frame_start_after">
+             <property name="frameShape">
+              <enum>QFrame::NoFrame</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_12">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="label_start_after">
+                <property name="text">
+                 <string>Start At:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="sca_cbox_start_after">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <widget class="QFrame" name="frame_stop_before">
              <property name="toolTip">
               <string>Stop before a given rule. Click ‘Apply’ to refresh the list of rules. 
@@ -524,7 +565,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
                <widget class="QComboBox" name="sca_cbox_stop_before">
                 <property name="minimumSize">
                  <size>
-                  <width>200</width>
+                  <width>150</width>
                   <height>0</height>
                  </size>
                 </property>
@@ -729,7 +770,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>498</width>
+                 <width>638</width>
                  <height>452</height>
                 </rect>
                </property>
@@ -974,7 +1015,7 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>940</width>
      <height>23</height>
     </rect>
    </property>
@@ -1381,6 +1422,22 @@ Note that certain rules with special names (e.g. anything starting with ‘roman
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_chbox_details</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frame_start_after</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>81</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>402</x>
+     <y>544</y>
     </hint>
    </hints>
   </connection>

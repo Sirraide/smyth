@@ -36,6 +36,7 @@ public:
     auto Apply(
         QStringView input,
         QString changes,
+        const QString& start_after,
         const QString& stop_before
     ) -> Result<QString>;
 
@@ -55,6 +56,7 @@ Connexion::~Connexion() { lexurgy_process.close(); }
 auto Connexion::Apply(
     QStringView input,
     QString changes,
+    const QString& start_after,
     const QString& stop_before
 ) -> Result<QString> {
     Try(UpdateSoundChanges(std::move(changes)));
@@ -65,11 +67,14 @@ auto Connexion::Apply(
         words.push_back(sv.toString().toStdString());
     }
 
+    std::optional<std::string> start_after_opt;
     std::optional<std::string> stop_before_opt;
+    if (start_after != "") start_after_opt = start_after.toStdString();
     if (stop_before != "") stop_before_opt = stop_before.toStdString();
     json req;
     req["type"] = "apply";
     req["words"] = words;
+    if (start_after_opt) req["startAt"] = *start_after_opt;
     if (stop_before_opt) req["stopBefore"] = *stop_before_opt;
     auto changed = Try(SendRequest(req));
     if (changed["type"] != "changed") return Error(
@@ -145,9 +150,10 @@ auto Connexion::UpdateSoundChanges(QString changes) -> Result<> {
 auto lexurgy::Apply(
     QStringView input,
     QString changes,
+    const QString& start_after,
     const QString& stop_before
 ) -> Result<QString> {
-    return Try(Connexion::Get())->Apply(input, std::move(changes), stop_before);
+    return Try(Connexion::Get())->Apply(input, std::move(changes), start_after, stop_before);
 }
 
 void lexurgy::Close() {
